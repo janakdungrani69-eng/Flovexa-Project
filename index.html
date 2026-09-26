@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<html lang="en-IN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FLOVEXA Parfums — Find your signature scent</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,500;1,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#100d0b;
+    --bg-alt:#0b0908;
+    --surface:#1c1713;
+    --surface-2:#282019;
+    --ivory:#f4eee4;
+    --muted:#a69a8b;
+    --line:rgba(244,238,228,0.10);
+    --line-strong:rgba(244,238,228,0.19);
+    --gold:#c69a58;
+    --gold-2:#ead3a7;
+    --rose:#a55c58;
+    --emerald:#566449;
+    --slate:#7C8CA8;
+    --violet:#8C7AA8;
+    --terracotta:#B3714B;
+    --danger:#C4634F;
+    --font-display:'Fraunces', serif;
+    --font-body:'Inter', sans-serif;
+    --font-mono:'IBM Plex Mono', monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ivory);
+    font-family:var(--font-body);
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;background:radial-gradient(ellipse at 76% 18%,rgba(137,78,37,.12),transparent 36%),radial-gradient(ellipse at 6% 55%,rgba(105,69,37,.08),transparent 30%)}
+  a{color:inherit;text-decoration:none;}
+  button{font-family:inherit;cursor:pointer;}
+  .hidden{display:none !important;}
+  ::selection{background:var(--gold); color:#10151A;}
+
+  /* ---------- Header ---------- */
+  header.topbar{
+    position:sticky; top:0; z-index:40;
+    background:rgba(16,21,26,0.92);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .topbar-inner{
+    max-width:1240px; margin:0 auto; padding:16px 24px;
+    display:flex; align-items:center; gap:24px; flex-wrap:wrap;
+  }
+  .brand{
+    font-family:var(--font-display); font-style:italic; font-weight:600;
+    font-size:24px; letter-spacing:0.02em; color:var(--ivory);
+    white-space:nowrap;
+  }
+  .brand span{color:var(--gold);}
+  .nav-search{
+    flex:1 1 260px; min-width:200px;
+    display:flex; align-items:center; gap:8px;
+    background:var(--surface); border:1px solid var(--line);
+    padding:9px 14px; border-radius:2px;
+  }
+  .nav-search input{
+    background:transparent; border:none; outline:none; color:var(--ivory);
+    font-family:var(--font-body); font-size:14px; width:100%;
+  }
+  .nav-search input::placeholder{color:var(--muted);}
+  .nav-search svg{flex-shrink:0; color:var(--muted);}
+  .topbar-actions{display:flex; align-items:center; gap:18px; margin-left:auto;}
+  .icon-btn{
+    display:flex; align-items:center; gap:8px;
+    background:none; border:none; color:var(--ivory);
+    font-family:var(--font-body); font-size:13px; position:relative;
+    padding:6px 4px;
+  }
+  .icon-btn svg{color:var(--ivory);}
+  .icon-btn:hover{color:var(--gold-2);}
+  .icon-btn:hover svg{color:var(--gold-2);}
+  .cart-badge{
+    position:absolute; top:-6px; right:-10px;
+    background:var(--gold); color:#10151A;
+    font-family:var(--font-mono); font-size:10px; font-weight:600;
+    min-width:16px; height:16px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; padding:0 3px;
+  }
+  .user-chip{position:relative;}
+  .user-menu{
+    position:absolute; top:calc(100% + 10px); right:0;
+    background:var(--surface-2); border:1px solid var(--line-strong);
+    min-width:150px; padding:8px; z-index:50;
+  }
+  .user-menu button{
+    width:100%; text-align:left; background:none; border:none; color:var(--ivory);
+    font-size:13px; padding:8px 10px;
+  }
+  .user-menu button:hover{background:var(--surface);}
+
+  /* ---------- Category strip ---------- */
+  .cat-strip{
+    max-width:1240px; margin:0 auto; padding:14px 24px 0;
+    display:flex; gap:10px; overflow-x:auto; scrollbar-width:none;
+  }
+  .cat-strip::-webkit-scrollbar{display:none;}
+  .chip{
+    flex-shrink:0; padding:8px 16px; border:1px solid var(--line-strong);
+    background:transparent; color:var(--muted); font-size:12.5px;
+    letter-spacing:0.03em; text-transform:uppercase; font-family:var(--font-mono);
+    border-radius:20px;
+  }
+  .chip.active{background:var(--gold); border-color:var(--gold); color:#10151A; font-weight:600;}
+  .chip:hover:not(.active){border-color:var(--gold); color:var(--gold-2);}
+
+  /* ---------- Hero ---------- */
+  .hero{
+    max-width:1240px; margin:0 auto; padding:68px 24px 52px;
+    display:grid; grid-template-columns:1.1fr 0.9fr; gap:40px; align-items:center;
+  }
+  .hero-eyebrow{
+    font-family:var(--font-mono); font-size:11.5px; letter-spacing:0.14em;
+    text-transform:uppercase; color:var(--gold-2); margin-bottom:18px; display:block;
+  }
+  .hero-eyebrow:before{content:"✦";margin-right:10px;color:var(--gold)}
+  .hero h1{
+    font-family:var(--font-display); font-weight:500; font-size:clamp(38px,5.2vw,68px);
+    line-height:1.06; margin:0 0 20px; color:var(--ivory);
+  }
+  .hero h1 em{color:var(--gold); font-style:italic; font-weight:600;}
+  .hero p{color:var(--muted); font-size:15.5px; line-height:1.65; max-width:440px; margin:0 0 28px;}
+  .hero-cta{
+    display:inline-flex; align-items:center; gap:10px;
+    background:var(--gold); color:#10151A; border:none; padding:14px 26px;
+    font-size:14px; font-weight:600; letter-spacing:0.02em; border-radius:2px;
+  }
+  .hero-cta:hover{background:var(--gold-2);}
+  .hero-shelf{position:relative; height:380px;isolation:isolate}
+  .hero-shelf:before{content:"";position:absolute;inset:28px 24px 12px 18px;border-radius:50%;background:radial-gradient(ellipse,rgba(202,145,76,.23),rgba(116,65,34,.08) 42%,transparent 70%);filter:blur(12px);z-index:-1}
+  .shelf-card{
+    position:absolute; width:190px; aspect-ratio:4/5; border:1px solid var(--line-strong);
+    box-shadow:0 20px 40px rgba(0,0,0,0.45); overflow:hidden;background:linear-gradient(145deg,#352820,#16100d)!important;
+  }
+  .shelf-card:nth-child(1){top:0; left:40px; transform:rotate(-4deg); z-index:3;}
+  .shelf-card:nth-child(2){top:30px; left:210px; transform:rotate(3deg); z-index:2;}
+  .shelf-card:nth-child(3){top:120px; left:110px; transform:rotate(-2deg); z-index:1;}
+  .shelf-card .swatch{justify-content:center;align-items:center;background:radial-gradient(ellipse at 50% 40%,rgba(205,151,90,.27),transparent 58%)}
+
+  /* ---------- Swatch (signature product visual) ---------- */
+  .swatch{
+    position:relative; width:100%; aspect-ratio:4/5; overflow:hidden;
+    display:flex; align-items:flex-end;
+  }
+  .bottle{position:absolute;left:50%;top:48%;transform:translate(-50%,-50%);width:35%;height:53%;border-radius:18% 18% 13% 13% / 12% 12% 8% 8%;background:linear-gradient(90deg,rgba(255,255,255,.18),rgba(255,255,255,.04) 20%,var(--juice,#a86b31) 42%,rgba(235,183,109,.68) 70%,rgba(255,255,255,.2));border:1px solid rgba(255,235,202,.48);box-shadow:0 18px 30px rgba(0,0,0,.55),inset 0 0 16px rgba(255,236,199,.25);}
+  .bottle:before{content:"";position:absolute;width:38%;height:15%;left:31%;top:-14%;background:linear-gradient(90deg,#b3905d,#f0dfbc,#8c6838);border-radius:3px 3px 0 0;box-shadow:0 -9px 0 -2px #191410}
+  .bottle:after{content:"F\A L O V E X A\A\A PARFUMS";white-space:pre;position:absolute;left:11%;right:11%;top:40%;height:34%;display:flex;align-items:center;justify-content:center;text-align:center;background:rgba(242,226,197,.9);color:#33251a;font-family:var(--font-mono);font-size:clamp(5px,.7vw,9px);letter-spacing:.08em;line-height:1.35;padding:4px 2px;box-shadow:0 2px 6px rgba(0,0,0,.2)}
+  .shelf-card .bottle{width:39%;height:56%;top:48%}
+  .swatch .swatch-letter{color:rgba(255,255,255,.12);font-size:88px;top:4px;left:12px}
+  .swatch-letter{
+    position:absolute; top:2px; left:8px; font-family:var(--font-display);
+    font-style:italic; font-weight:600; font-size:58px; color:rgba(255,255,255,0.32);
+    line-height:1; pointer-events:none;
+  }
+  .swatch-tag{
+    font-family:var(--font-mono); font-size:10px; text-transform:uppercase;
+    letter-spacing:0.06em; background:rgba(10,12,14,0.62); color:#f5e8d2;
+    padding:6px 9px; margin:10px;max-width:calc(100% - 20px);text-align:center;line-height:1.4;
+  }
+  .notes-line{font-family:var(--font-mono);font-size:10px;line-height:1.5;letter-spacing:.04em;color:var(--gold-2);text-transform:uppercase;margin:-2px 0 14px;min-height:30px}
+
+  /* ---------- Shop section ---------- */
+  .shop-wrap{max-width:1240px; margin:0 auto; padding:20px 24px 80px;}
+  .shop-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:22px; flex-wrap:wrap; gap:12px;}
+  .shop-head h2{font-family:var(--font-display); font-weight:500; font-size:24px; margin:0;}
+  .shop-count{color:var(--muted); font-family:var(--font-mono); font-size:12.5px;}
+  .filters-toggle{display:none; background:var(--surface); border:1px solid var(--line-strong); color:var(--ivory); padding:9px 14px; font-size:13px; border-radius:2px;}
+
+  .shop-grid{display:grid; grid-template-columns:220px 1fr; gap:32px;}
+  .filters{border-right:1px solid var(--line); padding-right:24px;}
+  .filter-block{margin-bottom:28px;}
+  .filter-block h4{font-family:var(--font-mono); font-size:11.5px; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); margin:0 0 14px;}
+  select#sort-select{
+    width:100%; background:var(--surface); border:1px solid var(--line-strong); color:var(--ivory);
+    padding:10px 12px; font-size:13px; font-family:var(--font-body); border-radius:2px;
+  }
+  input[type=range]{width:100%; accent-color:var(--gold);}
+  .price-label{font-family:var(--font-mono); font-size:12.5px; color:var(--gold-2); margin-top:8px; display:block;}
+  .clear-filters{background:none; border:none; color:var(--muted); font-size:12.5px; text-decoration:underline; padding:0;}
+
+  .grid{display:grid; grid-template-columns:repeat(3, 1fr); gap:22px;}
+  .product-card{
+    background:linear-gradient(180deg,#211a15,var(--surface)); border:1px solid var(--line); cursor:pointer;
+    display:flex; flex-direction:column; transition:border-color .15s ease;
+  }
+  .product-card:hover{border-color:rgba(198,154,88,.62);transform:translateY(-3px);transition:transform .2s,border-color .2s}
+  .card-body{padding:16px;}
+  .card-cat{font-family:var(--font-mono); font-size:10.5px; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); margin-bottom:6px; display:block;}
+  .card-name{font-family:var(--font-display); font-size:17px; margin:0 0 8px; line-height:1.3;}
+  .card-rating{font-size:12px; color:var(--muted); margin-bottom:12px;}
+  .card-rating .star{color:var(--gold-2);}
+  .card-foot{display:flex; align-items:center; justify-content:space-between; gap:10px;}
+  .card-price{font-family:var(--font-mono); font-size:16px; color:var(--ivory); font-weight:500;}
+  .add-btn{
+    background:transparent; border:1px solid var(--gold); color:var(--gold-2);
+    padding:8px 14px; font-size:12px; letter-spacing:0.03em; border-radius:2px; text-transform:uppercase;
+  }
+  .add-btn:hover{background:var(--gold); color:#10151A;}
+  .empty-state{grid-column:1/-1; text-align:center; padding:60px 20px; color:var(--muted);}
+  .empty-state h3{font-family:var(--font-display); color:var(--ivory); font-size:20px;}
+
+  /* ---------- Overlay / Drawer / Modal ---------- */
+  .overlay{
+    position:fixed; inset:0; background:rgba(10,12,14,0.6); z-index:60; opacity:0; pointer-events:none;
+    transition:opacity .2s ease;
+  }
+  .overlay.show{opacity:1; pointer-events:auto;}
+
+  .drawer{
+    position:fixed; top:0; right:0; height:100%; width:400px; max-width:90vw;
+    background:var(--bg-alt); border-left:1px solid var(--line-strong); z-index:70;
+    transform:translateX(100%); transition:transform .25s ease;
+    display:flex; flex-direction:column;
+  }
+  .drawer.show{transform:translateX(0);}
+  .drawer-head{display:flex; align-items:center; justify-content:space-between; padding:20px 22px; border-bottom:1px solid var(--line);}
+  .drawer-head h3{font-family:var(--font-display); font-size:19px; margin:0;}
+  .drawer-close{background:none; border:none; color:var(--muted);}
+  .drawer-body{flex:1; overflow-y:auto; padding:18px 22px;}
+  .cart-item{display:flex; gap:12px; padding:14px 0; border-bottom:1px solid var(--line);}
+  .cart-thumb{width:60px; height:75px; flex-shrink:0; position:relative; overflow:hidden;}
+  .cart-thumb .swatch-letter{font-size:30px; top:0; left:4px;}
+  .cart-item-info{flex:1; min-width:0;}
+  .cart-item-info .name{font-family:var(--font-display); font-size:14.5px; margin:0 0 4px;}
+  .cart-item-info .cat{font-family:var(--font-mono); font-size:10px; color:var(--muted); text-transform:uppercase;}
+  .qty-row{display:flex; align-items:center; gap:10px; margin-top:8px;}
+  .qty-btn{width:22px; height:22px; background:var(--surface); border:1px solid var(--line-strong); color:var(--ivory); display:flex; align-items:center; justify-content:center; font-size:14px; border-radius:2px;}
+  .qty-val{font-family:var(--font-mono); font-size:13px; min-width:16px; text-align:center;}
+  .remove-link{background:none; border:none; color:var(--muted); font-size:11.5px; text-decoration:underline; margin-left:auto;}
+  .line-total{font-family:var(--font-mono); font-size:13.5px; white-space:nowrap;}
+  .drawer-foot{padding:20px 22px; border-top:1px solid var(--line);}
+  .subtotal-row{display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:15px; margin-bottom:16px;}
+  .checkout-btn{width:100%; background:var(--gold); color:#10151A; border:none; padding:14px; font-size:14px; font-weight:600; border-radius:2px;}
+  .checkout-btn:disabled{opacity:0.4; cursor:not-allowed;}
+  .empty-cart{color:var(--muted); text-align:center; padding:40px 10px; font-size:14px;}
+
+  .modal{
+    position:fixed; top:50%; left:50%; transform:translate(-50%,-48%);
+    background:var(--bg-alt); border:1px solid var(--line-strong); z-index:80;
+    width:420px; max-width:90vw; opacity:0; pointer-events:none; transition:opacity .2s ease, transform .2s ease;
+  }
+  .modal.show{opacity:1; pointer-events:auto; transform:translate(-50%,-50%);}
+  .modal-head{display:flex; justify-content:space-between; align-items:center; padding:20px 22px; border-bottom:1px solid var(--line);}
+  .modal-head h3{font-family:var(--font-display); font-size:19px; margin:0;}
+  .modal-body{padding:22px;}
+  .tabs{display:flex; gap:4px; margin-bottom:18px;}
+  .tab-btn{flex:1; background:var(--surface); border:1px solid var(--line-strong); color:var(--muted); padding:10px; font-size:12.5px; text-transform:uppercase; letter-spacing:0.04em;}
+  .tab-btn.active{color:#10151A; background:var(--gold); border-color:var(--gold);}
+  .field{margin-bottom:14px;}
+  .field label{display:block; font-family:var(--font-mono); font-size:11px; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted); margin-bottom:6px;}
+  .field input{width:100%; background:var(--surface); border:1px solid var(--line-strong); color:var(--ivory); padding:11px 12px; font-size:14px; border-radius:2px; font-family:var(--font-body);}
+  .field input:focus{outline:1px solid var(--gold);}
+  .submit-btn{width:100%; background:var(--gold); color:#10151A; border:none; padding:13px; font-size:14px; font-weight:600; border-radius:2px; margin-top:6px;}
+
+  .product-modal-inner{display:grid; grid-template-columns:1fr 1fr;}
+  .pm-swatch{position:relative;}
+  .pm-swatch .swatch{aspect-ratio:auto; height:100%;}
+  .pm-info{padding:24px; display:flex; flex-direction:column;}
+  .pm-info .card-cat{margin-bottom:8px;}
+  .pm-info h2{font-family:var(--font-display); font-size:24px; margin:0 0 10px;}
+  .pm-info .desc{color:var(--muted); font-size:13.5px; line-height:1.6; margin-bottom:18px;}
+  .pm-price{font-family:var(--font-mono); font-size:22px; margin-bottom:20px;}
+  .pm-qty{display:flex; align-items:center; gap:14px; margin-bottom:18px;}
+  #product-modal .modal{width:680px;}
+
+  /* ---------- Checkout ---------- */
+  .checkout-view{max-width:820px; margin:0 auto; padding:50px 24px 100px;}
+  .steps{display:flex; gap:0; margin-bottom:40px;}
+  .step{flex:1; text-align:center; padding-bottom:14px; border-bottom:2px solid var(--line-strong); color:var(--muted); font-family:var(--font-mono); font-size:12px; text-transform:uppercase; letter-spacing:0.06em;}
+  .step.active{color:var(--gold-2); border-color:var(--gold);}
+  .step.done{color:var(--ivory); border-color:var(--emerald);}
+  .checkout-panel{display:none;}
+  .checkout-panel.active{display:block;}
+  .form-grid{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+  .form-grid .field.full{grid-column:1/-1;}
+  .checkout-actions{display:flex; justify-content:space-between; margin-top:26px;}
+  .btn-ghost{background:none; border:1px solid var(--line-strong); color:var(--ivory); padding:12px 22px; border-radius:2px; font-size:13.5px;}
+  .btn-gold{background:var(--gold); color:#10151A; border:none; padding:12px 26px; border-radius:2px; font-size:13.5px; font-weight:600;}
+  .review-item{display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--line); font-size:14px;}
+  .review-total{display:flex; justify-content:space-between; padding-top:16px; font-family:var(--font-mono); font-size:18px;}
+  .confirmation{text-align:center; padding:70px 24px;}
+  .confirmation .check{width:64px; height:64px; border-radius:50%; background:var(--emerald); display:flex; align-items:center; justify-content:center; margin:0 auto 24px;}
+  .confirmation h2{font-family:var(--font-display); font-size:30px; margin:0 0 12px;}
+  .confirmation p{color:var(--muted); margin-bottom:6px;}
+  .order-id{font-family:var(--font-mono); color:var(--gold-2); font-size:16px; margin-bottom:30px; display:block;}
+
+  /* ---------- Footer ---------- */
+  footer{border-top:1px solid var(--line); margin-top:20px;}
+  .footer-inner{max-width:1240px; margin:0 auto; padding:50px 24px 30px; display:grid; grid-template-columns:1.4fr 1fr 1fr 1fr; gap:30px;}
+  .footer-brand{font-family:var(--font-display); font-style:italic; font-size:22px; margin-bottom:12px;}
+  .footer-brand span{color:var(--gold);}
+  .footer-inner p{color:var(--muted); font-size:13px; line-height:1.6; max-width:280px;}
+  .footer-col h5{font-family:var(--font-mono); font-size:11px; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); margin:0 0 14px;}
+  .footer-col a{display:block; color:var(--ivory); font-size:13.5px; margin-bottom:10px; opacity:0.85;}
+  .footer-col a:hover{color:var(--gold-2);}
+  .footer-bottom{border-top:1px solid var(--line); text-align:center; padding:18px; color:var(--muted); font-size:12px; font-family:var(--font-mono);}
+  .toast{
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--surface-2); border:1px solid var(--gold); color:var(--ivory);
+    padding:12px 22px; font-size:13.5px; border-radius:2px; z-index:90;
+    opacity:0; pointer-events:none; transition:opacity .2s ease, transform .2s ease;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  @media (max-width:860px){
+    .hero{grid-template-columns:1fr; padding-top:36px;}
+    .hero-shelf{display:none;}
+    .shop-grid{grid-template-columns:1fr;}
+    .filters{display:none; border-right:none; padding-right:0; margin-bottom:20px; border-bottom:1px solid var(--line); padding-bottom:20px;}
+    .filters.show{display:block;}
+    .filters-toggle{display:inline-block;}
+    .grid{grid-template-columns:repeat(2,1fr);}
+    .product-modal-inner{grid-template-columns:1fr;}
+    #product-modal .modal{width:92vw;}
+    .form-grid{grid-template-columns:1fr;}
+    .footer-inner{grid-template-columns:1fr 1fr;}
+  }
+  @media (max-width:480px){
+    .grid{grid-template-columns:1fr;}
+    .footer-inner{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <a href="#" class="brand" data-action="go-home">FLOVEXA<span> PARFUMS</span></a>
+    <div class="nav-search">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="search-input" type="text" placeholder="Search fragrances, notes, oud…">
+    </div>
+    <div class="topbar-actions">
+      <div class="user-chip" id="user-chip">
+        <button class="icon-btn" data-action="open-auth" data-tab="login" id="user-btn">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span id="user-label">Account</span>
+        </button>
+      </div>
+      <button class="icon-btn" data-action="open-cart">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+        Cart
+        <span class="cart-badge hidden" id="cart-badge">0</span>
+      </button>
+    </div>
+  </div>
+  <div class="cat-strip" id="cat-strip"></div>
+</header>
+
+<main id="home-view">
+  <section class="hero">
+    <div>
+      <span class="hero-eyebrow">Independent perfumery · Est. 2026</span>
+      <h1>Leave a little<br><em>of yourself</em><br>in the air.</h1>
+      <p>Discover soulful fragrances made to be remembered. From smoky oud to soft florals, find the note that feels unmistakably yours.</p>
+      <button class="hero-cta" data-action="scroll-shop">
+        Explore the collection
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </button>
+    </div>
+    <div class="hero-shelf" aria-label="Three signature perfume bottles">
+      <div class="shelf-card" style="--juice:#bd783b">
+        <div class="swatch"><span class="swatch-letter">01</span><span class="bottle"></span><span class="swatch-tag">Amber · 50 ml</span></div>
+      </div>
+      <div class="shelf-card" style="--juice:#d7c7a1">
+        <div class="swatch"><span class="swatch-letter">02</span><span class="bottle"></span><span class="swatch-tag">Santal · 50 ml</span></div>
+      </div>
+      <div class="shelf-card" style="--juice:#7f4037">
+        <div class="swatch"><span class="swatch-letter">03</span><span class="bottle"></span><span class="swatch-tag">Noir · 50 ml</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="shop-wrap" id="shop-section">
+    <div class="shop-head">
+      <h2>The fragrance edit</h2>
+      <button class="filters-toggle" data-action="toggle-filters">Filters</button>
+      <span class="shop-count" id="shop-count"></span>
+    </div>
+    <div class="shop-grid">
+      <aside class="filters" id="filters-panel">
+        <div class="filter-block">
+          <h4>Sort by</h4>
+          <select id="sort-select">
+            <option value="featured">Featured</option>
+            <option value="price-asc">Price: Low to High</option>
+            <option value="price-desc">Price: High to Low</option>
+            <option value="rating">Highest Rated</option>
+          </select>
+        </div>
+        <div class="filter-block">
+          <h4>Price range</h4>
+          <input type="range" id="price-range" min="500" max="8000" step="100" value="8000">
+          <span class="price-label" id="price-range-label">Up to ₹8,000</span>
+        </div>
+        <button class="clear-filters" data-action="clear-filters">Clear all filters</button>
+      </aside>
+      <div class="grid" id="product-grid"></div>
+    </div>
+  </section>
+</main>
+
+<div id="checkout-root" class="hidden"></div>
+<div id="admin-root" class="hidden"></div>
+
+<footer>
+  <div class="footer-inner">
+    <div>
+      <div class="footer-brand">FLOVEXA<span> PARFUMS</span></div>
+      <p>Independent perfumery for the beautifully remembered. Blended with care, chosen by you.</p>
+    </div>
+    <div class="footer-col">
+      <h5>Company</h5>
+      <a href="#">Our story</a>
+      <a href="#shop-section">Our fragrances</a>
+      <a href="#">Journal</a>
+    </div>
+    <div class="footer-col">
+      <h5>Support</h5>
+      <a href="#">Delivery & returns</a>
+      <a href="#">Care guide</a>
+      <a href="mailto:hello@flovexa.com">Contact us</a>
+    </div>
+    <div class="footer-col">
+      <h5>Follow</h5>
+      <a href="#">Instagram</a>
+      <a href="#">Pinterest</a>
+    </div>
+  </div>
+  <div class="footer-bottom" id="footer-bottom"></div>
+  <div style="text-align:center; padding-bottom:16px;">
+    <button data-action="open-admin-login" style="background:none; border:none; color:var(--muted); font-size:11px; font-family:var(--font-mono); text-decoration:underline; cursor:pointer;">Admin login</button>
+  </div>
+</footer>
+
+<!-- Cart Drawer -->
+<div class="drawer" id="cart-drawer">
+  <div class="drawer-head">
+    <h3>Your bag</h3>
+    <button class="drawer-close" data-action="close-cart">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="drawer-body" id="cart-body"></div>
+  <div class="drawer-foot">
+    <div class="subtotal-row"><span>Subtotal</span><span id="cart-subtotal">₹0</span></div>
+    <button class="checkout-btn" id="checkout-btn" data-action="go-checkout">Proceed to Checkout</button>
+  </div>
+</div>
+
+<!-- Product Modal -->
+<div id="product-modal">
+  <div class="modal" id="product-modal-inner-wrap">
+    <div class="modal-head">
+      <h3>Product details</h3>
+      <button class="drawer-close" data-action="close-product">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="product-modal-inner" id="product-modal-body"></div>
+  </div>
+</div>
+
+<!-- Auth Modal -->
+<div class="modal" id="auth-modal">
+  <div class="modal-head">
+    <h3 id="auth-title">Welcome to FLOVEXA PARFUMS</h3>
+    <button class="drawer-close" data-action="close-auth">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="modal-body">
+    <div class="tabs">
+      <button class="tab-btn active" id="tab-login" data-action="switch-auth-tab" data-tab="login">Log in</button>
+      <button class="tab-btn" id="tab-signup" data-action="switch-auth-tab" data-tab="signup">Sign up</button>
+    </div>
+    <form id="auth-form">
+      <div class="field hidden" id="auth-name-field">
+        <label>Full name</label>
+        <input type="text" id="auth-name" placeholder="Ananya Rao">
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="auth-email" required placeholder="you@example.com">
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="auth-password" required placeholder="••••••••">
+      </div>
+      <button type="submit" class="submit-btn" id="auth-submit">Log in</button>
+    </form>
+  </div>
+</div>
+
+<!-- Admin Login Modal -->
+<div class="modal" id="admin-login-modal">
+  <div class="modal-head">
+    <h3>Admin login</h3>
+    <button class="drawer-close" data-action="close-admin-login">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="modal-body">
+    <div class="field">
+      <label>Passcode</label>
+      <input type="password" id="admin-passcode" placeholder="Enter admin passcode">
+    </div>
+    <button class="submit-btn" data-action="admin-login-submit">Enter admin panel</button>
+  </div>
+</div>
+
+<div class="overlay" id="overlay" data-action="overlay"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const CATEGORIES = ['All','For Her','For Him','Unisex','Oud & Attar','Discovery Sets'];
+const CAT_COLOR = {
+  'For Her':'#8f5c57','For Him':'#485143','Unisex':'#937348',
+  'Oud & Attar':'#754432','Discovery Sets':'#55505b'
+};
+const CAT_COLOR_DARK = {
+  'For Her':'#382222','For Him':'#20271f','Unisex':'#3e2d1f',
+  'Oud & Attar':'#321b14','Discovery Sets':'#29242b'
+};
+const PRODUCTS = [
+  {id:'e1',name:'Saffron Veil',cat:'For Her',price:3299,rating:4.8,reviews:142,desc:'A luminous floral fragrance of saffron, rose petals and soft white musk. Elegant by day, unforgettable after dark.',color:'#c58e56',notes:'Saffron · Rose · White musk'},
+  {id:'e2',name:'Midnight Oud',cat:'For Him',price:4299,rating:4.9,reviews:186,desc:'Smoky oud and black pepper settle into a warm, smooth trail of amber and aged woods.',color:'#7b492d',notes:'Black pepper · Oud · Amber'},
+  {id:'e3',name:'Fig & Santal',cat:'Unisex',price:2899,rating:4.7,reviews:97,desc:'Green fig leaves meet creamy sandalwood and a quiet touch of cedar. Skin-close and easy to love.',color:'#bc9b6a',notes:'Fig leaf · Sandalwood · Cedar'},
+  {id:'f1',name:'Rose de Minuit',cat:'For Her',price:3599,rating:4.8,reviews:119,desc:'Velvety Turkish rose, a glimmer of pink pepper and a gently resinous, lingering base.',color:'#a9585e',notes:'Pink pepper · Damask rose · Patchouli'},
+  {id:'f2',name:'Cedar No. 08',cat:'For Him',price:3199,rating:4.6,reviews:82,desc:'Dry cedar and aromatic vetiver capture the stillness of a forest after rain.',color:'#68704d',notes:'Bergamot · Vetiver · Cedarwood'},
+  {id:'f3',name:'Vanille Brûlée',cat:'Unisex',price:3399,rating:4.7,reviews:104,desc:'Madagascar vanilla, toasted tonka and a whisper of smoked sugar. Comfort with a little edge.',color:'#d0a35f',notes:'Vanilla · Tonka · Smoked sugar'},
+  {id:'b1',name:'Jasmine Reverie',cat:'For Her',price:2999,rating:4.5,reviews:76,desc:'A night-blooming jasmine heart wrapped in neroli and cashmere woods.',color:'#dec48c',notes:'Neroli · Jasmine sambac · Cashmere wood'},
+  {id:'b2',name:'Noir Cuir',cat:'For Him',price:3899,rating:4.8,reviews:131,desc:'Supple leather, cardamom and dark vetiver create a confident, close-wearing signature.',color:'#594137',notes:'Cardamom · Suede · Vetiver'},
+  {id:'b3',name:'Amber Alchemy',cat:'Oud & Attar',price:2499,rating:4.9,reviews:176,desc:'Concentrated perfume oil with golden amber, saffron and a deep, velvety oud accord.',color:'#c17632',notes:'Saffron · Amber · Pure oud oil'},
+  {id:'h1',name:'Mitti After Rain',cat:'Unisex',price:2699,rating:4.6,reviews:68,desc:'The first monsoon drops on warm earth, softened with vetiver and a clean green note.',color:'#8b7655',notes:'Petrichor · Vetiver · Moss'},
+  {id:'h2',name:'Oud-e-Khaas',cat:'Oud & Attar',price:4599,rating:4.9,reviews:153,desc:'A rich, slow-burning oud attar with rose, saffron and the warmth of Indian sandalwood.',color:'#75442b',notes:'Rose · Assam oud · Sandalwood'},
+  {id:'h3',name:'Citrus Atelier',cat:'Unisex',price:2799,rating:4.5,reviews:57,desc:'Bright bergamot and mandarin open onto aromatic basil and mineral woods.',color:'#d2a74e',notes:'Bergamot · Basil · Mineral woods'},
+  {id:'k1',name:'The Discovery Set',cat:'Discovery Sets',price:1199,rating:4.9,reviews:220,desc:'Six of our signature scents in generous 2 ml vials. Find your favourite before choosing a full bottle.',color:'#af8053',notes:'6 × 2 ml · Curated collection'},
+  {id:'k2',name:'Oud Tasting Set',cat:'Discovery Sets',price:1499,rating:4.8,reviews:98,desc:'A guided introduction to oud, from soft and rosy to deep and smoky. Four extrait samples.',color:'#88553d',notes:'4 × 2 ml · Oud collection'},
+  {id:'k3',name:'Soft Florals Set',cat:'Discovery Sets',price:1299,rating:4.7,reviews:134,desc:'Five modern florals made for layering, gifting or discovering your next everyday signature.',color:'#bb777b',notes:'5 × 2 ml · Floral collection'},
+  {id:'s1',name:'Mukhallat Safa',cat:'Oud & Attar',price:1899,rating:4.8,reviews:61,desc:'A precise roll-on attar blending white musk, rose and a fine thread of oud. Alcohol-free.',color:'#d1b579',notes:'White musk · Rose · Oud'},
+  {id:'s2',name:'Coastal Neroli',cat:'Unisex',price:3099,rating:4.6,reviews:203,desc:'Neroli and sea salt drift over warm driftwood for an easy, sunlit escape.',color:'#c9ab75',notes:'Neroli · Sea salt · Driftwood'},
+  {id:'s3',name:'Velvet Iris',cat:'For Her',price:3699,rating:4.7,reviews:87,desc:'Powdery iris, black tea and soft musk, composed with restraint and a little mystery.',color:'#968290',notes:'Black tea · Iris · Skin musk'},
+];
+
+let state = {
+  cart: [],
+  user: null,
+  filter: { category:'All', search:'', maxPrice:8000, sort:'featured' },
+  authTab: 'login',
+  checkoutStep: 1,
+  lastOrder: null,
+  isAdmin: false,
+  editingId: null
+};
+const ADMIN_PASSCODE = 'flovexa2026';
+let customProducts = [];
+let deletedIds = [];
+let overrides = {};
+let ALL_PRODUCTS = [...PRODUCTS];
+
+function recomputeAllProducts(){
+  ALL_PRODUCTS = PRODUCTS
+    .filter(p=>!deletedIds.includes(p.id))
+    .map(p=> overrides[p.id] ? {...p, ...overrides[p.id]} : p)
+    .concat(customProducts);
+}
+
+async function loadAdminData(){
+  try{ const r = await window.storage.get('flovexa:custom-products', true); if(r && r.value) customProducts = JSON.parse(r.value); }catch(e){}
+  try{ const r = await window.storage.get('flovexa:deleted-products', true); if(r && r.value) deletedIds = JSON.parse(r.value); }catch(e){}
+  try{ const r = await window.storage.get('flovexa:overrides', true); if(r && r.value) overrides = JSON.parse(r.value); }catch(e){}
+  recomputeAllProducts();
+}
+async function saveCustomProducts(){ try{ await window.storage.set('flovexa:custom-products', JSON.stringify(customProducts), true); }catch(e){} }
+async function saveDeletedIds(){ try{ await window.storage.set('flovexa:deleted-products', JSON.stringify(deletedIds), true); }catch(e){} }
+async function saveOverrides(){ try{ await window.storage.set('flovexa:overrides', JSON.stringify(overrides), true); }catch(e){} }
+
+function rupee(n){ return '₹' + n.toLocaleString('en-IN'); }
+
+async function loadCart(){
+  try{
+    const res = await window.storage.get('flovexa:cart', false);
+    if(res && res.value){ state.cart = JSON.parse(res.value); }
+  }catch(e){ /* no saved cart yet */ }
+  renderCartBadge();
+  renderCartDrawer();
+}
+async function saveCart(){
+  try{ await window.storage.set('flovexa:cart', JSON.stringify(state.cart), false); }catch(e){}
+}
+
+function swatchHTML(p, big){
+  const dark = CAT_COLOR_DARK[p.cat] || '#30231b';
+  const color = CAT_COLOR[p.cat] || 'var(--gold)';
+  return `<div class="swatch" style="--juice:${p.color||'#ad7542'};background:radial-gradient(ellipse at 50% 42%,${color},${dark} 72%)">
+    <span class="swatch-letter">${p.name.charAt(0)}</span>
+    <span class="bottle"></span>
+    <span class="swatch-tag">${p.notes || p.cat}</span>
+  </div>`;
+}
+
+function getFiltered(){
+  return ALL_PRODUCTS.filter(p=>{
+    if(state.filter.category!=='All' && p.cat!==state.filter.category) return false;
+    if(p.price > state.filter.maxPrice) return false;
+    if(state.filter.search){
+      const q = state.filter.search;
+      if(!p.name.toLowerCase().includes(q) && !p.cat.toLowerCase().includes(q) && !(p.notes||'').toLowerCase().includes(q)) return false;
+    }
+    return true;
+  }).sort((a,b)=>{
+    if(state.filter.sort==='price-asc') return a.price-b.price;
+    if(state.filter.sort==='price-desc') return b.price-a.price;
+    if(state.filter.sort==='rating') return b.rating-a.rating;
+    return 0;
+  });
+}
+
+function renderCategoryStrip(){
+  const el = document.getElementById('cat-strip');
+  el.innerHTML = CATEGORIES.map(c=>
+    `<button class="chip ${state.filter.category===c?'active':''}" data-action="set-category" data-cat="${c}">${c}</button>`
+  ).join('');
+}
+
+function renderProducts(){
+  const list = getFiltered();
+  const grid = document.getElementById('product-grid');
+  document.getElementById('shop-count').textContent = list.length + ' item' + (list.length!==1?'s':'');
+  if(list.length===0){
+    grid.innerHTML = `<div class="empty-state"><h3>Nothing on this shelf yet</h3><p>Try a different category or widen your price range.</p></div>`;
+    return;
+  }
+  grid.innerHTML = list.map(p=>`
+    <div class="product-card" data-action="open-product" data-id="${p.id}">
+      ${swatchHTML(p)}
+      <div class="card-body">
+        <span class="card-cat">${p.cat}</span>
+        <h3 class="card-name">${p.name}</h3>
+        <p class="notes-line">${p.notes || 'A FLOVEXA signature fragrance'}</p>
+        <div class="card-rating"><span class="star">★</span> ${p.rating} · ${p.reviews} reviews</div>
+        <div class="card-foot">
+          <span class="card-price">${rupee(p.price)}</span>
+          <button class="add-btn" data-action="add-to-cart" data-id="${p.id}">Add</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function setCategory(cat){
+  state.filter.category = cat;
+  renderCategoryStrip();
+  renderProducts();
+}
+
+/* ---------- Cart ---------- */
+function cartDetails(){
+  return state.cart.map(item=>{
+    const p = ALL_PRODUCTS.find(x=>x.id===item.id);
+    if(!p) return null;
+    return { ...p, qty:item.qty, lineTotal:p.price*item.qty };
+  }).filter(Boolean);
+}
+function cartCount(){ return state.cart.reduce((s,i)=>s+i.qty,0); }
+function cartSubtotal(){ return cartDetails().reduce((s,i)=>s+i.lineTotal,0); }
+
+function addToCart(id, qty=1){
+  const existing = state.cart.find(i=>i.id===id);
+  if(existing) existing.qty += qty; else state.cart.push({id, qty});
+  saveCart(); renderCartBadge(); renderCartDrawer(); showToast('Added to your bag');
+}
+function changeQty(id, delta){
+  const item = state.cart.find(i=>i.id===id);
+  if(!item) return;
+  item.qty += delta;
+  if(item.qty<=0) state.cart = state.cart.filter(i=>i.id!==id);
+  saveCart(); renderCartBadge(); renderCartDrawer();
+}
+function removeFromCart(id){
+  state.cart = state.cart.filter(i=>i.id!==id);
+  saveCart(); renderCartBadge(); renderCartDrawer();
+}
+function renderCartBadge(){
+  const badge = document.getElementById('cart-badge');
+  const count = cartCount();
+  badge.textContent = count;
+  badge.classList.toggle('hidden', count===0);
+}
+function renderCartDrawer(){
+  const body = document.getElementById('cart-body');
+  const details = cartDetails();
+  document.getElementById('checkout-btn').disabled = details.length===0;
+  if(details.length===0){
+    body.innerHTML = `<div class="empty-cart">Your bag is empty. Time to find something worth keeping.</div>`;
+  }else{
+    body.innerHTML = details.map(p=>`
+      <div class="cart-item">
+        <div class="cart-thumb" style="--juice:${p.color||'#ad7542'};background:radial-gradient(ellipse at 50% 40%,${CAT_COLOR[p.cat]||'var(--gold)'},${CAT_COLOR_DARK[p.cat]||'#30231b'})"><span class="bottle"></span></div>
+        <div class="cart-item-info">
+          <p class="name">${p.name}</p>
+          <span class="cat">${p.cat}</span>
+          <div class="qty-row">
+            <button class="qty-btn" data-action="dec-qty" data-id="${p.id}">−</button>
+            <span class="qty-val">${p.qty}</span>
+            <button class="qty-btn" data-action="inc-qty" data-id="${p.id}">+</button>
+            <button class="remove-link" data-action="remove-item" data-id="${p.id}">Remove</button>
+          </div>
+        </div>
+        <div class="line-total">${rupee(p.lineTotal)}</div>
+      </div>
+    `).join('');
+  }
+  document.getElementById('cart-subtotal').textContent = rupee(cartSubtotal());
+}
+function openCart(){ document.getElementById('cart-drawer').classList.add('show'); document.getElementById('overlay').classList.add('show'); }
+function closeCart(){ document.getElementById('cart-drawer').classList.remove('show'); document.getElementById('overlay').classList.remove('show'); }
+
+/* ---------- Product modal ---------- */
+let activeProductId = null;
+function openProduct(id){
+  activeProductId = id;
+  const p = ALL_PRODUCTS.find(x=>x.id===id);
+  document.getElementById('product-modal-body').innerHTML = `
+    <div class="pm-swatch">${swatchHTML(p)}</div>
+    <div class="pm-info">
+      <span class="card-cat">${p.cat}</span>
+        <h2>${p.name}</h2>
+      <div class="card-rating"><span class="star">★</span> ${p.rating} · ${p.reviews} reviews</div>
+      <p class="notes-line">${p.notes || 'A FLOVEXA signature fragrance'}</p>
+      <p class="desc">${p.desc}</p>
+      <div class="pm-price">${rupee(p.price)}</div>
+      <div class="pm-qty">
+        <button class="qty-btn" data-action="dec-qty" data-id="__pm">−</button>
+        <span class="qty-val" id="pm-qty-val">1</span>
+        <button class="qty-btn" data-action="inc-qty" data-id="__pm">+</button>
+      </div>
+      <button class="checkout-btn" data-action="add-to-cart" data-id="${p.id}" data-pmqty="true">Add to bag</button>
+    </div>
+  `;
+  document.getElementById('product-modal').classList.add('show');
+  document.getElementById('product-modal-inner-wrap').classList.add('show');
+  document.getElementById('overlay').classList.add('show');
+}
+function closeProduct(){
+  document.getElementById('product-modal').classList.remove('show');
+  document.getElementById('product-modal-inner-wrap').classList.remove('show');
+  document.getElementById('overlay').classList.remove('show');
+}
+
+/* ---------- Auth ---------- */
+function openAuth(tab){
+  state.authTab = tab || 'login';
+  updateAuthTabUI();
+  document.getElementById('auth-modal').classList.add('show');
+  document.getElementById('overlay').classList.add('show');
+}
+function closeAuth(){
+  document.getElementById('auth-modal').classList.remove('show');
+  document.getElementById('overlay').classList.remove('show');
+}
+function switchAuthTab(tab){ state.authTab = tab; updateAuthTabUI(); }
+function updateAuthTabUI(){
+  document.getElementById('tab-login').classList.toggle('active', state.authTab==='login');
+  document.getElementById('tab-signup').classList.toggle('active', state.authTab==='signup');
+  document.getElementById('auth-name-field').classList.toggle('hidden', state.authTab!=='signup');
+  document.getElementById('auth-title').textContent = state.authTab==='signup' ? 'Create your account' : 'Welcome back';
+  document.getElementById('auth-submit').textContent = state.authTab==='signup' ? 'Create account' : 'Log in';
+}
+function renderUserChip(){
+  const btn = document.getElementById('user-btn');
+  const label = document.getElementById('user-label');
+  if(state.user){
+    label.textContent = state.user.name.split(' ')[0];
+    btn.setAttribute('data-action','toggle-user-menu');
+  } else {
+    label.textContent = 'Account';
+    btn.setAttribute('data-action','open-auth');
+    btn.setAttribute('data-tab','login');
+  }
+}
+let userMenuOpen = false;
+function toggleUserMenu(){
+  userMenuOpen = !userMenuOpen;
+  let menu = document.getElementById('user-menu');
+  if(userMenuOpen){
+    if(!menu){
+      menu = document.createElement('div');
+      menu.className = 'user-menu';
+      menu.id = 'user-menu';
+      menu.innerHTML = `<button data-action="logout">Log out</button>`;
+      document.getElementById('user-chip').appendChild(menu);
+    }
+  } else if(menu){ menu.remove(); }
+}
+function logout(){
+  state.user = null;
+  renderUserChip();
+  const menu = document.getElementById('user-menu');
+  if(menu) menu.remove();
+  userMenuOpen = false;
+  showToast('Logged out');
+}
+
+/* ---------- Checkout ---------- */
+function goCheckout(){
+  if(cartDetails().length===0) return;
+  closeCart();
+  state.checkoutStep = 1;
+  document.getElementById('home-view').classList.add('hidden');
+  document.getElementById('checkout-root').classList.remove('hidden');
+  renderCheckout();
+  window.scrollTo(0,0);
+}
+function goHome(){
+  document.getElementById('checkout-root').classList.add('hidden');
+  document.getElementById('home-view').classList.remove('hidden');
+  window.scrollTo(0,0);
+}
+function checkoutNext(){
+  if(state.checkoutStep===1){
+    const req = ['ship-name','ship-address','ship-city','ship-pincode','ship-phone'];
+    for(const id of req){ if(!document.getElementById(id).value.trim()){ showToast('Please fill in all shipping details'); return; } }
+  }
+  if(state.checkoutStep===2){
+    const req = ['pay-name','pay-number','pay-expiry','pay-cvv'];
+    for(const id of req){ if(!document.getElementById(id).value.trim()){ showToast('Please complete payment details'); return; } }
+  }
+  state.checkoutStep = Math.min(3, state.checkoutStep+1);
+  renderCheckout();
+}
+function checkoutBack(){ state.checkoutStep = Math.max(1, state.checkoutStep-1); renderCheckout(); }
+
+function renderCheckout(){
+  const root = document.getElementById('checkout-root');
+  const details = cartDetails();
+  const step = state.checkoutStep;
+  root.innerHTML = `
+    <div class="checkout-view">
+      <div class="steps">
+        <div class="step ${step===1?'active':step>1?'done':''}">1. Shipping</div>
+        <div class="step ${step===2?'active':step>2?'done':''}">2. Payment</div>
+        <div class="step ${step===3?'active':''}">3. Review</div>
+      </div>
+
+      <div class="checkout-panel ${step===1?'active':''}">
+        <form-grid class="form-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div class="field full" style="grid-column:1/-1;"><label>Full name</label><input id="ship-name" type="text" placeholder="Ananya Rao"></div>
+          <div class="field full" style="grid-column:1/-1;"><label>Address</label><input id="ship-address" type="text" placeholder="House no, street, area"></div>
+          <div class="field"><label>City</label><input id="ship-city" type="text" placeholder="Surat"></div>
+          <div class="field"><label>Pincode</label><input id="ship-pincode" type="text" placeholder="395007"></div>
+          <div class="field full" style="grid-column:1/-1;"><label>Phone</label><input id="ship-phone" type="tel" placeholder="+91 98765 43210"></div>
+        </form-grid>
+        <div class="checkout-actions">
+          <button class="btn-ghost" data-action="go-home">Back to shop</button>
+          <button class="btn-gold" data-action="checkout-next">Continue to payment</button>
+        </div>
+      </div>
+
+      <div class="checkout-panel ${step===2?'active':''}">
+        <div class="form-grid">
+          <div class="field full" style="grid-column:1/-1;"><label>Name on card</label><input id="pay-name" type="text" placeholder="Ananya Rao"></div>
+          <div class="field full" style="grid-column:1/-1;"><label>Card number</label><input id="pay-number" type="text" placeholder="1234 5678 9012 3456" maxlength="19"></div>
+          <div class="field"><label>Expiry</label><input id="pay-expiry" type="text" placeholder="MM/YY"></div>
+          <div class="field"><label>CVV</label><input id="pay-cvv" type="password" placeholder="•••" maxlength="3"></div>
+        </div>
+        <div class="checkout-actions">
+          <button class="btn-ghost" data-action="checkout-back">Back</button>
+          <button class="btn-gold" data-action="checkout-next">Review order</button>
+        </div>
+      </div>
+
+      <div class="checkout-panel ${step===3?'active':''}">
+        ${details.map(p=>`<div class="review-item"><span>${p.name} × ${p.qty}</span><span>${rupee(p.lineTotal)}</span></div>`).join('')}
+        <div class="review-total"><span>Total</span><span>${rupee(cartSubtotal())}</span></div>
+        <div class="checkout-actions">
+          <button class="btn-ghost" data-action="checkout-back">Back</button>
+          <button class="btn-gold" data-action="place-order">Place order</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function placeOrder(){
+  const details = cartDetails();
+  const orderId = 'FLX-' + Date.now().toString().slice(-6);
+  state.lastOrder = { id: orderId, items: details, total: cartSubtotal() };
+  state.cart = [];
+  saveCart(); renderCartBadge(); renderCartDrawer();
+  renderConfirmation();
+}
+function renderConfirmation(){
+  const root = document.getElementById('checkout-root');
+  const o = state.lastOrder;
+  root.innerHTML = `
+    <div class="checkout-view">
+      <div class="confirmation">
+        <div class="check"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#10151A" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+        <h2>Order placed</h2>
+        <p>Thank you — your order is being prepared with care.</p>
+        <span class="order-id">Order ${o.id}</span>
+        <button class="btn-gold" data-action="continue-shopping">Continue shopping</button>
+      </div>
+    </div>
+  `;
+}
+function continueShopping(){ state.checkoutStep = 1; goHome(); }
+
+/* ---------- Admin ---------- */
+function openAdminLogin(){
+  document.getElementById('admin-login-modal').classList.add('show');
+  document.getElementById('overlay').classList.add('show');
+}
+function closeAdminLogin(){
+  document.getElementById('admin-login-modal').classList.remove('show');
+  document.getElementById('overlay').classList.remove('show');
+}
+function checkAdminPasscode(){
+  const val = document.getElementById('admin-passcode').value;
+  if(val === ADMIN_PASSCODE){
+    state.isAdmin = true;
+    closeAdminLogin();
+    document.getElementById('admin-passcode').value = '';
+    openAdmin();
+  } else {
+    showToast('Incorrect passcode');
+  }
+}
+function openAdmin(){
+  state.editingId = null;
+  document.getElementById('home-view').classList.add('hidden');
+  document.getElementById('checkout-root').classList.add('hidden');
+  document.getElementById('admin-root').classList.remove('hidden');
+  renderAdmin();
+  window.scrollTo(0,0);
+}
+function exitAdmin(){
+  document.getElementById('admin-root').classList.add('hidden');
+  document.getElementById('home-view').classList.remove('hidden');
+  window.scrollTo(0,0);
+}
+function startEditProduct(id){
+  state.editingId = id;
+  renderAdmin();
+  document.getElementById('admin-form-panel').scrollIntoView({behavior:'smooth'});
+}
+function cancelEdit(){ state.editingId = null; renderAdmin(); }
+
+async function deleteProduct(id){
+  const isCustom = customProducts.some(p=>p.id===id);
+  if(isCustom){
+    customProducts = customProducts.filter(p=>p.id!==id);
+    await saveCustomProducts();
+  } else {
+    if(!deletedIds.includes(id)) deletedIds.push(id);
+    await saveDeletedIds();
+  }
+  recomputeAllProducts();
+  renderAdmin();
+  renderProducts();
+  showToast('Product removed');
+}
+
+async function submitProductForm(e){
+  e.preventDefault();
+  const name = document.getElementById('pf-name').value.trim();
+  const cat = document.getElementById('pf-cat').value;
+  const price = parseInt(document.getElementById('pf-price').value, 10);
+  const rating = parseFloat(document.getElementById('pf-rating').value) || 4.5;
+  const desc = document.getElementById('pf-desc').value.trim();
+  if(!name || !cat || !price){ showToast('Please fill in name, category and price'); return; }
+
+  if(state.editingId){
+    const id = state.editingId;
+    const isCustom = customProducts.some(p=>p.id===id);
+    const updated = { name, cat, price, rating, desc, reviews: (ALL_PRODUCTS.find(p=>p.id===id)||{}).reviews || 0 };
+    if(isCustom){
+      customProducts = customProducts.map(p=> p.id===id ? {...p, ...updated} : p);
+      await saveCustomProducts();
+    } else {
+      overrides[id] = updated;
+      await saveOverrides();
+    }
+    showToast('Product updated');
+    state.editingId = null;
+  } else {
+    const newProduct = {
+      id: 'c' + Date.now().toString(36),
+      name, cat, price, rating, reviews: 0, desc
+    };
+    customProducts.push(newProduct);
+    await saveCustomProducts();
+    showToast('Product added');
+  }
+  recomputeAllProducts();
+  renderAdmin();
+  renderProducts();
+  document.getElementById('product-form').reset();
+}
+
+function renderAdmin(){
+  const root = document.getElementById('admin-root');
+  const editing = state.editingId ? ALL_PRODUCTS.find(p=>p.id===state.editingId) : null;
+  const catOptions = CATEGORIES.filter(c=>c!=='All').map(c=>
+    `<option value="${c}" ${editing && editing.cat===c ? 'selected':''}>${c}</option>`
+  ).join('');
+  root.innerHTML = `
+    <div class="checkout-view" style="max-width:960px;">
+      <div class="shop-head" style="margin-bottom:30px;">
+        <h2>FLOVEXA Parfums · Admin</h2>
+        <button class="btn-ghost" data-action="exit-admin">Exit admin</button>
+      </div>
+
+      <div id="admin-form-panel" style="background:var(--surface); border:1px solid var(--line-strong); padding:24px; margin-bottom:36px;">
+        <h3 style="font-family:var(--font-display); margin:0 0 18px;">${editing ? 'Edit product' : 'Add new product'}</h3>
+        <form id="product-form">
+          <div class="form-grid">
+            <div class="field"><label>Product name</label><input id="pf-name" type="text" value="${editing ? editing.name.replace(/"/g,'&quot;') : ''}" placeholder="e.g. Solace Cotton Kurta"></div>
+            <div class="field"><label>Category</label>
+              <select id="pf-cat" style="width:100%;background:var(--surface-2);border:1px solid var(--line-strong);color:var(--ivory);padding:11px 12px;font-size:14px;border-radius:2px;font-family:var(--font-body);">${catOptions}</select>
+            </div>
+            <div class="field"><label>Price (₹)</label><input id="pf-price" type="number" min="1" value="${editing ? editing.price : ''}" placeholder="1999"></div>
+            <div class="field"><label>Rating (1-5)</label><input id="pf-rating" type="number" min="1" max="5" step="0.1" value="${editing ? editing.rating : '4.5'}" placeholder="4.5"></div>
+            <div class="field full"><label>Description</label><input id="pf-desc" type="text" value="${editing ? (editing.desc||'').replace(/"/g,'&quot;') : ''}" placeholder="Short, evocative product description"></div>
+          </div>
+          <div class="checkout-actions">
+            ${editing ? `<button type="button" class="btn-ghost" data-action="cancel-edit">Cancel</button>` : `<span></span>`}
+            <button type="submit" class="btn-gold">${editing ? 'Save changes' : 'Add product'}</button>
+          </div>
+        </form>
+      </div>
+
+      <h3 style="font-family:var(--font-display); margin:0 0 16px;">All products (${ALL_PRODUCTS.length})</h3>
+      <div>
+        ${ALL_PRODUCTS.map(p=>`
+          <div class="review-item" style="align-items:center;">
+            <span style="flex:1;">
+              <strong>${p.name}</strong>
+              <span style="color:var(--muted); font-family:var(--font-mono); font-size:12px; margin-left:10px;">${p.cat} · ${rupee(p.price)}</span>
+            </span>
+            <span style="display:flex; gap:10px;">
+              <button class="btn-ghost" style="padding:6px 14px; font-size:12.5px;" data-action="edit-product" data-id="${p.id}">Edit</button>
+              <button class="btn-ghost" style="padding:6px 14px; font-size:12.5px; color:var(--danger); border-color:var(--danger);" data-action="delete-product" data-id="${p.id}">Delete</button>
+            </span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+  document.getElementById('product-form').addEventListener('submit', submitProductForm);
+}
+
+/* ---------- Toast ---------- */
+let toastTimer;
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+/* ---------- Filters panel toggle (mobile) ---------- */
+function toggleFilters(){ document.getElementById('filters-panel').classList.toggle('show'); }
+function clearFilters(){
+  state.filter = { category:'All', search:'', maxPrice:8000, sort:'featured' };
+  document.getElementById('search-input').value = '';
+  document.getElementById('sort-select').value = 'featured';
+  document.getElementById('price-range').value = 8000;
+  document.getElementById('price-range-label').textContent = 'Up to ₹8,000';
+  renderCategoryStrip();
+  renderProducts();
+}
+
+/* ---------- Event delegation ---------- */
+document.addEventListener('click', (e)=>{
+  const el = e.target.closest('[data-action]');
+  const userChip = document.getElementById('user-chip');
+  if(userChip && !userChip.contains(e.target) && userMenuOpen){ toggleUserMenu(); }
+  if(!el) return;
+  const action = el.dataset.action;
+  const id = el.dataset.id;
+  switch(action){
+    case 'add-to-cart': {
+      if(id==='__pm') break;
+      const qty = el.dataset.pmqty ? parseInt(document.getElementById('pm-qty-val').textContent,10) : 1;
+      addToCart(id, qty);
+      if(el.dataset.pmqty) closeProduct();
+      break;
+    }
+    case 'open-product': openProduct(id); break;
+    case 'close-product': closeProduct(); break;
+    case 'open-cart': openCart(); break;
+    case 'close-cart': closeCart(); break;
+    case 'inc-qty':
+      if(id==='__pm'){ const v = document.getElementById('pm-qty-val'); v.textContent = parseInt(v.textContent,10)+1; }
+      else changeQty(id, 1);
+      break;
+    case 'dec-qty':
+      if(id==='__pm'){ const v = document.getElementById('pm-qty-val'); v.textContent = Math.max(1, parseInt(v.textContent,10)-1); }
+      else changeQty(id, -1);
+      break;
+    case 'remove-item': removeFromCart(id); break;
+    case 'set-category': setCategory(el.dataset.cat); break;
+    case 'open-auth': openAuth(el.dataset.tab); break;
+    case 'close-auth': closeAuth(); break;
+    case 'switch-auth-tab': switchAuthTab(el.dataset.tab); break;
+    case 'toggle-user-menu': toggleUserMenu(); break;
+    case 'logout': logout(); break;
+    case 'go-checkout': goCheckout(); break;
+    case 'go-home': goHome(); break;
+    case 'checkout-next': checkoutNext(); break;
+    case 'checkout-back': checkoutBack(); break;
+    case 'place-order': placeOrder(); break;
+    case 'continue-shopping': continueShopping(); break;
+    case 'toggle-filters': toggleFilters(); break;
+    case 'clear-filters': clearFilters(); break;
+    case 'open-admin-login': openAdminLogin(); break;
+    case 'close-admin-login': closeAdminLogin(); break;
+    case 'admin-login-submit': checkAdminPasscode(); break;
+    case 'exit-admin': exitAdmin(); break;
+    case 'edit-product': startEditProduct(id); break;
+    case 'delete-product': deleteProduct(id); break;
+    case 'cancel-edit': cancelEdit(); break;
+    case 'overlay': closeCart(); closeProduct(); closeAuth(); closeAdminLogin(); break;
+    case 'scroll-shop': document.getElementById('shop-section').scrollIntoView({behavior:'smooth'}); break;
+  }
+});
+
+document.getElementById('search-input').addEventListener('input', e=>{
+  state.filter.search = e.target.value.toLowerCase();
+  renderProducts();
+});
+document.getElementById('sort-select').addEventListener('change', e=>{
+  state.filter.sort = e.target.value;
+  renderProducts();
+});
+document.getElementById('price-range').addEventListener('input', e=>{
+  state.filter.maxPrice = parseInt(e.target.value,10);
+  document.getElementById('price-range-label').textContent = 'Up to ' + rupee(state.filter.maxPrice);
+  renderProducts();
+});
+document.getElementById('auth-form').addEventListener('submit', e=>{
+  e.preventDefault();
+  const nameInput = document.getElementById('auth-name').value.trim();
+  const email = document.getElementById('auth-email').value.trim();
+  const name = state.authTab==='signup' ? (nameInput || email.split('@')[0]) : (email.split('@')[0] || 'Guest');
+  state.user = { name: name.charAt(0).toUpperCase()+name.slice(1), email };
+  renderUserChip();
+  closeAuth();
+  showToast(state.authTab==='signup' ? 'Account created — welcome!' : 'Welcome back, ' + state.user.name);
+  document.getElementById('auth-form').reset();
+});
+
+/* ---------- Init ---------- */
+document.getElementById('footer-bottom').textContent = '© ' + new Date().getFullYear() + ' FLOVEXA PARFUMS. All rights reserved.';
+renderCategoryStrip();
+renderUserChip();
+(async function init(){
+  await loadAdminData();
+  renderProducts();
+  await loadCart();
+})();
+</script>
+</body>
+</html>
