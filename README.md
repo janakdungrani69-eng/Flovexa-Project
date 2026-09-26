@@ -6,7 +6,7 @@ Flovexa is a Next.js storefront with a Supabase-backed catalogue and order store
 
 1. Install Node.js 20.9 or newer and pnpm.
 2. Run `pnpm install` and copy `.env.example` to `.env.local`.
-3. Create a Supabase project and run `supabase/migrations/202609260001_initial_store.sql` in its SQL editor.
+3. Create a Supabase project and run every file in `supabase/migrations` in filename order in its SQL editor. The first migration creates the catalogue/orders; the second creates the product-photo bucket.
 4. Fill in the Supabase URL, publishable key, and server-only service role key in `.env.local`. Never expose the service role key with a `NEXT_PUBLIC_` prefix or commit `.env.local`.
 5. Add real products, accurate prices, photos, and stock to the `products` table. Leave `active` false until each listing is ready.
 6. Configure a Razorpay test account and webhook URL at `https://YOUR_DOMAIN/api/payments/webhook`. Subscribe to `payment.captured`, `order.paid`, and `payment.failed`; use the same webhook secret in the server environment.
@@ -14,6 +14,10 @@ Flovexa is a Next.js storefront with a Supabase-backed catalogue and order store
 8. Configure Resend with a verified sending domain and set `RESEND_API_KEY` and `ORDER_FROM_EMAIL`. Set `NEXT_PUBLIC_SITE_URL` to the canonical HTTPS URL and create a long random `ORDER_LOOKUP_PEPPER`.
 9. Create the store owner's Supabase Auth user, then set `app_metadata.role` to `admin` using a trusted server-side admin process or Supabase dashboard. The role must not be set from browser code.
 10. Start with `pnpm dev`. Before launch run `pnpm typecheck`, `pnpm lint`, and `pnpm build`.
+
+## Add a perfume as a seller
+
+Sign in at `/admin/login` with the authorized store account, then open **Products → Add a perfume**. Enter its name, collection, selling price, optional regular price, size, concentration, stock, scent notes, and description. The product link is generated from the name and can be edited. Upload a JPG, PNG, or WebP photo (up to 5 MB) for an instant preview, or paste an image link. Save it as a draft or mark it visible to publish it in the storefront. The photo upload uses the `product-images` bucket created by the second migration.
 
 ## Production launch
 

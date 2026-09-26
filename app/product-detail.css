@@ -16,6 +16,7 @@
 .detail-copy>h1{margin:13px 0 2px;font:clamp(42px,5vw,62px)/1.08 var(--serif);letter-spacing:-.03em}
 .detail-subtitle{margin:6px 0 21px;color:#777066;font:italic 16px var(--serif)}
 .detail-price{font-size:15px;font-weight:500}
+.detail-price del{margin-right:8px;color:#898174;font-size:12px;font-weight:400}
 .detail-price span{margin-left:5px;color:#8a8175;font-size:8px;letter-spacing:.14em}
 .detail-description{max-width:470px;margin:17px 0 26px;color:#6e665b;font-size:12px;line-height:1.9}
 .detail-size{display:flex;align-items:center;gap:15px;padding:13px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}

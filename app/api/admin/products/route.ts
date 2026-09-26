@@ -3,12 +3,13 @@ import { z } from "zod";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { getAdminUser } from "@/lib/supabase/admin-user";
 
-const productSchema = z.object({
+const productFields = z.object({
   id: z.string().uuid().optional(),
   name: z.string().trim().min(2).max(120),
   slug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).max(140),
   category: z.enum(["For Her", "For Him", "Unisex", "Oud & Attar", "Discovery Sets"]),
   price: z.coerce.number().finite().min(1).max(1000000),
+  compareAtPrice: z.number().finite().positive().max(1000000).nullable(),
   size: z.string().trim().min(1).max(40),
   concentration: z.string().trim().min(1).max(80),
   notes: z.string().trim().min(2).max(240),
@@ -20,6 +21,12 @@ const productSchema = z.object({
   active: z.boolean(),
 }).strict();
 
+const productSchema = productFields.superRefine((value, context) => {
+  if (value.compareAtPrice !== null && value.compareAtPrice <= value.price) {
+    context.addIssue({ code: "custom", path: ["compareAtPrice"], message: "The regular price must be higher than the selling price." });
+  }
+});
+
 function toClientProduct(item: Record<string, unknown>) {
   return {
     id: item.id,
@@ -27,6 +34,7 @@ function toClientProduct(item: Record<string, unknown>) {
     name: item.name,
     category: item.category,
     pricePaise: item.price_paise,
+    compareAtPaise: item.compare_at_paise ?? undefined,
     size: item.size,
     concentration: item.concentration,
     notes: item.notes,
@@ -49,7 +57,7 @@ export async function POST(request: Request) {
     const supabase = createAdminSupabase();
     const { data, error } = await supabase.from("products").insert({
       name: value.name, slug: value.slug, category: value.category,
-      price_paise: Math.round(value.price * 100), size: value.size,
+      price_paise: Math.round(value.price * 100), compare_at_paise: value.compareAtPrice === null ? null : Math.round(value.compareAtPrice * 100), size: value.size,
       concentration: value.concentration, notes: value.notes.split(",").map((note) => note.trim()).filter(Boolean),
       description: value.description, image_url: value.imageUrl || null, accent: value.accent,
       stock: value.stock, featured: value.featured, active: value.active,
@@ -65,14 +73,18 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   if (!await getAdminUser()) return NextResponse.json({ error: "Administrator access is required." }, { status: 401 });
-  const parsed = productSchema.extend({ id: z.string().uuid() }).safeParse(await request.json());
+  const parsed = productFields.extend({ id: z.string().uuid() }).strict().superRefine((value, context) => {
+    if (value.compareAtPrice !== null && value.compareAtPrice <= value.price) {
+      context.addIssue({ code: "custom", path: ["compareAtPrice"], message: "The regular price must be higher than the selling price." });
+    }
+  }).safeParse(await request.json());
   if (!parsed.success) return NextResponse.json({ error: "Please check all fragrance details." }, { status: 400 });
   const { id, ...value } = parsed.data;
   try {
     const supabase = createAdminSupabase();
     const { data, error } = await supabase.from("products").update({
       name: value.name, slug: value.slug, category: value.category,
-      price_paise: Math.round(value.price * 100), size: value.size,
+      price_paise: Math.round(value.price * 100), compare_at_paise: value.compareAtPrice === null ? null : Math.round(value.compareAtPrice * 100), size: value.size,
       concentration: value.concentration, notes: value.notes.split(",").map((note) => note.trim()).filter(Boolean),
       description: value.description, image_url: value.imageUrl || null, accent: value.accent,
       stock: value.stock, featured: value.featured, active: value.active, updated_at: new Date().toISOString(),
