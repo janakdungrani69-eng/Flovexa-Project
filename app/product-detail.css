@@ -1,0 +1,45 @@
+.summary-costs{margin-top:20px;padding-top:4px;border-top:1px solid var(--line)}
+.summary-costs>div{display:flex;justify-content:space-between;margin-top:12px;font-size:11px}
+.summary-costs>div strong{font-weight:500}
+.summary-costs .summary-total{margin-top:16px;padding-top:13px;border-top:1px solid var(--line);font-size:13px}
+.detail-header{max-width:var(--page);margin:auto;padding-inline:56px}
+.detail-bag-link{justify-self:end;display:flex;align-items:center;gap:8px;font-size:9px;letter-spacing:.12em}
+.detail-breadcrumb{max-width:1208px;margin:0 auto;padding:21px 30px;display:flex;gap:10px;color:#877e72;font-size:9px}
+.detail-breadcrumb span:last-child{color:#40392f}
+.detail-layout{max-width:1208px;margin:0 auto;padding:10px 30px 77px;display:grid;grid-template-columns:1fr .83fr;gap:68px}
+.detail-gallery{align-self:start}
+.detail-main-image{position:relative;overflow:hidden;background:#d6c7b1}
+.detail-main-image .bottle-art--hero{position:relative;min-height:600px}
+.detail-image-caption{position:absolute;z-index:3;left:24px;bottom:20px;color:rgba(255,255,255,.83);font-size:7px;letter-spacing:.2em}
+.detail-image-note{display:flex;justify-content:space-between;gap:10px;margin-top:13px;color:#82796d;font-size:8px;letter-spacing:.11em;text-transform:uppercase}
+.detail-copy{padding-top:15px}
+.detail-copy>h1{margin:13px 0 2px;font:clamp(42px,5vw,62px)/1.08 var(--serif);letter-spacing:-.03em}
+.detail-subtitle{margin:6px 0 21px;color:#777066;font:italic 16px var(--serif)}
+.detail-price{font-size:15px;font-weight:500}
+.detail-price span{margin-left:5px;color:#8a8175;font-size:8px;letter-spacing:.14em}
+.detail-description{max-width:470px;margin:17px 0 26px;color:#6e665b;font-size:12px;line-height:1.9}
+.detail-size{display:flex;align-items:center;gap:15px;padding:13px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.detail-size span{color:#857a6d;font-size:8px;letter-spacing:.16em}
+.detail-size b{font-size:11px;font-weight:500}
+.detail-actions{display:grid;grid-template-columns:115px 1fr;gap:11px;margin-top:18px}
+.detail-quantity{display:flex;align-items:center;justify-content:space-between;padding:0 11px;border:1px solid rgba(29,26,22,.2)}
+.detail-quantity button{display:grid;place-items:center;padding:5px;border:0;background:none}
+.detail-quantity span{font-size:11px}
+.detail-add{width:100%;margin:0;justify-content:center;gap:11px}
+.detail-divider{height:1px;margin:31px 0 26px;background:var(--line)}
+.detail-notes-head h2{margin:7px 0 15px;font:32px var(--serif)}
+.detail-notes-head h2 em{color:#9f7850;font-weight:400}
+.notes-list{border-top:1px solid var(--line)}
+.notes-list>div{display:grid;grid-template-columns:29px 1fr auto;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--line)}
+.notes-list>div>span{color:var(--gold);font:italic 13px var(--serif)}
+.notes-list b{font:16px var(--serif);font-weight:400}
+.notes-list small{color:#867d71;font-size:7px;letter-spacing:.13em}
+.detail-promises{display:grid;gap:11px;margin-top:23px}
+.detail-promises div{display:flex;align-items:center;gap:11px;color:#7a6a54}
+.detail-promises span{color:#82796d;font-size:8px;letter-spacing:.1em}
+.detail-more{max-width:1208px;margin:0 auto;padding:26px 30px 70px;display:flex;align-items:flex-end;justify-content:space-between;border-top:1px solid var(--line)}
+.detail-more h2{margin:8px 0 0;font:38px var(--serif)}
+.detail-more h2 em{color:#9f7850;font-weight:400}
+.detail-more>a{display:flex;align-items:center;gap:10px;padding-bottom:5px;border-bottom:1px solid #9a805e;font-size:9px;letter-spacing:.1em;text-transform:uppercase}
+@media(max-width:1050px){.detail-header{padding-inline:34px}.detail-layout{gap:35px}.detail-main-image .bottle-art--hero{min-height:510px}}
+@media(max-width:760px){.detail-header{padding-inline:15px}.detail-breadcrumb{padding:17px 18px;font-size:8px}.detail-layout{padding:4px 18px 49px;grid-template-columns:1fr;gap:26px}.detail-main-image .bottle-art--hero{min-height:420px}.detail-copy{padding-top:0}.detail-copy>h1{font-size:48px}.detail-description{font-size:11px}.detail-more{padding:22px 18px 48px;gap:14px}.detail-more h2{font-size:29px}.detail-more>a{font-size:8px}.notes-list small{font-size:6px}}

@@ -1,0 +1,48 @@
+.checkout-page{min-height:100vh;background:var(--paper)}
+.checkout-header{height:77px;padding:0 max(26px,calc((100vw - 1150px)/2));display:grid;grid-template-columns:1fr auto 1fr;align-items:center;border-bottom:1px solid var(--line)}
+.checkout-back{display:flex;align-items:center;gap:8px;color:#6c6459;font-size:10px;letter-spacing:.08em;text-transform:uppercase}
+.checkout-header>.wordmark{justify-self:center}
+.secure-label{justify-self:end;color:#85775f;font-size:8px;letter-spacing:.17em}
+.checkout-layout{max-width:1090px;margin:0 auto;padding:67px 28px 85px;display:grid;grid-template-columns:1.1fr .8fr;gap:75px}
+.checkout-main h1{margin:12px 0 4px;font:42px var(--serif)}
+.checkout-lede{margin:0 0 29px;color:#777066;font-size:12px}
+.order-summary{align-self:start;padding:27px;background:#ece7dd}
+.order-summary h2{margin:10px 0 20px;font:28px var(--serif)}
+.summary-lines{border-top:1px solid var(--line)}
+.summary-product{display:grid;grid-template-columns:56px 1fr auto;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.summary-product-visual{width:56px;height:56px;display:grid;place-items:center;background:radial-gradient(ellipse,#dfd1ba,#c9b69a);color:#6c4e2f;font:italic 18px var(--serif)}
+.summary-product>div:nth-child(2){display:grid;gap:5px}
+.summary-product b{font:15px var(--serif)}
+.summary-product small{color:#81796e;font-size:9px}
+.summary-product>strong{font-size:10px;font-weight:500}
+.summary-total{display:flex;justify-content:space-between;margin-top:20px;font-size:12px}
+.summary-total strong{font-weight:500}
+.summary-note{color:#80786d;font-size:9px;line-height:1.7}
+.summary-empty{padding:20px 0;color:#786f63;font-size:11px}
+.summary-empty a{text-decoration:underline}
+.form-section-title{display:flex;align-items:center;gap:11px;margin:27px 0 14px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.form-section-title>span{color:var(--gold);font:italic 14px var(--serif)}
+.form-section-title h2{margin:0;font:20px var(--serif)}
+.form-fields{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.form-fields label{display:grid;gap:6px;color:#6e665b;font-size:9px;letter-spacing:.06em}
+.form-fields label.field-wide{grid-column:1/-1}
+.form-fields label small{display:inline;color:#998f82;font-size:8px}
+.form-fields input{width:100%;height:43px;padding:0 11px;border:1px solid rgba(29,26,22,.19);border-radius:0;outline:none;background:rgba(255,255,255,.33);color:var(--ink);font-size:11px;letter-spacing:0}
+.form-fields input:focus{border-color:#9e7c51;box-shadow:0 0 0 2px rgba(170,128,80,.12)}
+.pay-button{width:100%;margin-top:23px;justify-content:space-between}
+.pay-button:disabled{cursor:not-allowed;opacity:.55}
+.payment-assurance{display:flex;align-items:flex-start;gap:7px;color:#82796d;font-size:9px;line-height:1.6}
+.payment-assurance svg{flex:none}
+.checkout-message{padding:10px 12px;background:#f2e2db;color:#784536;font-size:10px;line-height:1.6}
+.checkout-setup-note{display:flex;gap:12px;margin:20px 0;padding:14px;border:1px solid #dcc8a8;background:#f0e8d9;color:#604c31}
+.checkout-setup-note svg{flex:none}
+.checkout-setup-note b{font-size:10px}
+.checkout-setup-note p{margin:4px 0 0;color:#746753;font-size:9px;line-height:1.6}
+.checkout-success{padding:34px 22px;text-align:center;border:1px solid var(--line)}
+.checkout-success>span{width:42px;height:42px;display:grid;place-items:center;margin:auto;border-radius:50%;background:#53634b;color:white;font-size:20px}
+.checkout-success h2{margin:14px 0 4px;font:27px var(--serif)}
+.checkout-success p{color:#746d62;font-size:11px;line-height:1.7}
+.checkout-success a{display:inline-flex;gap:9px;align-items:center;margin-top:13px;color:#745b3a;font-size:10px;text-transform:uppercase;letter-spacing:.1em}
+.checkout-footer{min-height:54px;display:flex;justify-content:center;align-items:center;gap:24px;border-top:1px solid var(--line);color:#888073;font-size:8px;letter-spacing:.09em}
+.checkout-footer a:hover{color:var(--gold)}
+@media(max-width:760px){.checkout-header{height:65px;padding-inline:15px}.checkout-header .wordmark{font-size:15px}.checkout-back{font-size:8px;gap:5px}.checkout-back svg{width:13px}.secure-label{font-size:7px}.checkout-layout{padding:38px 17px 55px;grid-template-columns:1fr;gap:32px}.checkout-main h1{font-size:36px}.order-summary{grid-row:1;padding:20px}.order-summary h2{font-size:24px}.checkout-footer{gap:13px;font-size:7px}}
