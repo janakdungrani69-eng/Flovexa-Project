@@ -11,11 +11,11 @@ const metadataBase = configuredSiteUrl && URL.canParse(configuredSiteUrl)
 
 export const metadata: Metadata = {
   metadataBase,
-  title: { default: "Flovexa Parfums — Find your signature scent", template: "%s | Flovexa Parfums" },
-  description: "Discover thoughtful fragrances, modern attars and scent discovery sets from Flovexa Parfums.",
-  applicationName: "Flovexa Parfums",
+  title: { default: "Flovexa Perfumes — Find your signature scent", template: "%s | Flovexa Perfumes" },
+  description: "Discover thoughtful fragrances, modern attars and scent discovery sets from Flovexa Perfumes.",
+  applicationName: "Flovexa Perfumes",
   openGraph: {
-    title: "Flovexa Parfums — Find your signature scent",
+    title: "Flovexa Perfumes — Find your signature scent",
     description: "A considered collection of fragrances for every mood and moment.",
     type: "website",
     locale: "en_IN",

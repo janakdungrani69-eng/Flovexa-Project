@@ -8,7 +8,7 @@ const pages = {
   contact: { title: "Contact us", label: "WE’RE HERE TO HELP" },
   privacy: { title: "Privacy policy", label: "YOUR PRIVACY" },
   terms: { title: "Terms of service", label: "THE DETAILS" },
-  about: { title: "Our story", label: "FLOVEXA PARFUMS" },
+  about: { title: "Our story", label: "FLOVEXA PERFUMES" },
 } as const;
 
 type PageSlug = keyof typeof pages;
@@ -27,8 +27,8 @@ export default async function InformationPage({ params }: { params: Promise<{ sl
   const page = pages[slug as PageSlug];
 
   return <main className="orders-page">
-    <header className="checkout-header"><Link href="/" className="checkout-back">← Back to Flovexa</Link><Link href="/" className="wordmark">FLOVEXA<span>PARFUMS</span></Link><span className="secure-label">INFORMATION</span></header>
-    <section className="orders-content"><span className="eyebrow">{page.label}</span><h1>{page.title}</h1><p>This information is being prepared for the Flovexa Parfums launch. Please check back before placing an order.</p><p>Online orders are not being accepted until the store’s delivery, customer care, and applicable policy details have been published.</p><Link className="primary-button" href="/">Return to the collection</Link></section>
-    <footer className="checkout-footer"><span>© {new Date().getFullYear()} FLOVEXA PARFUMS</span><Link href="/orders">Order care</Link><Link href="/">Shop</Link></footer>
+    <header className="checkout-header"><Link href="/" className="checkout-back">← Back to Flovexa</Link><Link href="/" className="wordmark">FLOVEXA<span>PERFUMES</span></Link><span className="secure-label">INFORMATION</span></header>
+    <section className="orders-content"><span className="eyebrow">{page.label}</span><h1>{page.title}</h1><p>This information is being prepared for the Flovexa Perfumes launch. Please check back before placing an order.</p><p>Online orders are not being accepted until the store’s delivery, customer care, and applicable policy details have been published.</p><Link className="primary-button" href="/">Return to the collection</Link></section>
+    <footer className="checkout-footer"><span>© {new Date().getFullYear()} FLOVEXA PERFUMES</span><Link href="/orders">Order care</Link><Link href="/">Shop</Link></footer>
   </main>;
 }

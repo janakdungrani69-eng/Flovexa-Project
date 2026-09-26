@@ -40,7 +40,7 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
   const checkoutReady = hasRealProductIds && serverConfigured;
 
   return <main className="checkout-page">
-    <header className="checkout-header"><Link href="/" className="checkout-back"><ArrowLeft size={16} /> Continue shopping</Link><Link href="/" className="wordmark">FLOVEXA<span>PARFUMS</span></Link><span className="secure-label">SECURE CHECKOUT</span></header>
+    <header className="checkout-header"><Link href="/" className="checkout-back"><ArrowLeft size={16} /> Continue shopping</Link><Link href="/" className="wordmark">FLOVEXA<span>PERFUMES</span></Link><span className="secure-label">SECURE CHECKOUT</span></header>
     <div className="checkout-layout">
       <section className="checkout-main"><span className="eyebrow">ALMOST YOURS</span><h1>Delivery details</h1><p className="checkout-lede">Tell us where to send your fragrance.</p>
         <CheckoutForm items={requested} enabled={checkoutReady} />
@@ -50,6 +50,6 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
         <div className="summary-costs"><div><span>Subtotal</span><strong>{money(subtotal)}</strong></div>{pricing ? <><div><span>Shipping</span><strong>{pricing.shippingPaise ? money(pricing.shippingPaise) : "Complimentary"}</strong></div>{pricing.taxPaise > 0 && <div><span>{pricing.taxIncluded ? "Included taxes" : "Taxes"}</span><strong>{money(pricing.taxPaise)}</strong></div>}<div className="summary-total"><span>Total</span><strong>{money(pricing.totalPaise)}</strong></div></> : <p className="summary-note">Shipping and tax settings are being configured. The payment button stays disabled until the total can be confirmed.</p>}</div>
       </aside>
     </div>
-    <footer className="checkout-footer"><span>© {new Date().getFullYear()} FLOVEXA PARFUMS</span><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link><Link href="/returns">Returns</Link></footer>
+    <footer className="checkout-footer"><span>© {new Date().getFullYear()} FLOVEXA PERFUMES</span><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link><Link href="/returns">Returns</Link></footer>
   </main>;
 }

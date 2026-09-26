@@ -1,4 +1,4 @@
-# Flovexa Parfums
+# Flovexa Perfumes
 
 Flovexa is a Next.js storefront with a Supabase-backed catalogue and order store, Razorpay checkout, order lookup, email notifications, and a protected operations dashboard. The original supplied HTML reference is kept at `legacy/static-storefront.html`.
 
