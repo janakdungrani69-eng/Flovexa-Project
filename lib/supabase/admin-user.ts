@@ -1,11 +1,7 @@
 import "server-only";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getSignedInUser, getStoreRole } from "@/lib/supabase/roles";
 
 export async function getAdminUser() {
-  try {
-    const supabase = await createSupabaseServerClient();
-    const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user || data.user.app_metadata?.role !== "admin") return null;
-    return data.user;
-  } catch { return null; }
+  const user = await getSignedInUser();
+  return user && getStoreRole(user) === "admin" ? user : null;
 }

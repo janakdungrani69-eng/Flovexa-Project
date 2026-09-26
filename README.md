@@ -31,4 +31,12 @@ Sign in at `/admin/login` with the authorized store account, then open **Product
 
 The browser submits product IDs and quantities only. A transactional Supabase function reserves stock and calculates the price from the catalogue before the server creates a Razorpay order. The server validates Razorpay's signature and fetches the payment before marking an order captured. Webhooks are signature-checked and de-duplicated. Keep database migrations and all credentials under the store owner's control.
 
+## Account roles and routes
+
+- `/login` is the shared sign-in page. After authentication, a trusted Supabase `app_metadata.role` routes `admin`/`owner` to `/admin`, `seller` to `/seller`, and all ordinary customer accounts to `/account`.
+- `/signup` creates customer accounts only. Customer-supplied user metadata cannot grant admin or seller access.
+- Admin pages and product/order admin APIs check the trusted app-metadata role server-side. Typing `/admin` directly does not grant access.
+- Seller role routing is established, but Flovexa is currently a single-owner shop: seller-specific product ownership, order assignment, and payout settlements are not active. Do not grant seller access for marketplace operations until those workflows are built and verified.
+- Customer order history is matched to the email on the signed-in account. Supabase email confirmation should be enabled before launch.
+
 Orders hold inventory for 20 minutes. A cancelled/expired reservation is restored when a later checkout asks the database to release expired reservations. For busy production stores, add a secured scheduled job for timely cleanup and alerting; ensure the hosting plan supports the chosen schedule frequency.

@@ -17,11 +17,12 @@ export default function AdminLoginForm() {
     if (!url || !key) { setError("Admin sign-in is not configured yet."); setBusy(false); return; }
     const supabase = createBrowserClient(url, key);
     const { data, error: loginError } = await supabase.auth.signInWithPassword({ email, password });
-    if (loginError || data.user?.app_metadata?.role !== "admin") {
+    if (loginError || !data.user) {
       if (data.user) await supabase.auth.signOut();
-      setError(loginError?.message ?? "This account is not authorized to manage the store."); setBusy(false); return;
+      setError(loginError?.message ?? "We could not sign you in."); setBusy(false); return;
     }
-    router.replace("/admin"); router.refresh();
+    const role = data.user.app_metadata?.role;
+    router.replace(role === "admin" || role === "owner" ? "/admin" : role === "seller" ? "/seller" : "/account"); router.refresh();
   }
   return <form className="admin-login-form" onSubmit={submit}><label>Email address<input type="email" autoComplete="username" required value={email} onChange={(event) => setEmail(event.target.value)} /></label><label>Password<input type="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} /></label>{error && <p role="alert">{error}</p>}<button className="primary-button" disabled={busy}>{busy ? "Signing in…" : "Sign in securely"}</button></form>;
 }
