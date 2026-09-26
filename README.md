@@ -29,7 +29,7 @@ Sign in at `/admin/login` with the authorized store account, then open **Product
 
 ## Payment and inventory behavior
 
-The browser submits product IDs and quantities only. A transactional Supabase function reserves stock and calculates the price from the catalogue before the server creates a Razorpay order. The server validates Razorpay's signature and fetches the payment before marking an order captured. Webhooks are signature-checked and de-duplicated. Keep database migrations and all credentials under the store owner's control.
+Flovexa accepts prepaid orders through Razorpay; cash on delivery (COD) is intentionally not offered. Fulfilment requires a captured online payment. The browser submits product IDs and quantities only. A transactional Supabase function reserves stock and calculates the price from the catalogue before the server creates a Razorpay order. The server validates Razorpay's signature and fetches the payment before marking an order captured. Webhooks are signature-checked and de-duplicated. Keep database migrations and all credentials under the store owner's control.
 
 ## Account roles and routes
 
