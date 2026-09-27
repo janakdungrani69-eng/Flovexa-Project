@@ -2,7 +2,7 @@ export type Product = {
   id: string;
   slug: string;
   name: string;
-  category: "For Her" | "For Him" | "Unisex" | "Oud & Attar" | "Discovery Sets";
+  category: string;
   pricePaise: number;
   compareAtPaise?: number;
   size: string;

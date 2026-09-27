@@ -7,7 +7,7 @@ const productFields = z.object({
   id: z.string().uuid().optional(),
   name: z.string().trim().min(2).max(120),
   slug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).max(140),
-  category: z.enum(["For Her", "For Him", "Unisex", "Oud & Attar", "Discovery Sets"]),
+  category: z.string().trim().min(2).max(60),
   price: z.coerce.number().finite().min(1).max(1000000),
   compareAtPrice: z.number().finite().positive().max(1000000).nullable(),
   size: z.string().trim().min(1).max(40),
@@ -55,6 +55,8 @@ export async function POST(request: Request) {
   const value = parsed.data;
   try {
     const supabase = createAdminSupabase();
+    const { data: category } = await supabase.from("store_categories").select("name").eq("name", value.category).eq("active", true).maybeSingle();
+    if (!category) return NextResponse.json({ error: "Choose an active store category." }, { status: 400 });
     const { data, error } = await supabase.from("products").insert({
       name: value.name, slug: value.slug, category: value.category,
       price_paise: Math.round(value.price * 100), compare_at_paise: value.compareAtPrice === null ? null : Math.round(value.compareAtPrice * 100), size: value.size,
@@ -82,6 +84,8 @@ export async function PATCH(request: Request) {
   const { id, ...value } = parsed.data;
   try {
     const supabase = createAdminSupabase();
+    const { data: category } = await supabase.from("store_categories").select("name").eq("name", value.category).eq("active", true).maybeSingle();
+    if (!category) return NextResponse.json({ error: "Choose an active store category." }, { status: 400 });
     const { data, error } = await supabase.from("products").update({
       name: value.name, slug: value.slug, category: value.category,
       price_paise: Math.round(value.price * 100), compare_at_paise: value.compareAtPrice === null ? null : Math.round(value.compareAtPrice * 100), size: value.size,

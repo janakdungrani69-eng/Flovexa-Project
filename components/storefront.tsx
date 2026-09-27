@@ -6,9 +6,9 @@ import Link from "next/link";
 import { ArrowDownRight, ArrowRight, Check, ChevronDown, Menu, Minus, Plus, Search, ShoppingBag, Sparkles, X } from "lucide-react";
 import type { Product } from "@/lib/products";
 import WishlistButton from "@/components/wishlist-button";
+import type { StorefrontSettings } from "@/lib/storefront-content";
 
 type CartItem = { productId: string; quantity: number };
-const categories = ["All scents", "For Her", "For Him", "Unisex", "Oud & Attar", "Discovery Sets"] as const;
 const money = (paise: number) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(paise / 100);
 
 export function BottleArt({ product, hero = false }: { product: Product; hero?: boolean }) {
@@ -23,7 +23,8 @@ export function BottleArt({ product, hero = false }: { product: Product; hero?: 
   );
 }
 
-export default function Storefront({ products }: { products: Product[] }) {
+export default function Storefront({ products, categories: storeCategories, settings }: { products: Product[]; categories: string[]; settings: StorefrontSettings }) {
+  const categories = ["All scents", ...storeCategories];
   const [cart, setCart] = useState<CartItem[]>([]);
   const [category, setCategory] = useState<(typeof categories)[number]>("All scents");
   const [query, setQuery] = useState("");
@@ -79,7 +80,7 @@ export default function Storefront({ products }: { products: Product[] }) {
   const heroProduct = products.find((product) => product.featured) ?? products[0];
   return (
     <main>
-      <div className="announcement"><Sparkles size={13} strokeWidth={1.5} /><span>A more personal way to discover fragrance</span><ArrowRight size={13} strokeWidth={1.5} /></div>
+      <div className="announcement"><Sparkles size={13} strokeWidth={1.5} /><span>{settings.announcement}</span><ArrowRight size={13} strokeWidth={1.5} /></div>
       <header className="site-header">
         <button className="mobile-menu icon-button" aria-label={mobileMenuOpen ? "Close menu" : "Open menu"} aria-expanded={mobileMenuOpen} onClick={() => setMobileMenuOpen((open) => !open)}>{mobileMenuOpen ? <X size={21} /> : <Menu size={21} />}</button>
         <a href="#top" className="wordmark" aria-label="Flovexa Perfumes home">FLOVEXA<span>PERFUMES</span></a>
@@ -96,13 +97,13 @@ export default function Storefront({ products }: { products: Product[] }) {
 
       <section className="hero" id="top">
         <div className="hero-copy">
-          <div className="eyebrow"><span /> THE ART OF A LASTING IMPRESSION</div>
-          <h1>Wear the feeling.<br /><em>Keep the memory.</em></h1>
-          <p>Fragrance is the quietest way to tell your story. Find a scent that feels like it was always yours.</p>
-          <a className="primary-button" href="#collection">Discover your scent <ArrowRight size={17} /></a>
-          <div className="hero-caption"><span>01 / THE SIGNATURE COLLECTION</span><span>SCENT, MADE PERSONAL</span></div>
+          <div className="eyebrow"><span /> {settings.eyebrow}</div>
+          <h1>{settings.title}<br /><em>{settings.title_emphasis}</em></h1>
+          <p>{settings.description}</p>
+          <a className="primary-button" href="#collection">{settings.cta_label} <ArrowRight size={17} /></a>
+          <div className="hero-caption"><span>{settings.caption_one}</span><span>{settings.caption_two}</span></div>
         </div>
-        <div className="hero-visual">
+        <div className="hero-visual" style={settings.hero_image_url ? { backgroundImage: `linear-gradient(125deg,rgba(71,50,31,.22),rgba(20,15,10,.12)),url("${settings.hero_image_url}")`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}>
           {heroProduct && <BottleArt product={heroProduct} hero />}
           <div className="hero-visual-note"><span>EAU DE PARFUM</span><i>Notes that stay with you.</i></div>
           <span className="hero-roman">01</span>
