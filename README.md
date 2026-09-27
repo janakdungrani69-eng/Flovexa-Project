@@ -6,7 +6,7 @@ Flovexa is a Next.js storefront with a Supabase-backed catalogue and order store
 
 1. Install Node.js 20.9 or newer and pnpm.
 2. Run `pnpm install` and copy `.env.example` to `.env.local`.
-3. Create a Supabase project and run every file in `supabase/migrations` in filename order in its SQL editor. The migrations create the catalogue/orders, product-photo bucket, customer accounts, private customer notes, and editable homepage/category settings.
+3. Create a Supabase project and run every file in `supabase/migrations` in filename order in its SQL editor. The migrations create the catalogue/orders, product-photo bucket, customer accounts, private customer notes, editable homepage/category settings, coupons, and owner-managed seller access records.
 4. Fill in the Supabase URL, publishable key, and server-only service role key in `.env.local`. Never expose the service role key with a `NEXT_PUBLIC_` prefix or commit `.env.local`.
 5. Add real products, accurate prices, photos, and stock to the `products` table. Leave `active` false until each listing is ready.
 6. Configure a Razorpay test account and webhook URL at `https://YOUR_DOMAIN/api/payments/webhook`. Subscribe to `payment.captured`, `order.paid`, and `payment.failed`; use the same webhook secret in the server environment.
@@ -36,8 +36,8 @@ Flovexa accepts prepaid orders through Razorpay; cash on delivery (COD) is inten
 - `/login` is the shared sign-in page. After authentication, a trusted Supabase `app_metadata.role` routes `admin`/`owner` to `/admin`, `seller` to `/seller`, and all ordinary customer accounts to `/account`.
 - `/signup` creates customer accounts only. Customer-supplied user metadata cannot grant admin or seller access.
 - Admin pages and product/order admin APIs check the trusted app-metadata role server-side. Typing `/admin` directly does not grant access.
-- Admin can manage perfume listings and stock, fulfil orders, review returns, search registered customers and keep private support notes, review captured sales from the latest 1,000 orders, edit homepage copy/banner and manage categories, and prepare discount codes. Category deletion is blocked while products still use it. Coupon redemption and refunds remain disabled until the payment phase. Apply migrations before using these controls.
-- Seller role routing is established, but Flovexa is currently a single-owner shop: seller-specific product ownership, order assignment, and payout settlements are not active. Do not grant seller access for marketplace operations until those workflows are built and verified.
+- Admin can manage perfume listings and stock, fulfil orders, review returns, search registered customers and keep private support notes, review captured sales from the latest 1,000 orders, edit homepage copy/banner and manage categories, prepare discount codes, and pause/restore existing seller accounts. Category deletion is blocked while products still use it. Coupon redemption and refunds remain disabled until the payment phase. Apply migrations before using these controls.
+- Seller role routing and owner-managed access controls are in place. Seller product ownership, order assignment, and payout settlements are not active yet; keep seller marketplace access paused until those workflows are built and verified.
 - Customer order history is matched to the email on the signed-in account. Supabase email confirmation should be enabled before launch.
 - `/account` includes order tracking, saved perfumes, profile and saved delivery addresses. A signed-in customer’s default address is prefilled at checkout. Return requests are reviewed by an administrator in the **Returns** tab; approving a request does not automatically issue a Razorpay refund.
 

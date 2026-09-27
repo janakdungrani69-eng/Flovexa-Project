@@ -4,6 +4,7 @@ import AdminDashboard, { type AdminOrder, type AdminProduct, type AdminReturnReq
 import type { AdminCustomer } from "@/components/admin-customers";
 import type { AdminReportOrder } from "@/components/admin-reports";
 import AdminReports from "@/components/admin-reports";
+import AdminSellers, { type AdminSeller } from "@/components/admin-sellers";
 import AdminCoupons, { type AdminCoupon } from "@/components/admin-coupons";
 import { getStoreRole } from "@/lib/supabase/roles";
 import { getStorefrontContent } from "@/lib/storefront-content-server";
@@ -20,6 +21,7 @@ export default async function AdminPage() {
   let customers: AdminCustomer[] = [];
   let reportOrders: AdminReportOrder[] = [];
   let coupons: AdminCoupon[] = [];
+  let sellers: AdminSeller[] = [];
   try {
     const supabase = createAdminSupabase();
     const [productResult, orderResult, returnResult, reportResult, usersResult, couponResult] = await Promise.all([
@@ -34,7 +36,15 @@ export default async function AdminPage() {
     if (orderResult.data) orders = orderResult.data as unknown as AdminOrder[];
     reportOrders = reportResult.data ?? [];
     coupons = (couponResult.data ?? []) as AdminCoupon[];
-    const customerUsers = usersResult.data?.users.filter((item) => getStoreRole(item) === "customer") ?? [];
+    const { data: sellerProfiles } = await supabase.from("seller_profiles").select("user_id, store_name, status, admin_note, created_at").order("created_at", { ascending: false }).limit(1000);
+    const profileMap = new Map((sellerProfiles ?? []).map((profile) => [profile.user_id, profile]));
+    const authUsers = usersResult.data?.users ?? [];
+    const usersById = new Map(authUsers.map((item) => [item.id, item]));
+    sellers = (sellerProfiles ?? []).flatMap((profile) => {
+      const sellerUser = usersById.get(profile.user_id);
+      return sellerUser?.email ? [{ id: sellerUser.id, email: sellerUser.email, store_name: profile.store_name || sellerUser.user_metadata?.store_name || "", status: profile.status as AdminSeller["status"], created_at: profile.created_at, admin_note: profile.admin_note }] : [];
+    });
+    const customerUsers = authUsers.filter((item) => getStoreRole(item) === "customer" && !profileMap.has(item.id));
     if (customerUsers.length) {
       const userIds = customerUsers.map((item) => item.id);
       const emails = customerUsers.map((item) => item.email?.toLowerCase()).filter((email): email is string => Boolean(email));
@@ -66,5 +76,5 @@ export default async function AdminPage() {
       returnRequests = returnResult.data.map((item) => ({ ...item, order: known.get(item.order_id) ?? null }));
     }
   } catch (error) { console.error("Could not load store admin data", error instanceof Error ? error.message : "Unknown error"); }
-  return <main className="admin-page"><header className="admin-topbar"><Link href="/" className="wordmark">FLOVEXA<span>PERFUMES</span></Link><div><span>{user.email}</span><form action="/auth/signout" method="post"><button type="submit">Sign out</button></form></div></header><AdminDashboard products={products} orders={orders} returnRequests={returnRequests} customers={customers} coupons={coupons} couponPanel={<AdminCoupons initialCoupons={coupons}/>} reportPanel={<AdminReports orders={reportOrders} now={new Date().toISOString()}/>} categories={storefrontContent.categories} storefrontSettings={storefrontContent.settings} /></main>;
+  return <main className="admin-page"><header className="admin-topbar"><Link href="/" className="wordmark">FLOVEXA<span>PERFUMES</span></Link><div><span>{user.email}</span><form action="/auth/signout" method="post"><button type="submit">Sign out</button></form></div></header><AdminDashboard products={products} orders={orders} returnRequests={returnRequests} customers={customers} sellers={sellers} coupons={coupons} couponPanel={<AdminCoupons initialCoupons={coupons}/>} sellerPanel={<AdminSellers initialSellers={sellers}/>} reportPanel={<AdminReports orders={reportOrders} now={new Date().toISOString()}/>} categories={storefrontContent.categories} storefrontSettings={storefrontContent.settings} /></main>;
 }
