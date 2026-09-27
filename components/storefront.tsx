@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowDownRight, ArrowRight, Check, ChevronDown, Menu, Minus, Plus, Search, ShoppingBag, Sparkles, X } from "lucide-react";
 import type { Product } from "@/lib/products";
+import WishlistButton from "@/components/wishlist-button";
 
 type CartItem = { productId: string; quantity: number };
 const categories = ["All scents", "For Her", "For Him", "Unisex", "Oud & Attar", "Discovery Sets"] as const;
@@ -30,6 +31,7 @@ export default function Storefront({ products }: { products: Product[] }) {
   const [notice, setNotice] = useState("");
   const [cartLoaded, setCartLoaded] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [savedProductIds, setSavedProductIds] = useState<string[]>([]);
   const filteredProducts = useMemo(() => products.filter((product) => {
     const matchesCategory = category === "All scents" || product.category === category;
     const words = `${product.name} ${product.category} ${product.notes.join(" ")}`.toLowerCase();
@@ -45,6 +47,15 @@ export default function Storefront({ products }: { products: Product[] }) {
       setCartLoaded(true);
     }, 0);
     return () => window.clearTimeout(timer);
+  }, []);
+  useEffect(() => {
+    let active = true;
+    fetch("/api/account/wishlist", { cache: "no-store" }).then(async (response) => {
+      if (!response.ok) return;
+      const result = await response.json();
+      if (active && Array.isArray(result.productIds)) setSavedProductIds(result.productIds);
+    }).catch(() => undefined);
+    return () => { active = false; };
   }, []);
   useEffect(() => { if (cartLoaded) localStorage.setItem("flovexa-cart", JSON.stringify(cart)); }, [cart, cartLoaded]);
   useEffect(() => {
@@ -114,7 +125,7 @@ export default function Storefront({ products }: { products: Product[] }) {
         <div className="product-grid">
           {filteredProducts.map((product, index) => <article className="product-card" key={product.id}>
             <a href={`/products/${product.slug}`} className="product-art-link" aria-label={`View ${product.name}`}><BottleArt product={product} /><span className="product-number">0{index + 1}</span><span className="quick-view">DISCOVER THIS SCENT <ArrowRight size={14} /></span></a>
-            <div className="product-info"><div className="product-overline"><span>{product.category}</span><span>{product.size}</span></div><a href={`/products/${product.slug}`} className="product-name">{product.name}</a><p className="product-notes">{product.notes.join(" · ")}</p><div className="product-buy"><div className="product-prices">{product.compareAtPaise && <del>{money(product.compareAtPaise)}</del>}<strong>{money(product.pricePaise)}</strong></div><button onClick={() => addProduct(product)} aria-label={`Add ${product.name} to bag`}><Plus size={17} /><span>Add</span></button></div></div>
+            <div className="product-info"><div className="product-overline"><span>{product.category}</span><span>{product.size}</span></div><a href={`/products/${product.slug}`} className="product-name">{product.name}</a><p className="product-notes">{product.notes.join(" · ")}</p><div className="product-buy"><div className="product-prices">{product.compareAtPaise && <del>{money(product.compareAtPaise)}</del>}<strong>{money(product.pricePaise)}</strong></div><div className="product-buy-actions"><WishlistButton key={`${product.id}-${savedProductIds.includes(product.id)}`} productId={product.id} initialSaved={savedProductIds.includes(product.id)} onSavedChange={(saved) => setSavedProductIds((current) => saved ? [...new Set([...current, product.id])] : current.filter((id) => id !== product.id))} /><button onClick={() => addProduct(product)} aria-label={`Add ${product.name} to bag`}><Plus size={17} /><span>Add</span></button></div></div></div>
           </article>)}
           {filteredProducts.length === 0 && <div className="no-results"><h3>{products.length ? "No fragrances found" : "Our first collection is being prepared."}</h3><p>{products.length ? "Try a different note or browse the full collection." : "The Flovexa storefront is ready. Our products will appear here once the catalogue is connected."}</p>{products.length > 0 && <button onClick={() => { setQuery(""); setCategory("All scents"); }}>Clear filters</button>}</div>}
         </div>

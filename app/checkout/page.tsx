@@ -3,6 +3,8 @@ import Link from "next/link";
 import CheckoutForm from "@/components/checkout-form";
 import { getProducts } from "@/lib/catalog";
 import { calculateOrderPricing, getPricingConfig } from "@/lib/pricing";
+import { getSignedInUser, getStoreRole } from "@/lib/supabase/roles";
+import { createAdminSupabase } from "@/lib/supabase/admin";
 
 type CartLine = { productId: string; quantity: number };
 const money = (paise: number) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(paise / 100);
@@ -20,7 +22,7 @@ function parseCart(value?: string): CartLine[] {
 }
 
 export default async function CheckoutPage({ searchParams }: { searchParams: Promise<{ items?: string }> }) {
-  const [{ items }, products] = await Promise.all([searchParams, getProducts()]);
+  const [{ items }, products, user] = await Promise.all([searchParams, getProducts(), getSignedInUser()]);
   const requested = parseCart(items);
   const lines = requested.flatMap((item) => {
     const product = products.find((candidate) => candidate.id === item.productId);
@@ -38,12 +40,27 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
     process.env.ORDER_LOOKUP_PEPPER && process.env.NEXT_PUBLIC_SITE_URL && pricingConfig && paymentKeyIsLive,
   );
   const checkoutReady = hasRealProductIds && serverConfigured;
+  let initialCustomer: { name: string; email: string; phone: string; line1: string; line2: string; city: string; state: string; pincode: string } | undefined;
+  if (user && getStoreRole(user) === "customer") {
+    try {
+      const supabase = createAdminSupabase();
+      const [profileResult, addressResult] = await Promise.all([
+        supabase.from("customer_profiles").select("full_name, phone").eq("user_id", user.id).maybeSingle(),
+        supabase.from("customer_addresses").select("full_name, phone, line1, line2, city, state, pincode").eq("user_id", user.id).order("is_default", { ascending: false }).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+      ]);
+      const address = addressResult.data;
+      initialCustomer = {
+        name: address?.full_name || profileResult.data?.full_name || "", email: user.email ?? "", phone: address?.phone || profileResult.data?.phone || "",
+        line1: address?.line1 ?? "", line2: address?.line2 ?? "", city: address?.city ?? "", state: address?.state ?? "", pincode: address?.pincode ?? "",
+      };
+    } catch { initialCustomer = { name: user.user_metadata?.full_name ?? "", email: user.email ?? "", phone: "", line1: "", line2: "", city: "", state: "", pincode: "" }; }
+  }
 
   return <main className="checkout-page">
     <header className="checkout-header"><Link href="/" className="checkout-back"><ArrowLeft size={16} /> Continue shopping</Link><Link href="/" className="wordmark">FLOVEXA<span>PERFUMES</span></Link><span className="secure-label">SECURE CHECKOUT</span></header>
     <div className="checkout-layout">
       <section className="checkout-main"><span className="eyebrow">ALMOST YOURS</span><h1>Delivery details</h1><p className="checkout-lede">Tell us where to send your fragrance.</p>
-        <CheckoutForm items={requested} enabled={checkoutReady} />
+        <CheckoutForm items={requested} enabled={checkoutReady} initialCustomer={initialCustomer} />
       </section>
       <aside className="order-summary"><span className="eyebrow">YOUR SELECTION</span><h2>Order summary</h2>
         {lines.length ? <div className="summary-lines">{lines.map(({ product, quantity }) => <div className="summary-product" key={product.id}><div className="summary-product-visual" style={{ "--juice": product.accent } as React.CSSProperties}><span>F</span></div><div><b>{product.name}</b><small>{product.size} · Qty {quantity}</small></div><strong>{money(product.pricePaise * quantity)}</strong></div>)}</div> : <div className="summary-empty">Your bag is empty. <Link href="/#collection">Explore fragrances</Link></div>}

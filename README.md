@@ -6,7 +6,7 @@ Flovexa is a Next.js storefront with a Supabase-backed catalogue and order store
 
 1. Install Node.js 20.9 or newer and pnpm.
 2. Run `pnpm install` and copy `.env.example` to `.env.local`.
-3. Create a Supabase project and run every file in `supabase/migrations` in filename order in its SQL editor. The first migration creates the catalogue/orders; the second creates the product-photo bucket.
+3. Create a Supabase project and run every file in `supabase/migrations` in filename order in its SQL editor. The migrations create the catalogue/orders, product-photo bucket, and customer account tables.
 4. Fill in the Supabase URL, publishable key, and server-only service role key in `.env.local`. Never expose the service role key with a `NEXT_PUBLIC_` prefix or commit `.env.local`.
 5. Add real products, accurate prices, photos, and stock to the `products` table. Leave `active` false until each listing is ready.
 6. Configure a Razorpay test account and webhook URL at `https://YOUR_DOMAIN/api/payments/webhook`. Subscribe to `payment.captured`, `order.paid`, and `payment.failed`; use the same webhook secret in the server environment.
@@ -38,5 +38,6 @@ Flovexa accepts prepaid orders through Razorpay; cash on delivery (COD) is inten
 - Admin pages and product/order admin APIs check the trusted app-metadata role server-side. Typing `/admin` directly does not grant access.
 - Seller role routing is established, but Flovexa is currently a single-owner shop: seller-specific product ownership, order assignment, and payout settlements are not active. Do not grant seller access for marketplace operations until those workflows are built and verified.
 - Customer order history is matched to the email on the signed-in account. Supabase email confirmation should be enabled before launch.
+- `/account` includes order tracking, saved perfumes, profile and saved delivery addresses. A signed-in customer’s default address is prefilled at checkout. Return requests are reviewed by an administrator in the **Returns** tab; approving a request does not automatically issue a Razorpay refund.
 
 Orders hold inventory for 20 minutes. A cancelled/expired reservation is restored when a later checkout asks the database to release expired reservations. For busy production stores, add a secured scheduled job for timely cleanup and alerting; ensure the hosting plan supports the chosen schedule frequency.

@@ -16,11 +16,14 @@ type CheckoutOptions = {
 };
 declare global { interface Window { Razorpay?: new (options: CheckoutOptions) => { open: () => void; on: (event: string, callback: (response: { error?: { description?: string } }) => void) => void } } }
 
-export default function CheckoutForm({ items, enabled }: { items: CartLine[]; enabled: boolean }) {
+type CustomerPrefill = { name: string; email: string; phone: string; line1: string; line2: string; city: string; state: string; pincode: string };
+const blankValues = { name: "", email: "", phone: "", line1: "", line2: "", city: "", state: "", pincode: "" };
+
+export default function CheckoutForm({ items, enabled, initialCustomer }: { items: CartLine[]; enabled: boolean; initialCustomer?: CustomerPrefill }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [success, setSuccess] = useState("");
-  const [values, setValues] = useState({ name: "", email: "", phone: "", line1: "", line2: "", city: "", state: "", pincode: "" });
+  const [values, setValues] = useState(initialCustomer ?? blankValues);
   function change(event: React.ChangeEvent<HTMLInputElement>) { setValues((current) => ({ ...current, [event.target.name]: event.target.value })); }
 
   async function pay(event: FormEvent<HTMLFormElement>) {
@@ -49,7 +52,7 @@ export default function CheckoutForm({ items, enabled }: { items: CartLine[]; en
             if (!verification.ok) throw new Error(result.error ?? "Payment confirmation is pending.");
             localStorage.removeItem("flovexa-cart");
             setSuccess(result.orderStatus === "payment_review" ? `Payment for ${result.orderNumber} reached us. Our team is confirming availability and will update you shortly.` : result.paymentStatus === "captured" ? `Thank you. Your order ${result.orderNumber} is confirmed.` : `Payment for ${result.orderNumber} is authorized and awaiting confirmation.`);
-            setValues({ name: "", email: "", phone: "", line1: "", line2: "", city: "", state: "", pincode: "" });
+            setValues(blankValues);
           } catch (error) { setMessage(error instanceof Error ? error.message : "We could not confirm payment yet."); }
           finally { setBusy(false); }
         },
