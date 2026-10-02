@@ -101,3 +101,23 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: message }, { status: 409 });
   }
 }
+
+export async function DELETE(request: Request) {
+  if (!await getAdminUser()) return NextResponse.json({ error: "Administrator access is required." }, { status: 401 });
+  const body = await request.json().catch(() => null);
+  const parsed = z.object({ id: z.string().uuid() }).strict().safeParse(body);
+  if (!parsed.success) return NextResponse.json({ error: "Choose a valid perfume to delete." }, { status: 400 });
+
+  try {
+    const supabase = createAdminSupabase();
+    const { data: result, error } = await supabase.rpc("admin_delete_product_if_unused", { product_uuid: parsed.data.id });
+    if (error) throw error;
+    if (result === "not_found") return NextResponse.json({ error: "This perfume no longer exists." }, { status: 404 });
+    if (result === "has_orders") return NextResponse.json({ error: "This perfume has order history and cannot be deleted. Hide it from the storefront instead." }, { status: 409 });
+    if (result !== "deleted") throw new Error("Unexpected product deletion result.");
+    return NextResponse.json({ deletedId: parsed.data.id });
+  } catch (error) {
+    console.error("Product deletion failed", error instanceof Error ? error.message : "Unknown error");
+    return NextResponse.json({ error: "Could not delete this perfume." }, { status: 500 });
+  }
+}
