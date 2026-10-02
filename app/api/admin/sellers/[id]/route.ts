@@ -23,6 +23,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     if (!profile || !target || !["seller", "customer"].includes(String(target.app_metadata?.role ?? ""))) {
       return NextResponse.json({ error: "This account is not a managed seller." }, { status: 404 });
     }
+    if (parsed.data.status === "suspended") {
+      const { error: productError } = await supabase.from("products").update({ active: false, updated_at: new Date().toISOString() }).eq("seller_id", id).eq("active", true);
+      if (productError) throw productError;
+    }
     const nextRole = parsed.data.status === "active" ? "seller" : "customer";
     const { error: roleError } = await supabase.auth.admin.updateUserById(id, {
       app_metadata: { ...target.app_metadata, role: nextRole },

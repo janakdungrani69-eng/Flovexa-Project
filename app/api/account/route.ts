@@ -18,19 +18,29 @@ export async function GET() {
       supabase.from("orders").select("id, order_number, status, payment_status, total_paise, created_at, tracking_carrier, tracking_number, tracking_url, order_items(product_name, size, quantity)").eq("email", (user.email ?? "").toLowerCase()).order("created_at", { ascending: false }).limit(50),
       supabase.from("return_requests").select("id, order_id, reason, details, status, created_at").eq("user_id", user.id).order("created_at", { ascending: false }),
     ]);
-    const failure = profileResult.error ?? addressResult.error ?? wishlistResult.error ?? orderResult.error ?? returnsResult.error;
+    const orderIds = (orderResult.data ?? []).map((order) => order.id);
+    const shipmentResult = orderIds.length
+      ? await supabase.from("seller_fulfillments").select("order_id, status, tracking_carrier, tracking_number, tracking_url, seller_profiles(store_name)").in("order_id", orderIds)
+      : { data: [], error: null };
+    const failure = profileResult.error ?? addressResult.error ?? wishlistResult.error ?? orderResult.error ?? returnsResult.error ?? shipmentResult.error;
     if (failure) throw failure;
     const { data: profile } = await supabase.from("customer_profiles").select("full_name, phone").eq("user_id", user.id).single();
     const wishlist = (wishlistResult.data ?? []).flatMap((entry) => {
       const product = entry.products as unknown as { id: string; slug: string; name: string; category: string; price_paise: number; size: string; image_url: string | null; accent: string } | null;
       return product ? [{ ...product, product_id: entry.product_id }] : [];
     });
+    const shipmentsByOrder = new Map<string, typeof shipmentResult.data>();
+    for (const shipment of shipmentResult.data ?? []) {
+      const current = shipmentsByOrder.get(shipment.order_id) ?? [];
+      current.push(shipment);
+      shipmentsByOrder.set(shipment.order_id, current);
+    }
     return NextResponse.json({
       email: user.email,
       profile: profile ?? { full_name: user.user_metadata?.full_name ?? "", phone: "" },
       addresses: addressResult.data ?? [],
       wishlist,
-      orders: orderResult.data ?? [],
+      orders: (orderResult.data ?? []).map((order) => ({ ...order, seller_fulfillments: shipmentsByOrder.get(order.id) ?? [] })),
       returns: returnsResult.data ?? [],
     }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {

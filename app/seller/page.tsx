@@ -1,5 +1,6 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
+import SellerDashboard from "@/components/seller-dashboard";
+import { createAdminSupabase } from "@/lib/supabase/admin";
 import { getSignedInUser, getStoreRole } from "@/lib/supabase/roles";
 
 export default async function SellerPage() {
@@ -8,10 +9,22 @@ export default async function SellerPage() {
   const role = getStoreRole(user);
   if (role !== "seller") redirect(role === "admin" ? "/admin" : "/account");
 
-  return <main className="admin-page"><header className="admin-topbar"><Link href="/" className="wordmark">FLOVEXA<span>PERFUMES</span></Link><div><span>{user.email}</span><form action="/auth/signout" method="post"><button type="submit">Sign out</button></form></div></header>
-    <section className="customer-account"><span className="eyebrow">FLOVEXA SELLER PORTAL</span><h1>Your seller space.</h1><p>This account has the seller role. The current store is configured for Flovexa-owned products; seller catalogues, order assignments and settlements need to be enabled before marketplace sales begin.</p>
-      <div className="seller-portal-notice"><b>Seller tools are being prepared.</b><span>When marketplace operations are enabled, your panel will include your perfumes, stock, assigned orders, returns and earnings. Seller access cannot see the owner dashboard.</span><Link href="/contact">Contact the store owner</Link></div>
-    </section>
-    <footer className="checkout-footer"><Link href="/">Shop Flovexa</Link></footer>
-  </main>;
+  const supabase = createAdminSupabase();
+  const [{ data: profile, error: profileError }, { data: productRows, error: productError }, { data: categoryRows, error: categoryError }] = await Promise.all([
+    supabase.from("seller_profiles").select("store_name, status").eq("user_id", user.id).maybeSingle(),
+    supabase.from("products").select("id, slug, name, category, price_paise, compare_at_paise, size, concentration, notes, description, image_url, accent, stock, active, created_at").eq("seller_id", user.id).order("created_at", { ascending: false }),
+    supabase.from("store_categories").select("name").eq("active", true).order("sort_order"),
+  ]);
+  if (profileError || productError || categoryError) throw profileError ?? productError ?? categoryError;
+  if (!profile || profile.status !== "active") redirect("/account");
+
+  const products = (productRows ?? []).map((item) => ({
+    id: item.id, slug: item.slug, name: item.name, category: item.category,
+    pricePaise: item.price_paise, compareAtPaise: item.compare_at_paise ?? undefined,
+    size: item.size, concentration: item.concentration, notes: item.notes, description: item.description,
+    imageUrl: item.image_url ?? undefined, accent: item.accent, stock: item.stock,
+    active: item.active, createdAt: item.created_at,
+  }));
+  const categories = (categoryRows ?? []).map((item) => item.name);
+  return <SellerDashboard storeName={profile.store_name || user.email || "Seller account"} initialProducts={products} categories={categories.length ? categories : ["Unisex"]}/>;
 }
