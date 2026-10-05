@@ -51,7 +51,6 @@ export default async function AdminPage() {
     }
     if (orderResult.data) orders = orderResult.data.map((order) => ({ ...order, seller_fulfillments: sellerFulfillmentsByOrder.get(order.id) ?? [] })) as unknown as AdminOrder[];
     if (productResult.data) products = productResult.data.map((item) => ({ id: item.id, slug: item.slug, name: item.name, category: item.category, pricePaise: item.price_paise, compareAtPaise: item.compare_at_paise ?? undefined, size: item.size, concentration: item.concentration, notes: item.notes, description: item.description, imageUrl: item.image_url, accent: item.accent, stock: item.stock, featured: item.featured, active: item.active, createdAt: item.created_at }));
-    if (orderResult.data) orders = orderResult.data as unknown as AdminOrder[];
     reportOrders = reportResult.data ?? [];
     coupons = (couponResult.data ?? []) as AdminCoupon[];
     const { data: sellerProfiles } = await supabase.from("seller_profiles").select("user_id, store_name, status, admin_note, created_at").order("created_at", { ascending: false }).limit(1000);
