@@ -32,6 +32,24 @@ export default async function AdminPage() {
       supabase.auth.admin.listUsers({ page: 1, perPage: 1000 }),
       supabase.from("discount_coupons").select("id, code, discount_type, discount_value, minimum_order_paise, maximum_discount_paise, starts_at, expires_at, usage_limit, usage_count, active").order("created_at", { ascending: false }).limit(200),
     ]);
+    const orderIds = (orderResult.data ?? []).map((order) => order.id);
+    const sellerFulfillmentResult = orderIds.length
+      ? await supabase.from("seller_fulfillments").select("order_id, status, tracking_carrier, tracking_number, tracking_url, seller_profiles(store_name)").in("order_id", orderIds)
+      : { data: [], error: null };
+    if (sellerFulfillmentResult.error) throw sellerFulfillmentResult.error;
+    const sellerFulfillmentsByOrder = new Map<string, AdminOrder["seller_fulfillments"]>();
+    for (const shipment of sellerFulfillmentResult.data ?? []) {
+      const current = sellerFulfillmentsByOrder.get(shipment.order_id) ?? [];
+      current.push({
+        status: shipment.status,
+        tracking_carrier: shipment.tracking_carrier,
+        tracking_number: shipment.tracking_number,
+        tracking_url: shipment.tracking_url,
+        store_name: (shipment.seller_profiles as unknown as { store_name: string } | null)?.store_name ?? "Marketplace seller",
+      });
+      sellerFulfillmentsByOrder.set(shipment.order_id, current);
+    }
+    if (orderResult.data) orders = orderResult.data.map((order) => ({ ...order, seller_fulfillments: sellerFulfillmentsByOrder.get(order.id) ?? [] })) as unknown as AdminOrder[];
     if (productResult.data) products = productResult.data.map((item) => ({ id: item.id, slug: item.slug, name: item.name, category: item.category, pricePaise: item.price_paise, compareAtPaise: item.compare_at_paise ?? undefined, size: item.size, concentration: item.concentration, notes: item.notes, description: item.description, imageUrl: item.image_url, accent: item.accent, stock: item.stock, featured: item.featured, active: item.active, createdAt: item.created_at }));
     if (orderResult.data) orders = orderResult.data as unknown as AdminOrder[];
     reportOrders = reportResult.data ?? [];
