@@ -65,7 +65,7 @@ export default async function SellerPage() {
 
   // 2. If user is not an approved active seller, show the portal landing / application form
   if (role !== "seller" || !profile || profile.status !== "active") {
-    return <SellerPortalLanding userEmail={user.email ?? ""} isCustomer />;
+    return <SellerPortalLanding />;
   }
 
   const [{ data: productRows, error: productError }, { data: categoryRows, error: categoryError }] = await Promise.all([

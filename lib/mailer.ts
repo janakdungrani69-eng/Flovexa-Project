@@ -70,3 +70,4 @@ export async function sendMail({ to, subject, html, text }: SendEmailOptions): P
     error: "No email service configured. Please add SMTP_USER & SMTP_PASS (Gmail App Password) or RESEND_API_KEY in .env.local to send OTP to Gmail.",
   };
 }
+

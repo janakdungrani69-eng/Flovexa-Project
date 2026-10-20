@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Store, ShieldCheck, Package, TrendingUp, Truck } from "lucide-react";
 import SellerAuthForm from "@/components/seller-auth-form";
 
-export default function SellerPortalLanding({ userEmail, isCustomer }: { userEmail?: string; isCustomer?: boolean }) {
+export default function SellerPortalLanding() {
   return (
     <main className="seller-landing-page">
       {/* Top Navigation */}
@@ -28,14 +28,14 @@ export default function SellerPortalLanding({ userEmail, isCustomer }: { userEma
       <section className="seller-landing-hero">
         <div className="seller-landing-hero-content">
           <span className="seller-hero-pill">
-            <Store size={13} /> OFFICIAL MERCHANT PORTAL
+            <Store size={13} /> AUTHORIZED MERCHANT PORTAL
           </span>
           <h1>
-            Partner with Flovexa.<br />
-            <em>Sell Luxury Fragrances Across India.</em>
+            Flovexa Seller Central.<br />
+            <em>Manage Catalog & Orders.</em>
           </h1>
           <p>
-            Welcome to Flovexa Seller Central. Showcase your artisanal Eau de Parfums and concentrated fragrance oils to thousands of verified perfume connoisseurs nationwide.
+            Private merchant console for authorized Flovexa fragrance partners. Manage product listings, update prices, track stock levels, and dispatch orders across India.
           </p>
 
           <div className="seller-landing-features">
@@ -43,37 +43,37 @@ export default function SellerPortalLanding({ userEmail, isCustomer }: { userEma
               <Package size={22} className="seller-feat-icon" />
               <div>
                 <h4>Direct Catalog Control</h4>
-                <p>Add new scents, update batch stocks, and adjust pricing instantly.</p>
-              </div>
-            </div>
-            <div className="seller-feat-card">
-              <TrendingUp size={22} className="seller-feat-icon" />
-              <div>
-                <h4>High-Intent Fragrance Buyers</h4>
-                <p>Reach buyers actively looking for authentic Indian & European luxury blends.</p>
+                <p>Add new perfumes, upload high-res imagery, and update batch stocks instantly.</p>
               </div>
             </div>
             <div className="seller-feat-card">
               <Truck size={22} className="seller-feat-icon" />
               <div>
                 <h4>Fulfillment & Courier Tracking</h4>
-                <p>Integrated order dispatch with custom tracking links and customer updates.</p>
+                <p>Generate consolidated shipping labels, attach tracking numbers, and fulfill customer orders.</p>
+              </div>
+            </div>
+            <div className="seller-feat-card">
+              <TrendingUp size={22} className="seller-feat-icon" />
+              <div>
+                <h4>Real-Time Order Insights</h4>
+                <p>Monitor buyer orders, order quantities, and revenue analytics.</p>
               </div>
             </div>
             <div className="seller-feat-card">
               <ShieldCheck size={22} className="seller-feat-icon" />
               <div>
-                <h4>Verified Merchant Settlements</h4>
-                <p>Transparent weekly sales reporting and direct merchant bank transfers.</p>
+                <h4>Secure Merchant Hub</h4>
+                <p>Private access restricted strictly to verified Flovexa owners and merchants.</p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Login & Registration Box */}
+        {/* Login Box */}
         <div className="seller-landing-auth-box">
           <div className="seller-auth-card">
-            <SellerAuthForm userEmail={userEmail} isCustomer={isCustomer} />
+            <SellerAuthForm />
 
             <div className="seller-auth-footer">
               <div className="seller-auth-divider">
@@ -87,23 +87,23 @@ export default function SellerPortalLanding({ userEmail, isCustomer }: { userEma
         </div>
       </section>
 
-      {/* Trust Metrics Bar */}
+      {/* Metrics Bar */}
       <section className="seller-landing-metrics">
         <div>
-          <strong>10,000+</strong>
-          <span>Monthly Fragrance Buyers</span>
-        </div>
-        <div>
-          <strong>0%</strong>
-          <span>Upfront Listing Fee</span>
-        </div>
-        <div>
-          <strong>24 Hours</strong>
-          <span>Merchant Support Turnaround</span>
-        </div>
-        <div>
           <strong>100%</strong>
-          <span>Verified Online Payments (UPI, Cards)</span>
+          <span>Direct Merchant Control</span>
+        </div>
+        <div>
+          <strong>Real-Time</strong>
+          <span>Inventory Sync</span>
+        </div>
+        <div>
+          <strong>Automated</strong>
+          <span>Combo Shipping Labels</span>
+        </div>
+        <div>
+          <strong>Verified</strong>
+          <span>PAN-India Order Fulfillment</span>
         </div>
       </section>
     </main>
