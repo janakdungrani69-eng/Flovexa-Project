@@ -51,7 +51,7 @@ export default async function StorePage() {
               "@type": "Organization",
               name: "Flovexa Perfumes",
               url: canonicalUrl("/store"),
-              logo: canonicalUrl("/products/rose-royale.jpg"),
+              logo: canonicalUrl("/products/flovexa-luxury-box.jpg"),
             },
           ],
         }}

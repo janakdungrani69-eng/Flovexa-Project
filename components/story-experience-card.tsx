@@ -16,13 +16,13 @@ export default function StoryExperienceCard({ products }: StoryExperienceCardPro
   const [activeTab, setActiveTab] = useState<ExperienceTab>("layering");
   const [selectedMood, setSelectedMood] = useState<"warm" | "fresh" | "royal">("warm");
 
-  const oilProduct = products.find((p) => p.slug === "amber-alchemy") ?? products.find((p) => p.category === "Fragrance") ?? products[0];
-  const edpProduct = products.find((p) => p.slug === "chocolate-desire") ?? products.find((p) => p.category === "Perfume") ?? products[0];
+  const oilProduct = products.find((p) => p.category === "Fragrance" || p.concentration.toLowerCase().includes("oil")) ?? products[0];
+  const edpProduct = products.find((p) => p.category === "Perfume" || p.concentration.toLowerCase().includes("parfum")) ?? products[0];
 
   const moodProductMap = {
-    warm: products.find((p) => p.slug === "chocolate-desire") ?? products[0],
-    fresh: products.find((p) => p.slug === "aqua-blue") ?? products[1] ?? products[0],
-    royal: products.find((p) => p.slug === "midnight-oud") ?? products[3] ?? products[0],
+    warm: products[0],
+    fresh: products[1] ?? products[0],
+    royal: products[2] ?? products[0],
   };
 
   const matchedProduct = moodProductMap[selectedMood] ?? products[0];

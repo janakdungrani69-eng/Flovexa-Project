@@ -14,8 +14,6 @@ interface ProductGalleryProps {
 }
 
 export default function ProductGallery({ product }: ProductGalleryProps) {
-  const isOil = product.category === "Fragrance" || product.concentration.includes("Oil");
-
   const userImages =
     product.images && product.images.length > 0
       ? product.images
@@ -31,16 +29,8 @@ export default function ProductGallery({ product }: ProductGalleryProps) {
         }))
       : [
           {
-            url: "/products/rose-royale.jpg",
-            label: "Signature Bottle",
-          },
-          {
             url: "/products/flovexa-luxury-box.jpg",
-            label: "Gift Packaging",
-          },
-          {
-            url: isOil ? "/products/oil-dropper-ritual.jpg" : "/products/rose-royale-lifestyle.jpg",
-            label: isOil ? "Dropper Ritual" : "Atomized Mist",
+            label: "Signature Packaging",
           },
         ];
 
@@ -68,33 +58,35 @@ export default function ProductGallery({ product }: ProductGalleryProps) {
       </div>
 
       {/* Different images thumbnail bar below main image */}
-      <div className="mini-gallery" role="tablist" aria-label="Product image gallery">
-        {galleryImages.map((item, idx) => {
-          const isSelected = activeIndex === idx;
-          return (
-            <button
-              key={idx}
-              type="button"
-              role="tab"
-              aria-selected={isSelected}
-              className={`mini-card ${isSelected ? "active" : ""}`}
-              onClick={() => setActiveIndex(idx)}
-            >
-              <div className="mini-thumb-wrap">
-                <Image
-                  src={item.url}
-                  alt={`${product.name} ${item.label}`}
-                  width={240}
-                  height={240}
-                  className="mini-thumb-img"
-                  unoptimized
-                />
-              </div>
-              <span className="mini-thumb-label">{item.label}</span>
-            </button>
-          );
-        })}
-      </div>
+      {galleryImages.length > 1 && (
+        <div className="mini-gallery" role="tablist" aria-label="Product image gallery">
+          {galleryImages.map((item, idx) => {
+            const isSelected = activeIndex === idx;
+            return (
+              <button
+                key={idx}
+                type="button"
+                role="tab"
+                aria-selected={isSelected}
+                className={`mini-card ${isSelected ? "active" : ""}`}
+                onClick={() => setActiveIndex(idx)}
+              >
+                <div className="mini-thumb-wrap">
+                  <Image
+                    src={item.url}
+                    alt={`${product.name} ${item.label}`}
+                    width={240}
+                    height={240}
+                    className="mini-thumb-img"
+                    unoptimized
+                  />
+                </div>
+                <span className="mini-thumb-label">{item.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

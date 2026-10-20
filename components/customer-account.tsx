@@ -147,42 +147,7 @@ function resolvePrimaryImage(imageUrl: string | null): string | null {
   return trimmed;
 }
 
-// Curated bestsellers showcase when orders are empty
-const CURATED_RECOMMENDATIONS = [
-  {
-    id: "prod-chocolate-desire",
-    slug: "chocolate-desire",
-    name: "Chocolate Desire",
-    category: "Eau de Parfum",
-    size: "100 ml",
-    pricePaise: 349900,
-    mrpPaise: 499900,
-    imageUrl: "/products/chocolate-desire.jpg",
-    notes: ["Roasted Cocoa", "Dark Chocolate", "Madagascar Vanilla"],
-  },
-  {
-    id: "prod-aqua-blue",
-    slug: "aqua-blue",
-    name: "Aqua Blue",
-    category: "Eau de Parfum",
-    size: "100 ml",
-    pricePaise: 349900,
-    mrpPaise: 499900,
-    imageUrl: "/products/aqua-blue.jpg",
-    notes: ["Calabrian Bergamot", "Marine Driftwood", "White Amber"],
-  },
-  {
-    id: "prod-rose-royale",
-    slug: "rose-royale",
-    name: "Rose Royale",
-    category: "Extrait de Parfum",
-    size: "50 ml",
-    pricePaise: 299900,
-    mrpPaise: 399900,
-    imageUrl: "/products/rose-royale.jpg",
-    notes: ["May Rose Absolute", "Bulgarian Rose", "Warm Cashmere"],
-  },
-];
+
 
 export default function CustomerAccount({ email }: { email: string }) {
   const [data, setData] = useState<AccountData | null>(null);
@@ -711,69 +676,7 @@ export default function CustomerAccount({ email }: { email: string }) {
                       </Link>
                     </div>
 
-                    {/* Curated Bestseller Perfumes Showcase */}
-                    <div className="curated-bestsellers-box">
-                      <div className="bestsellers-head">
-                        <h4>✨ Popular Signature Fragrances to Discover</h4>
-                        <Link href="/store" className="bestsellers-link">
-                          View all perfumes <ArrowRight size={13} />
-                        </Link>
-                      </div>
 
-                      <div className="bestsellers-grid">
-                        {CURATED_RECOMMENDATIONS.map((perfume) => (
-                          <div key={perfume.id} className="bestseller-item-card">
-                            <div className="bestseller-thumb">
-                              <Image
-                                src={perfume.imageUrl}
-                                alt={perfume.name}
-                                width={160}
-                                height={160}
-                                unoptimized
-                                className="bestseller-img"
-                              />
-                            </div>
-                            <div className="bestseller-info">
-                              <span className="bestseller-cat">
-                                {perfume.category} · {perfume.size}
-                              </span>
-                              <strong className="bestseller-title">{perfume.name}</strong>
-                              <div className="bestseller-price-row">
-                                <span className="bestseller-price">{money(perfume.pricePaise)}</span>
-                                <del className="bestseller-mrp">{money(perfume.mrpPaise)}</del>
-                              </div>
-                              <div className="bestseller-notes-tags">
-                                {perfume.notes.slice(0, 2).map((n) => (
-                                  <span key={n} className="note-pill">
-                                    {n}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                            <div className="bestseller-actions">
-                              <button
-                                type="button"
-                                className="bestseller-btn-add"
-                                onClick={() => handleAddToCart({ product_id: perfume.id, name: perfume.name })}
-                              >
-                                {addedProductId === perfume.id ? (
-                                  <>
-                                    <Check size={13} /> Added!
-                                  </>
-                                ) : (
-                                  <>
-                                    <ShoppingBag size={13} /> Add to Bag
-                                  </>
-                                )}
-                              </button>
-                              <Link href={`/products/${perfume.slug}`} className="bestseller-btn-view">
-                                View
-                              </Link>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
                   </div>
                 ) : (
                   <div className="orders-rich-list">

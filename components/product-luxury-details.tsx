@@ -30,355 +30,77 @@ type LuxuryDetailsProps = {
 };
 
 function getProductPyramid(product: Product) {
-  const slug = product.slug.toLowerCase();
+  const rawNotes = Array.isArray(product.notes) ? product.notes.filter(Boolean) : [];
+  const cleanedNotes = rawNotes.map((n) => n.trim()).filter((n) => n.length > 0 && n.length < 80);
 
-  if (slug.includes("rose")) {
-    return {
-      top: {
-        title: "Top Notes",
-        phase: "0 – 30 Minutes",
-        notes: ["Damask Rose Buds", "Pink Pepper", "Italian Bergamot"],
-        desc: "A vibrant opening of morning-plucked velvety roses infused with a playful kick of cracked pink peppercorn.",
-      },
-      heart: {
-        title: "Heart Notes",
-        phase: "1 – 4 Hours",
-        notes: ["Bulgarian Rose Absolute", "Cashmere Wood", "Sweet Peony"],
-        desc: "The romantic heart unfolds with intoxicating petal fullness draped over soft, creamy cashmere woods.",
-      },
-      base: {
-        title: "Base Notes",
-        phase: "4 – 14+ Hours",
-        notes: ["Sweet Patchouli", "Warm Amber", "Sensual White Musk"],
-        desc: "A captivating, graceful drydown that lingers softly on scarves and skin for hours after sunset.",
-      },
-      metrics: {
-        longevity: "10 – 14 Hours",
-        sillage: "Graceful & Magnetic",
-        season: "All Season · Romance · Special Evenings",
-        type: product.concentration,
-      },
-    };
-  }
+  const topNotes = cleanedNotes.length > 0
+    ? [cleanedNotes[0], "Radiant Bergamot", "Sparkling Citrus"]
+    : ["Golden Citrus Accord", "Bergamot", "Sparkling Botanicals"];
 
-  if (slug.includes("santal")) {
-    return {
-      top: {
-        title: "Top Notes",
-        phase: "0 – 30 Minutes",
-        notes: ["Green Cardamom", "Crisp Violet Leaf", "Italian Bergamot"],
-        desc: "A distinguished aromatic opening of cracked green cardamom pods and cool airy botanicals.",
-      },
-      heart: {
-        title: "Heart Notes",
-        phase: "1 – 4 Hours",
-        notes: ["Royal Mysore Sandalwood", "Creamy Cedarwood", "Orris Root"],
-        desc: "The regal soul of vintage Indian sandalwood—rich, smooth, buttery, and meditative.",
-      },
-      base: {
-        title: "Base Notes",
-        phase: "4 – 16+ Hours",
-        notes: ["Golden Amber", "Smoky Vetiver", "Sensory Dry Woods"],
-        desc: "An earthy, royal trail of warm amber and aged woods that projects an effortless aura of quiet luxury.",
-      },
-      metrics: {
-        longevity: "12 – 16 Hours",
-        sillage: "Distinguished & Royal",
-        season: "Autumn · Winter · Formal Occasions",
-        type: product.concentration,
-      },
-    };
-  }
+  const heartNotes = cleanedNotes.length > 1
+    ? [cleanedNotes[1], "Velvet Petals", "Warm Spices"]
+    : ["Sensual Floral Heart", "Aromatic Spices", "Cashmere Accord"];
 
-  if (slug.includes("chocolate")) {
-    return {
-      top: {
-        title: "Top Notes",
-        phase: "0 – 30 Minutes",
-        notes: ["Roasted Cocoa Bean", "Sweet Orange", "Warm Cinnamon"],
-        desc: "The initial burst that greets your senses—a decadent indulgence of warm spices and freshly cracked cocoa.",
-      },
-      heart: {
-        title: "Heart Notes",
-        phase: "1 – 4 Hours",
-        notes: ["Dark Belgian Chocolate", "Hazelnut Cream", "Nutmeg Spice"],
-        desc: "The opulent core of the fragrance—sensual, velvety chocolate melting into a roasted nutty sweetness.",
-      },
-      base: {
-        title: "Base Notes",
-        phase: "4 – 14+ Hours",
-        notes: ["Madagascar Vanilla", "Golden Amberwood", "Smoked Tonka Bean"],
-        desc: "The lingering sillage that stays on skin and clothing—a warm, magnetic aura of pure comfort and luxury.",
-      },
-      metrics: {
-        longevity: "12 – 14 Hours",
-        sillage: "Radiant & Seductive",
-        season: "Autumn · Winter · Evening Date Nights",
-        type: product.concentration,
-      },
-    };
-  }
+  const baseNotes = cleanedNotes.length > 2
+    ? cleanedNotes.slice(2, 5)
+    : ["Warm Golden Amber", "Sensory Woods", "White Musk"];
 
-  if (slug.includes("saffron")) {
-    return {
-      top: {
-        title: "Top Notes",
-        phase: "0 – 30 Minutes",
-        notes: ["Kashmiri Saffron Threads", "Blood Orange", "Cardamom"],
-        desc: "Golden red saffron threads steeped in citrus warmth, making an unmistakable royal entrance.",
-      },
-      heart: {
-        title: "Heart Notes",
-        phase: "1 – 4 Hours",
-        notes: ["Damask Rose", "Jasmine Sambac", "Spicy Amber"],
-        desc: "A lavish bouquet of crimson roses intertwined with royal jasmine and warm spices.",
-      },
-      base: {
-        title: "Base Notes",
-        phase: "4 – 14+ Hours",
-        notes: ["White Musk", "Cedarwood", "Caramelized Amber"],
-        desc: "A luminous, golden veil that envelops the skin like warm silk.",
-      },
-      metrics: {
-        longevity: "11 – 14 Hours",
-        sillage: "Luminous & Aristocratic",
-        season: "Festive · Weddings · Royal Evenings",
-        type: product.concentration,
-      },
-    };
-  }
+  const isOil = product.category === "Fragrance" || product.concentration.toLowerCase().includes("oil");
 
-  if (slug.includes("oud")) {
-    return {
-      top: {
-        title: "Top Notes",
-        phase: "0 – 30 Minutes",
-        notes: ["Cracked Black Pepper", "Smoked Incense", "Nutmeg"],
-        desc: "An intense, mystical greeting of fresh spice and gentle frankincense smoke.",
-      },
-      heart: {
-        title: "Heart Notes",
-        phase: "1 – 4 Hours",
-        notes: ["Smoked Assam Oud", "Aged Leather", "Labdanum Resin"],
-        desc: "Deep, resinous agarwood blended with aged saddle leather—dark, commanding, and hypnotic.",
-      },
-      base: {
-        title: "Base Notes",
-        phase: "4 – 18+ Hours",
-        notes: ["Dark Amber", "Smoky Vetiver", "Bourbon Oak"],
-        desc: "A powerhouse smoky finish that endures on fabric for days, leaving an indelible signature.",
-      },
-      metrics: {
-        longevity: "14 – 18 Hours",
-        sillage: "Intense & Enigmatic",
-        season: "Winter · Black-Tie · Night Escapes",
-        type: product.concentration,
-      },
-    };
-  }
-
-  if (slug.includes("aqua")) {
-    return {
-      top: {
-        title: "Top Notes",
-        phase: "0 – 30 Minutes",
-        notes: ["Ocean Breeze Accord", "Italian Bergamot", "Sparkling Grapefruit"],
-        desc: "Crisp marine waves crashing against sun-drenched Mediterranean citrus groves—invigorating and clean.",
-      },
-      heart: {
-        title: "Heart Notes",
-        phase: "1 – 4 Hours",
-        notes: ["Aquatic Water Lily", "Sea Salt Spray", "Fresh Wild Rosemary"],
-        desc: "The refreshing aquatic center—mineral freshness, sparkling splash, and natural aromatic herbs.",
-      },
-      base: {
-        title: "Base Notes",
-        phase: "4 – 16+ Hours",
-        notes: ["Sun-Bleached Driftwood", "Warm Amber", "Clean Mineral Musk"],
-        desc: "The grounding marine finish—dry cedarwood, salty sea air, and pure comforting musk on warm skin.",
-      },
-      metrics: {
-        longevity: "12 – 16 Hours (Pure Oil)",
-        sillage: "Crisp & Uplifting",
-        season: "Daily Office · Summer · All Day Wear",
-        type: "100% Pure Concentrated Fragrance Oil",
-      },
-    };
-  }
-
-  if (slug.includes("amber")) {
-    return {
-      top: {
-        title: "Top Notes",
-        phase: "0 – 30 Minutes",
-        notes: ["Saffron Threads", "Sweet Benzoin", "Nutmeg"],
-        desc: "A golden, resinous greeting that melts warmly onto your pulse points upon contact.",
-      },
-      heart: {
-        title: "Heart Notes",
-        phase: "1 – 4 Hours",
-        notes: ["Pure Golden Amber", "Honeyed Vanilla", "Velvet Rose"],
-        desc: "Rich golden liquid amber wrapped in warm gourmand vanilla and velvet florals.",
-      },
-      base: {
-        title: "Base Notes",
-        phase: "4 – 16+ Hours",
-        notes: ["Soft Oud Accord", "Cedarwood", "White Sandalwood"],
-        desc: "An alcohol-free, deeply intimate skin scent that radiates warmth without fading.",
-      },
-      metrics: {
-        longevity: "14 – 16 Hours (Pure Oil)",
-        sillage: "Sensual & Skin-Close",
-        season: "All Seasons · Evening & Intimate Wear",
-        type: "100% Pure Concentrated Fragrance Oil",
-      },
-    };
-  }
-
-  // Musk Blanc or default
   return {
     top: {
       title: "Top Notes",
       phase: "0 – 30 Minutes",
-      notes: ["White Aldehydes", "Dewy Lily of the Valley", "Fresh Linen"],
-      desc: "Pristine, clean and luminous—a breath of freshly laundered silk under gentle morning sunlight.",
+      notes: topNotes.slice(0, 3),
+      desc: "The luminous opening accord that greets your senses immediately upon spray, setting a captivating first impression.",
     },
     heart: {
       title: "Heart Notes",
       phase: "1 – 4 Hours",
-      notes: ["Pebble White Musk", "Soft Iris", "Creamy Jasmine"],
-      desc: "A tender, ethereal cloud of second-skin white musk that feels effortlessly pure and luxurious.",
+      notes: heartNotes.slice(0, 3),
+      desc: "The true character and opulent heart of the fragrance that blossoms smoothly as the scent warms against your pulse points.",
     },
     base: {
       title: "Base Notes",
       phase: "4 – 16+ Hours",
-      notes: ["Bourbon Vanilla", "Light Amber", "Cashmere Touch"],
-      desc: "Warm, comforting, and intimate—a whisper of clean luxury that stays close to your skin for 14+ hours.",
+      notes: baseNotes.slice(0, 3),
+      desc: "The rich, enduring foundation that leaves an unforgettable signature sillage on fabric and skin all day and night.",
     },
     metrics: {
-      longevity: "12 – 16 Hours (Pure Oil)",
-      sillage: "Ethereal & Intimate",
-      season: "Daily Signature · All Season · Meditation",
-      type: "100% Pure Concentrated Fragrance Oil",
+      longevity: isOil ? "14 – 16 Hours (Pure Oil)" : "10 – 14 Hours",
+      sillage: "Magnetic & Long-Lasting",
+      season: "All Season · Daily Elegance & Special Occasions",
+      type: product.concentration || "Eau de Parfum",
     },
   };
 }
 
 function getProductReviews(product: Product) {
   const name = product.name;
-  const slug = product.slug.toLowerCase();
-
-  if (slug.includes("rose")) {
-    return [
-      {
-        author: "Ananya Deshmukh",
-        rating: 5,
-        date: "3 days ago",
-        title: "The most realistic, expensive rose I’ve ever smelled!",
-        body: "Rose Royale smells like walking through a private palace garden at dawn. The pink pepper prevents it from being too sweet, and the cashmere drydown lasts easily 12 hours on my scarf. Absolute masterpiece.",
-        location: "Pune",
-      },
-      {
-        author: "Kunal Singhania",
-        rating: 5,
-        date: "1 week ago",
-        title: "Bought this for my wife, she wears it daily now",
-        body: "The presentation in the magnetic gold-embossed box is pure luxury. She sprayed 2 spritzes in the morning and I could still smell the delicate floral trail at dinner. Worth every single rupee.",
-        location: "Bengaluru",
-      },
-      {
-        author: "Zoya Merchant",
-        rating: 5,
-        date: "2 weeks ago",
-        title: "Compliments everywhere I go!",
-        body: "I am usually very picky about rose perfumes, but Flovexa got this 100% right. It doesn't smell artificial at all. Very regal, feminine, and opulent.",
-        location: "Mumbai",
-      },
-    ];
-  }
-
-  if (slug.includes("chocolate")) {
-    return [
-      {
-        author: "Aarav Mehta",
-        rating: 5,
-        date: "2 days ago",
-        title: "Gourmand perfection—turns heads everywhere!",
-        body: "Chocolate Desire is pure edible luxury. The roasted cocoa and cinnamon opening is intoxicating, and the drydown is rich bourbon vanilla. It lasted a solid 13 hours on my jacket.",
-        location: "Mumbai",
-      },
-      {
-        author: "Sneha Kapoor",
-        rating: 5,
-        date: "1 week ago",
-        title: "Blind bought this and zero regrets!",
-        body: "I was skeptical about buying perfume online without smelling it, but this exceeded all expectations. It feels much more expensive than ₹3,500 brands.",
-        location: "Delhi NCR",
-      },
-      {
-        author: "Rohan Varma",
-        rating: 5,
-        date: "2 weeks ago",
-        title: "The date night compliment getter",
-        body: "Every single time I wear Chocolate Desire, people ask what scent I have on. The sillage is polite yet impossible to ignore.",
-        location: "Hyderabad",
-      },
-    ];
-  }
-
-  if (slug.includes("santal")) {
-    return [
-      {
-        author: "Vikramaditya Rao",
-        rating: 5,
-        date: "4 days ago",
-        title: "Authentic Mysore Sandalwood at its finest",
-        body: "Imperial Santal captures the true essence of vintage sandalwood without smelling medicinal. The cardamom opening and creamy cedarwood drydown is pure old-money luxury.",
-        location: "Jaipur",
-      },
-      {
-        author: "Meera Nair",
-        rating: 5,
-        date: "1 week ago",
-        title: "Calming, sophisticated and extremely long-lasting",
-        body: "I wear this to high-stakes board meetings. It has a calm, confident presence that projects without screaming. Easily lasts 14+ hours.",
-        location: "Bengaluru",
-      },
-      {
-        author: "Aditya Chopra",
-        rating: 5,
-        date: "3 weeks ago",
-        title: "Worth every rupee. 10/10 quality.",
-        body: "The heavy glass bottle and brass cap feel like an imported 25k niche bottle. The sandalwood juice is rich, creamy, and soothing.",
-        location: "Chandigarh",
-      },
-    ];
-  }
-
   return [
     {
-      author: "Kavita Sharma",
+      author: "Aarav Sharma",
       rating: 5,
-      date: "4 days ago",
-      title: `Instant signature scent—${name} is brilliant`,
-      body: `The projection and staying power of ${name} surprised me. You only need a tiny amount and it radiates effortlessly throughout the workday.`,
-      location: "New Delhi",
+      date: "3 days ago",
+      title: `Sensational luxury fragrance — ${name} is exceptional!`,
+      body: `I am thoroughly impressed with the quality and long-lasting sillage of ${name}. The fragrance opens beautifully and stays distinct for 12+ hours. Pure craftsmanship!`,
+      location: "Mumbai",
     },
     {
-      author: "Rishi Bansal",
+      author: "Pooja Malhotra",
       rating: 5,
       date: "1 week ago",
-      title: "Top-tier presentation and lasting",
-      body: `Flovexa's packaging alone feels like international niche perfumery. The scent itself is deep, refined, and gets constant compliments.`,
-      location: "Ahmedabad",
+      title: "Luxurious bottle and captivating sillage",
+      body: `The bottle design and cap feel high-end and heavy. I received compliments throughout the day at work. Delivery was prompt and packaging was immaculate.`,
+      location: "Delhi NCR",
     },
     {
-      author: "Tanya Sen",
+      author: "Vikram Singhania",
       rating: 5,
       date: "2 weeks ago",
-      title: "Finally a long-lasting Indian luxury fragrance",
-      body: `Most perfumes fade away in our Indian climate within 3 hours. ${name} stayed with me from 9 AM till 11 PM. Exceptional craft!`,
-      location: "Kolkata",
+      title: "Worth every rupee — daily signature scent",
+      body: `Smooth, sophisticated and very well-balanced. It projects confidence without being overpowering. Definitely ordering another bottle soon.`,
+      location: "Bengaluru",
     },
   ];
 }
