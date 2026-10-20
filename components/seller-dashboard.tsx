@@ -201,8 +201,6 @@ export default function SellerDashboard({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [uploadingImage, setUploadingImage] = useState(false);
-  const [manualImageUrl, setManualImageUrl] = useState("");
   const [uploadingVariantIndex, setUploadingVariantIndex] = useState<number | null>(null);
   const [deletingProductId, setDeletingProductId] = useState<string | null>(null);
   const [savingFulfillment, setSavingFulfillment] = useState<string | null>(null);
@@ -285,7 +283,6 @@ export default function SellerDashboard({
   function beginAdd() {
     setEditingId(null);
     setForm(blankForm(categories[0] ?? "Perfume"));
-    setManualImageUrl("");
     setFormOpen(true);
     setMessage("");
     setErrorMessage("");
@@ -374,7 +371,6 @@ export default function SellerDashboard({
         : product.imageUrl
         ? [product.imageUrl]
         : [];
-    setManualImageUrl("");
 
     const initialVariants: VariantForm[] =
       product.variants && product.variants.length > 0
@@ -439,9 +435,12 @@ export default function SellerDashboard({
         }
       }
 
-      const allImages = form.images.filter(Boolean);
-      const primaryImage = allImages[0] || form.imageUrl.trim() || undefined;
-      const finalImages = allImages.length > 0 ? allImages : primaryImage ? [primaryImage] : [];
+      const variantPhotos = form.variants
+        .map((v) => v.imageUrl?.trim())
+        .filter((url): url is string => Boolean(url));
+      const combinedImages = Array.from(new Set([...variantPhotos, ...form.images.filter(Boolean)]));
+      const primaryImage = variantPhotos[0] || combinedImages[0] || form.imageUrl.trim() || undefined;
+      const finalImages = combinedImages.length > 0 ? combinedImages : primaryImage ? [primaryImage] : [];
 
       const primaryVar = form.variants[0];
       const primaryPrice = Number(primaryVar.price);
@@ -488,88 +487,7 @@ export default function SellerDashboard({
     }
   }
 
-  async function uploadProductImages(fileList: FileList | null) {
-    if (!fileList || fileList.length === 0) return;
-    setUploadingImage(true);
-    setMessage("");
-    setErrorMessage("");
-    try {
-      const body = new FormData();
-      for (let i = 0; i < fileList.length; i++) {
-        const file = fileList.item(i);
-        if (file) body.append("images", file);
-      }
-      const response = await fetch("/api/seller/products/image", { method: "POST", body });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Could not upload photos.");
 
-      const newUrls: string[] = Array.isArray(data.imageUrls)
-        ? data.imageUrls
-        : data.imageUrl
-        ? [data.imageUrl]
-        : [];
-
-      if (newUrls.length > 0) {
-        setForm((current) => {
-          const updated = [...current.images, ...newUrls];
-          return {
-            ...current,
-            images: updated,
-            imageUrl: updated[0] ?? "",
-          };
-        });
-        setMessage(`${newUrls.length} photo${newUrls.length > 1 ? "s" : ""} uploaded successfully to product gallery.`);
-      }
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Could not upload photos.");
-    } finally {
-      setUploadingImage(false);
-    }
-  }
-
-  function removeProductImage(index: number) {
-    setForm((current) => {
-      const updated = current.images.filter((_, idx) => idx !== index);
-      return {
-        ...current,
-        images: updated,
-        imageUrl: updated[0] ?? "",
-      };
-    });
-  }
-
-  function setCoverImage(index: number) {
-    setForm((current) => {
-      if (index <= 0 || index >= current.images.length) return current;
-      const target = current.images[index];
-      const without = current.images.filter((_, idx) => idx !== index);
-      const updated = [target, ...without];
-      return {
-        ...current,
-        images: updated,
-        imageUrl: updated[0] ?? "",
-      };
-    });
-  }
-
-  function handleAddManualImage() {
-    const trimmed = manualImageUrl.trim();
-    if (!trimmed) return;
-    if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://") && !trimmed.startsWith("/")) {
-      setErrorMessage("Please enter a valid image URL starting with https://");
-      return;
-    }
-    setForm((current) => {
-      const updated = [...current.images, trimmed];
-      return {
-        ...current,
-        images: updated,
-        imageUrl: updated[0] ?? "",
-      };
-    });
-    setManualImageUrl("");
-    setMessage("Image link added to product gallery.");
-  }
 
   async function deleteProduct(product: SellerProduct) {
     if (!window.confirm(`Delete "${product.name}" from your catalogue?`)) return;
@@ -1144,118 +1062,11 @@ export default function SellerDashboard({
                     </button>
                   </div>
 
-                  {/* SECTION 3: Product Photos & Multi-Image Gallery */}
-                  <div className="seller-form-section">
-                    <div className="seller-form-section-title">
-                      <ImagePlus size={17} />
-                      <span>3. Product Photos & Gallery ({form.images.length} photos attached)</span>
-                    </div>
-                    <p className="seller-section-desc">
-                      Upload multiple photos for this perfume (bottle front, gift packaging box, dropper, atomizer mist, ingredients). The 1st photo is used as the primary storefront display cover.
-                    </p>
-
-                    {/* Live Gallery Preview Grid */}
-                    {form.images.length > 0 && (
-                      <div className="seller-gallery-preview-grid">
-                        {form.images.map((url, idx) => (
-                          <div key={`${url}-${idx}`} className={`seller-gallery-card-v2 ${idx === 0 ? "is-cover" : ""}`}>
-                            <div className="seller-gallery-card-thumb">
-                              <Image
-                                src={url}
-                                alt={`Product photo ${idx + 1}`}
-                                width={140}
-                                height={140}
-                                unoptimized
-                              />
-                              {idx === 0 ? (
-                                <span className="seller-cover-badge-v2">★ Main Cover</span>
-                              ) : (
-                                <button
-                                  type="button"
-                                  className="seller-set-cover-btn-v2"
-                                  onClick={() => setCoverImage(idx)}
-                                  title="Make this the primary cover photo"
-                                >
-                                  Set as Cover
-                                </button>
-                              )}
-                              <button
-                                type="button"
-                                className="seller-remove-photo-btn-v2"
-                                onClick={() => removeProductImage(idx)}
-                                title="Delete this photo"
-                                aria-label="Delete this photo"
-                              >
-                                ✕
-                              </button>
-                            </div>
-                            <span className="seller-gallery-card-idx">Photo #{idx + 1}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Modern Drag & Drop Zone */}
-                    <label className="seller-modern-dropzone">
-                      <input
-                        type="file"
-                        multiple
-                        accept="image/jpeg,image/png,image/webp"
-                        disabled={uploadingImage || busy}
-                        onChange={(event) => {
-                          void uploadProductImages(event.currentTarget.files);
-                          event.currentTarget.value = "";
-                        }}
-                      />
-                      <div className="seller-dropzone-inner">
-                        <div className="seller-dropzone-icon-circle">
-                          <UploadCloud size={24} />
-                        </div>
-                        <div className="seller-dropzone-texts">
-                          <strong>
-                            {uploadingImage ? "Uploading photos to gallery…" : "Click or Drag & Drop Multiple Photos Here"}
-                          </strong>
-                          <span>Select multiple JPG, PNG or WebP files at once (up to 10 MB each)</span>
-                        </div>
-                        <span className="seller-dropzone-action-btn">
-                          {uploadingImage ? "Uploading…" : "Browse Files"}
-                        </span>
-                      </div>
-                    </label>
-
-                    {/* Or Manual URL Link */}
-                    <div className="seller-url-link-row">
-                      <span className="seller-url-link-label">Or Add via Image Link:</span>
-                      <div className="seller-url-link-inputs">
-                        <input
-                          type="url"
-                          value={manualImageUrl}
-                          placeholder="Paste image URL (https://...)"
-                          onChange={(e) => setManualImageUrl(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault();
-                              handleAddManualImage();
-                            }
-                          }}
-                        />
-                        <button
-                          type="button"
-                          className="seller-add-url-btn"
-                          onClick={handleAddManualImage}
-                          disabled={!manualImageUrl.trim()}
-                        >
-                          + Add Link
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* SECTION 4: Fragrance Notes & Description */}
+                  {/* SECTION 3: Fragrance Notes & Description */}
                   <div className="seller-form-section">
                     <div className="seller-form-section-title">
                       <Sparkles size={17} />
-                      <span>4. Fragrance Notes & Story</span>
+                      <span>3. Fragrance Notes & Story</span>
                     </div>
 
                     <div className="seller-form-grid-1">
@@ -1314,18 +1125,18 @@ export default function SellerDashboard({
                         type="button"
                         className="seller-btn-cancel-v2"
                         onClick={() => setFormOpen(false)}
-                        disabled={busy || uploadingImage}
+                        disabled={busy || uploadingVariantIndex !== null}
                       >
                         Cancel
                       </button>
                       <button
                         type="submit"
                         className="seller-btn-save-v2"
-                        disabled={busy || uploadingImage}
+                        disabled={busy || uploadingVariantIndex !== null}
                       >
                         <Save size={16} />
-                        {uploadingImage
-                          ? "Uploading photos…"
+                        {uploadingVariantIndex !== null
+                          ? "Uploading photo…"
                           : busy
                           ? "Saving perfume…"
                           : editingId
