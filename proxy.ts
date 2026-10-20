@@ -17,10 +17,42 @@ export async function proxy(request: NextRequest) {
       },
     },
   });
-  await supabase.auth.getClaims();
-  return response;
+
+  const { data: { user } } = await supabase.auth.getUser();
+  const { pathname } = request.nextUrl;
+
+  const isAuthPage = pathname === "/signup" || pathname === "/login" || pathname === "/admin/login";
+  const isSellerPortal = pathname === "/seller" || pathname.startsWith("/seller/");
+  const isApiRoute = pathname.startsWith("/api/");
+  const isAuthRoute = pathname.startsWith("/auth/");
+
+  // 1. Authenticated users (Customer, Seller, Admin)
+  if (user) {
+    // If already registered and logged in, redirect away from signup/login pages to storefront or target
+    if (pathname === "/signup" || pathname === "/login") {
+      const next = request.nextUrl.searchParams.get("next");
+      const target = next && next.startsWith("/") && !next.startsWith("//") ? next : "/store";
+      return NextResponse.redirect(new URL(target, request.url));
+    }
+    return response;
+  }
+
+  // 2. Unauthenticated visitors
+  // Allow access to public auth pages, seller portal, APIs, and auth callbacks
+  if (isAuthPage || isSellerPortal || isApiRoute || isAuthRoute) {
+    return response;
+  }
+
+  // Any other storefront page requires registration first
+  const signupUrl = new URL("/signup", request.url);
+  if (pathname !== "/" && pathname !== "/store") {
+    signupUrl.searchParams.set("next", `${pathname}${request.nextUrl.search}`);
+  }
+  return NextResponse.redirect(signupUrl);
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|txt|xml)$).*)",
+  ],
 };

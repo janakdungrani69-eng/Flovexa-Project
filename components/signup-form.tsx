@@ -153,7 +153,10 @@ export default function SignupForm() {
         });
 
         if (!loginError) {
-          router.replace("/");
+          const params = new URLSearchParams(window.location.search);
+          const next = params.get("next");
+          const target = next && next.startsWith("/") && !next.startsWith("//") ? next : "/store";
+          router.replace(target);
           router.refresh();
           return;
         }
@@ -161,7 +164,10 @@ export default function SignupForm() {
 
       setMessage("Account created successfully! Redirecting to sign in…");
       setTimeout(() => {
-        router.replace("/login");
+        const params = new URLSearchParams(window.location.search);
+        const next = params.get("next");
+        const target = next ? `/login?next=${encodeURIComponent(next)}` : "/login";
+        router.replace(target);
       }, 1200);
     } catch (signupError) {
       setError(signupError instanceof Error ? signupError.message : "Could not create your account.");
@@ -374,12 +380,15 @@ export default function SignupForm() {
         }}
       >
         <ShieldCheck size={16} />
-        {busy ? "Creating account…" : "Create customer account"}
+        {busy ? "Creating account…" : "Register & Enter Storefront"}
       </button>
 
-      <Link className="admin-back" href="/login" style={{ textAlign: "center", marginTop: "14px" }}>
-        Already have an account? Sign in with Email & Password
-      </Link>
+      <div style={{ textAlign: "center", marginTop: "14px", borderTop: "1px solid rgba(29,26,22,0.1)", paddingTop: "14px" }}>
+        <span style={{ fontSize: "11px", color: "#777066" }}>Already registered? </span>
+        <Link href="/login" style={{ fontSize: "11px", color: "#aa8050", fontWeight: 600, textDecoration: "underline" }}>
+          Sign in to your account
+        </Link>
+      </div>
     </form>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { createBrowserClient } from "@supabase/ssr";
 import { useRouter } from "next/navigation";
@@ -12,6 +12,15 @@ export default function AdminLoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [signupUrl, setSignupUrl] = useState("/signup");
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const next = params.get("next");
+    if (next && next.startsWith("/") && !next.startsWith("//")) {
+      setSignupUrl(`/signup?next=${encodeURIComponent(next)}`);
+    }
+  }, []);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -31,7 +40,7 @@ export default function AdminLoginForm() {
 
     if (loginError || !data.user) {
       if (data.user) await supabase.auth.signOut();
-      setError("No account found for this email, or the password is incorrect. Create an account first.");
+      setError("No account found for this email, or the password is incorrect. Please register first.");
       setBusy(false);
       return;
     }
@@ -40,12 +49,12 @@ export default function AdminLoginForm() {
     const params = new URLSearchParams(window.location.search);
     const next = params.get("next");
 
-    if (next && next.startsWith("/")) {
+    if (next && next.startsWith("/") && !next.startsWith("//")) {
       router.replace(next);
     } else if (window.location.pathname.startsWith("/admin") && (role === "admin" || role === "owner")) {
       router.replace("/admin");
     } else {
-      router.replace("/account");
+      router.replace("/store");
     }
     router.refresh();
   }
@@ -70,8 +79,8 @@ export default function AdminLoginForm() {
       {error && <p role="alert">{error}</p>}
 
       {error && (
-        <Link href="/signup" className="admin-back" style={{ display: "inline-block", marginTop: "-6px" }}>
-          Create account
+        <Link href={signupUrl} className="admin-back" style={{ display: "inline-block", marginTop: "-6px" }}>
+          Register account
         </Link>
       )}
 
@@ -80,9 +89,9 @@ export default function AdminLoginForm() {
       </button>
 
       <div style={{ textAlign: "center", marginTop: "12px", borderTop: "1px solid rgba(29,26,22,0.1)", paddingTop: "14px" }}>
-        <span style={{ fontSize: "10px", color: "#777066" }}>New customer? </span>
-        <Link href="/signup" style={{ fontSize: "10px", color: "#aa8050", fontWeight: 600, textDecoration: "underline" }}>
-          Create account with Email OTP
+        <span style={{ fontSize: "11px", color: "#777066" }}>New customer? </span>
+        <Link href={signupUrl} style={{ fontSize: "11px", color: "#aa8050", fontWeight: 600, textDecoration: "underline" }}>
+          Register for exclusive access
         </Link>
       </div>
     </form>

@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import JsonLd from "@/components/json-ld";
 import Storefront from "@/components/storefront";
 import { getProducts } from "@/lib/catalog";
 import { canonicalUrl } from "@/lib/seo";
 import { getStorefrontContent } from "@/lib/storefront-content-server";
+import { getSignedInUser } from "@/lib/supabase/roles";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -33,6 +35,11 @@ export const metadata: Metadata = {
 };
 
 export default async function StorePage() {
+  const user = await getSignedInUser();
+  if (!user) {
+    redirect("/signup");
+  }
+
   const [products, content] = await Promise.all([getProducts(), getStorefrontContent()]);
   return (
     <>
@@ -60,4 +67,3 @@ export default async function StorePage() {
     </>
   );
 }
-

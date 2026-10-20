@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import CheckoutExperience from "@/components/checkout-experience";
 import CheckoutBackButton from "@/components/checkout-back-button";
 import { getProducts } from "@/lib/catalog";
@@ -24,6 +25,10 @@ function parseCart(value?: string): CartLine[] {
 
 export default async function CheckoutPage({ searchParams }: { searchParams: Promise<{ items?: string }> }) {
   const [{ items }, products, user] = await Promise.all([searchParams, getProducts(), getSignedInUser()]);
+  if (!user) {
+    redirect("/signup?next=/checkout");
+  }
+
   const requested = parseCart(items);
   const lines = requested.flatMap((item) => {
     const product = products.find((candidate) => candidate.id === item.productId);

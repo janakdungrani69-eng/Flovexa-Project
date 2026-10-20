@@ -8,7 +8,7 @@ export const metadata = noIndexMetadata("My Account & Orders — Flovexa");
 
 export default async function AccountPage() {
   const user = await getSignedInUser();
-  if (!user) redirect("/login?next=/account");
+  if (!user) redirect("/signup?next=/account");
 
   return (
     <main className="customer-portal-page">

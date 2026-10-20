@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import JsonLd from "@/components/json-ld";
 import CheckoutBackButton from "@/components/checkout-back-button";
 import ProductPurchasePanel from "@/components/product-purchase-panel";
@@ -8,6 +8,7 @@ import ProductLuxuryDetails from "@/components/product-luxury-details";
 import ProductGallery from "@/components/product-gallery";
 import { getProducts } from "@/lib/catalog";
 import { canonicalUrl, metaDescription, noIndexMetadata } from "@/lib/seo";
+import { getSignedInUser } from "@/lib/supabase/roles";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const [{ slug }, products] = await Promise.all([params, getProducts()]);
@@ -26,7 +27,13 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 }
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
-  const [{ slug }, products] = await Promise.all([params, getProducts()]);
+  const user = await getSignedInUser();
+  const { slug } = await params;
+  if (!user) {
+    redirect(`/signup?next=/products/${slug}`);
+  }
+
+  const products = await getProducts();
   const product = products.find((item) => item.slug === slug || (slug === "dhukan" && item.slug.includes("dhukan")) || (item.slug === "dhukan" && slug.includes("dhukan")));
   if (!product) notFound();
   const productUrl = canonicalUrl(`/products/${product.slug}`);
