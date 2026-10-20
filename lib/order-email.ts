@@ -1,14 +1,11 @@
 import "server-only";
-import { Resend } from "resend";
 import { createAdminSupabase } from "@/lib/supabase/admin";
+import { sendMail } from "@/lib/mailer";
 
 type NotificationType = "order_confirmation" | "payment_review" | "shipment_update" | "refund_update";
 const escapeHtml = (value: unknown) => String(value ?? "").replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]!);
 
 export async function sendOrderEmail(orderId: string, eventType: NotificationType) {
-  const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.ORDER_FROM_EMAIL;
-  if (!apiKey || !from) return false;
   const supabase = createAdminSupabase();
   const { error: claimError } = await supabase.from("order_notification_events").insert({ order_id: orderId, event_type: eventType });
   if (claimError?.code === "23505") return true;
@@ -35,9 +32,19 @@ export async function sendOrderEmail(orderId: string, eventType: NotificationTyp
     const subject = eventType === "shipment_update" ? `Your Flovexa order ${order.order_number} is on its way` : eventType === "payment_review" ? `Payment received for ${order.order_number}` : eventType === "refund_update" ? `Refund update for ${order.order_number}` : `Order confirmed · ${order.order_number}`;
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "";
     const html = `<div style="margin:0;padding:32px;background:#f5f2eb;font-family:Arial,sans-serif;color:#28231d"><div style="max-width:560px;margin:0 auto;padding:34px;background:#fffdf8"><p style="font:600 12px Arial;letter-spacing:4px">FLOVEXA PERFUMES</p><h1 style="font:400 32px Georgia,serif">${eventType === "shipment_update" ? "On its way." : eventType === "payment_review" ? "Payment received." : eventType === "refund_update" ? "Refund started." : "Thank you, " + safeName + "."}</h1><p style="line-height:1.7">${info}</p><p style="margin-top:22px;color:#81796e;font-size:12px">ORDER ${safeNumber}</p>${eventType === "order_confirmation" ? `<table style="width:100%;border-collapse:collapse;font-size:13px">${rows}${discountRow}<tr><td style="padding:14px 0">Order total</td><td style="padding:14px 0;text-align:right;font-weight:600">₹${(order.total_paise / 100).toLocaleString("en-IN")}</td></tr></table>` : ""}<p style="margin-top:28px;color:#81796e;font-size:12px">View your order <a href="${escapeHtml(siteUrl.replace(/\/$/, ""))}/orders">online</a>.</p></div></div>`;
-    const resend = new Resend(apiKey);
-    const { error } = await resend.emails.send({ from, to: order.email, subject, html, text: `${subject}\n\n${String(info).replace(/<[^>]+>/g, " ")}\n\nOrder ${order.order_number}` });
-    if (error) throw new Error(error.message);
+    
+    const sendResult = await sendMail({
+      to: order.email,
+      subject,
+      html,
+      text: `${subject}\n\n${String(info).replace(/<[^>]+>/g, " ")}\n\nOrder ${order.order_number}`,
+    });
+
+    if (!sendResult.success) {
+      console.warn("Order email not sent:", sendResult.error);
+      return false;
+    }
+
     const { error: markError } = await supabase.from("order_notification_events").update({ sent_at: new Date().toISOString() }).eq("order_id", orderId).eq("event_type", eventType);
     if (markError) throw markError;
     return true;

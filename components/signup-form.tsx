@@ -61,9 +61,7 @@ export default function SignupForm() {
       setOtpSent(true);
       setOtpVerified(false);
       setResendCooldown(60);
-      if (data.otp) {
-        setOtp(String(data.otp));
-      }
+      setOtp("");
       setMessage(data.message ?? `A secret code (OTP) has been sent to ${trimmedEmail}.`);
     } catch (sendError) {
       setError(sendError instanceof Error ? sendError.message : "Failed to send verification code.");
@@ -297,7 +295,7 @@ export default function SignupForm() {
               maxLength={6}
               value={otp}
               onChange={(event) => setOtp(event.target.value.replace(/\D/g, ""))}
-              placeholder="e.g. 123456"
+              placeholder="······"
               style={{
                 flex: 1,
                 letterSpacing: "6px",
@@ -323,21 +321,9 @@ export default function SignupForm() {
             </button>
           </div>
           <small style={{ color: "#7a7266", fontSize: "9px" }}>
-            Check your inbox or spam folder for the secret verification code.
+            Please open your Gmail inbox or spam folder and enter the 6-digit code sent to your email.
           </small>
-          {otp.length === 6 && !otpVerified && (
-            <div style={{ display: "flex", alignItems: "center", gap: "6px", background: "#fcf8ee", border: "1px dashed #aa8050", padding: "6px 10px", borderRadius: "3px" }}>
-              <span style={{ fontSize: "11px", color: "#6a4f28" }}>Secret code ready: <strong>{otp}</strong></span>
-              <button
-                type="button"
-                onClick={() => void handleVerifyOtp()}
-                disabled={verifyingOtp}
-                style={{ marginLeft: "auto", fontSize: "10px", background: "#aa8050", color: "#fff", border: "none", padding: "3px 8px", borderRadius: "3px", cursor: "pointer", fontWeight: 600 }}
-              >
-                {verifyingOtp ? "Verifying…" : "Click to verify code"}
-              </button>
-            </div>
-          )}
+
         </div>
       )}
 
