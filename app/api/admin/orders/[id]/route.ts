@@ -47,7 +47,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       updated_at: new Date().toISOString(),
     };
     if (parsed.data.status !== "cancelled") update.status = parsed.data.status;
-    const { data: order, error } = await supabase.from("orders").update(update).eq("id", id).select("id, order_number, customer_name, email, phone, shipping_address, total_paise, status, payment_status, tracking_carrier, tracking_number, tracking_url, created_at, order_items(product_name, size, quantity)").single();
+    const { data: order, error } = await supabase.from("orders").update(update).eq("id", id).select("id, order_number, customer_name, email, phone, shipping_address, total_paise, discount_paise, coupon_code, status, payment_status, tracking_carrier, tracking_number, tracking_url, created_at, order_items(product_name, size, quantity)").single();
     if (error) throw error;
     return NextResponse.json({ order });
   } catch (error) {

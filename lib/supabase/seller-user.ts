@@ -12,7 +12,9 @@ export async function getActiveSeller() {
     .select("user_id, store_name, status")
     .eq("user_id", user.id)
     .maybeSingle();
+
   if (error) throw error;
+
   if (!profile || profile.status !== "active") return null;
 
   return { user, supabase, profile };

@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     if (rateError) throw rateError;
     if (!allowed) return NextResponse.json({ error: "Too many lookups. Please wait 15 minutes and try again." }, { status: 429 });
     const { data: order, error } = await supabase.from("orders")
-      .select("id, order_number, email, status, payment_status, total_paise, created_at, tracking_carrier, tracking_number, tracking_url, order_items(product_name, size, quantity)")
+      .select("id, order_number, email, status, payment_status, total_paise, discount_paise, coupon_code, created_at, tracking_carrier, tracking_number, tracking_url, order_items(product_name, size, quantity)")
       .eq("order_number", parsed.data.orderNumber).eq("email", parsed.data.email.toLowerCase()).maybeSingle();
     if (error) throw error;
     if (!order) return NextResponse.json({ error: "We could not find an order with those details. Please check your confirmation email." }, { status: 404 });
@@ -35,6 +35,8 @@ export async function POST(request: Request) {
       status: order.status,
       paymentStatus: order.payment_status,
       totalPaise: order.total_paise,
+      discountPaise: order.discount_paise,
+      couponCode: order.coupon_code,
       createdAt: order.created_at,
       trackingCarrier: order.tracking_carrier,
       trackingNumber: order.tracking_number,

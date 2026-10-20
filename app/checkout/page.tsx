@@ -1,14 +1,15 @@
-import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import CheckoutForm from "@/components/checkout-form";
+import CheckoutExperience from "@/components/checkout-experience";
+import CheckoutBackButton from "@/components/checkout-back-button";
 import { getProducts } from "@/lib/catalog";
 import { calculateOrderPricing, getPricingConfig } from "@/lib/pricing";
 import { getSignedInUser, getStoreRole } from "@/lib/supabase/roles";
 import { createAdminSupabase } from "@/lib/supabase/admin";
+import { noIndexMetadata } from "@/lib/seo";
+
+export const metadata = noIndexMetadata("Checkout");
 
 type CartLine = { productId: string; quantity: number };
-const money = (paise: number) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(paise / 100);
-
 function parseCart(value?: string): CartLine[] {
   if (!value) return [];
   try {
@@ -57,16 +58,8 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
   }
 
   return <main className="checkout-page">
-    <header className="checkout-header"><Link href="/" className="checkout-back"><ArrowLeft size={16} /> Continue shopping</Link><Link href="/" className="wordmark">FLOVEXA<span>PERFUMES</span></Link><span className="secure-label">SECURE CHECKOUT</span></header>
-    <div className="checkout-layout">
-      <section className="checkout-main"><span className="eyebrow">ALMOST YOURS</span><h1>Delivery details</h1><p className="checkout-lede">Tell us where to send your fragrance.</p>
-        <CheckoutForm items={requested} enabled={checkoutReady} initialCustomer={initialCustomer} />
-      </section>
-      <aside className="order-summary"><span className="eyebrow">YOUR SELECTION</span><h2>Order summary</h2>
-        {lines.length ? <div className="summary-lines">{lines.map(({ product, quantity }) => <div className="summary-product" key={product.id}><div className="summary-product-visual" style={{ "--juice": product.accent } as React.CSSProperties}><span>F</span></div><div><b>{product.name}</b><small>{product.size} · Qty {quantity}</small></div><strong>{money(product.pricePaise * quantity)}</strong></div>)}</div> : <div className="summary-empty">Your bag is empty. <Link href="/#collection">Explore fragrances</Link></div>}
-        <div className="summary-costs"><div><span>Subtotal</span><strong>{money(subtotal)}</strong></div>{pricing ? <><div><span>Shipping</span><strong>{pricing.shippingPaise ? money(pricing.shippingPaise) : "Complimentary"}</strong></div>{pricing.taxPaise > 0 && <div><span>{pricing.taxIncluded ? "Included taxes" : "Taxes"}</span><strong>{money(pricing.taxPaise)}</strong></div>}<div className="summary-total"><span>Total</span><strong>{money(pricing.totalPaise)}</strong></div></> : <p className="summary-note">Shipping and tax settings are being configured. The payment button stays disabled until the total can be confirmed.</p>}</div>
-      </aside>
-    </div>
+    <header className="checkout-header"><CheckoutBackButton label="Go back" fallback="/store" /><Link href="/store" className="wordmark">FLOVEXA<span>PERFUMES</span></Link><span className="secure-label">SECURE CHECKOUT</span></header>
+    <CheckoutExperience items={requested} lines={lines} subtotalPaise={subtotal} pricing={pricing} enabled={checkoutReady} initialCustomer={initialCustomer} />
     <footer className="checkout-footer"><span>© {new Date().getFullYear()} FLOVEXA PERFUMES</span><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link><Link href="/returns">Returns</Link></footer>
   </main>;
 }

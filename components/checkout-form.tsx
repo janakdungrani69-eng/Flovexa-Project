@@ -19,7 +19,7 @@ declare global { interface Window { Razorpay?: new (options: CheckoutOptions) =>
 type CustomerPrefill = { name: string; email: string; phone: string; line1: string; line2: string; city: string; state: string; pincode: string };
 const blankValues = { name: "", email: "", phone: "", line1: "", line2: "", city: "", state: "", pincode: "" };
 
-export default function CheckoutForm({ items, enabled, initialCustomer }: { items: CartLine[]; enabled: boolean; initialCustomer?: CustomerPrefill }) {
+export default function CheckoutForm({ items, enabled, initialCustomer, couponCode }: { items: CartLine[]; enabled: boolean; initialCustomer?: CustomerPrefill; couponCode?: string }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [success, setSuccess] = useState("");
@@ -35,6 +35,7 @@ export default function CheckoutForm({ items, enabled, initialCustomer }: { item
     try {
       const response = await fetch("/api/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
         items: items.map(({ productId, quantity }) => ({ id: productId, quantity })),
+        ...(couponCode ? { couponCode } : {}),
         customer: { name: values.name, email: values.email, phone: values.phone, address: { line1: values.line1, line2: values.line2, city: values.city, state: values.state, pincode: values.pincode, country: "India" } },
       }) });
       const order = await response.json();
@@ -68,7 +69,7 @@ export default function CheckoutForm({ items, enabled, initialCustomer }: { item
   return <>
     <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="afterInteractive" />
     {!enabled && <div className="checkout-setup-note"><LockKeyhole size={17} /><div><b>Secure checkout is not live yet</b><p>Real catalogue, shipping and tax settings, and merchant payment accounts must be connected before orders can be accepted.</p></div></div>}
-    {success ? <div className="checkout-success"><span>✓</span><h2>Order received</h2><p>{success}</p><Link href="/">Back to the collection <ArrowRight size={15} /></Link></div> : <form className="address-form" onSubmit={pay}>
+    {success ? <div className="checkout-success"><span>✓</span><h2>Order received</h2><p>{success}</p><Link href="/store">Back to the collection <ArrowRight size={15} /></Link></div> : <form className="address-form" onSubmit={pay}>
       <div className="form-section-title"><span>01</span><h2>Contact</h2></div>
       <div className="form-fields"><label className="field-wide">Full name<input autoComplete="name" name="name" required minLength={2} maxLength={100} value={values.name} onChange={change} placeholder="Name for delivery" /></label><label>Email address<input type="email" autoComplete="email" name="email" required value={values.email} onChange={change} placeholder="you@example.com" /></label><label>Mobile number<input type="tel" autoComplete="tel" name="phone" required pattern="[+\d][\d\s()\-]{7,18}" value={values.phone} onChange={change} placeholder="+91 98765 43210" /></label></div>
       <div className="form-section-title"><span>02</span><h2>Delivery address</h2></div>

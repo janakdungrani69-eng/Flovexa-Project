@@ -18,6 +18,16 @@
 .summary-total{display:flex;justify-content:space-between;margin-top:20px;font-size:12px}
 .summary-total strong{font-weight:500}
 .summary-note{color:#80786d;font-size:9px;line-height:1.7}
+.coupon-entry{display:grid;gap:7px;margin:18px 0;padding-bottom:16px;border-bottom:1px solid var(--line)}
+.coupon-entry>label{color:#6e665b;font-size:9px;letter-spacing:.06em;text-transform:uppercase}
+.coupon-entry>div{display:grid;grid-template-columns:1fr auto;gap:7px}
+.coupon-entry input{min-width:0;height:38px;padding:0 10px;border:1px solid rgba(29,26,22,.19);background:rgba(255,255,255,.33);color:var(--ink);font-size:10px;letter-spacing:0}
+.coupon-entry button{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-height:38px;padding:0 13px;border:1px solid #6b5941;background:#6b5941;color:#fff;font-size:9px}
+.coupon-entry button:disabled{cursor:not-allowed;opacity:.55}
+.coupon-applied{display:flex;align-items:center;gap:6px;margin:0;color:#53634b;font-size:9px}
+.coupon-applied button{width:24px;min-height:24px;padding:0;border:0;background:transparent;color:inherit}
+.coupon-error{margin:0;color:#87503e;font-size:9px;line-height:1.5}
+.summary-discount strong{color:#53634b}
 .summary-empty{padding:20px 0;color:#786f63;font-size:11px}
 .summary-empty a{text-decoration:underline}
 .form-section-title{display:flex;align-items:center;gap:11px;margin:27px 0 14px;padding-bottom:10px;border-bottom:1px solid var(--line)}

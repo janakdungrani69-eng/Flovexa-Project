@@ -1,4 +1,4 @@
-export const DEFAULT_CATEGORIES = ["For Her", "For Him", "Unisex", "Oud & Attar", "Discovery Sets"];
+export const DEFAULT_CATEGORIES = ["Perfume", "Fragrance"];
 
 export type StorefrontSettings = {
   hero_image_url: string;
@@ -14,12 +14,12 @@ export type StorefrontSettings = {
 
 export const DEFAULT_STOREFRONT_SETTINGS: StorefrontSettings = {
   hero_image_url: "",
-  announcement: "A more personal way to discover fragrance",
+  announcement: "Luxury Eau de Parfums & Pure Fragrance Oils · Fast Dispatch",
   eyebrow: "THE ART OF A LASTING IMPRESSION",
   title: "Wear the feeling.",
   title_emphasis: "Keep the memory.",
-  description: "Fragrance is the quietest way to tell your story. Find a scent that feels like it was always yours.",
-  cta_label: "Discover your scent",
-  caption_one: "01 / THE SIGNATURE COLLECTION",
+  description: "Discover luxury Eau de Parfum sprays and 100% pure concentrated fragrance oils, crafted with fine European extracts to leave an unforgettable trail.",
+  cta_label: "Explore perfumes & fragrances",
+  caption_one: "01 / PERFUMES & FRAGRANCE OILS",
   caption_two: "SCENT, MADE PERSONAL",
 };

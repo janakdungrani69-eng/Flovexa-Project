@@ -10,6 +10,9 @@ import { getStoreRole } from "@/lib/supabase/roles";
 import { getStorefrontContent } from "@/lib/storefront-content-server";
 import { getAdminUser } from "@/lib/supabase/admin-user";
 import { createAdminSupabase } from "@/lib/supabase/admin";
+import { noIndexMetadata } from "@/lib/seo";
+
+export const metadata = noIndexMetadata("Store admin");
 
 export default async function AdminPage() {
   const user = await getAdminUser();
@@ -26,7 +29,7 @@ export default async function AdminPage() {
     const supabase = createAdminSupabase();
     const [productResult, orderResult, returnResult, reportResult, usersResult, couponResult] = await Promise.all([
       supabase.from("products").select("id, slug, name, category, price_paise, compare_at_paise, size, concentration, notes, description, image_url, accent, stock, featured, active, created_at").order("created_at", { ascending: false }),
-      supabase.from("orders").select("id, order_number, customer_name, email, phone, shipping_address, total_paise, status, payment_status, tracking_carrier, tracking_number, tracking_url, created_at, order_items(product_name, size, quantity)").order("created_at", { ascending: false }).limit(50),
+      supabase.from("orders").select("id, order_number, customer_name, email, phone, shipping_address, total_paise, discount_paise, coupon_code, status, payment_status, tracking_carrier, tracking_number, tracking_url, created_at, order_items(product_name, size, quantity)").order("created_at", { ascending: false }).limit(50),
       supabase.from("return_requests").select("id, order_id, user_id, reason, details, status, created_at").order("created_at", { ascending: false }).limit(100),
       supabase.from("orders").select("email, total_paise, payment_status, created_at").order("created_at", { ascending: false }).limit(1000),
       supabase.auth.admin.listUsers({ page: 1, perPage: 1000 }),
@@ -93,5 +96,5 @@ export default async function AdminPage() {
       returnRequests = returnResult.data.map((item) => ({ ...item, order: known.get(item.order_id) ?? null }));
     }
   } catch (error) { console.error("Could not load store admin data", error instanceof Error ? error.message : "Unknown error"); }
-  return <main className="admin-page"><header className="admin-topbar"><Link href="/" className="wordmark">FLOVEXA<span>PERFUMES</span></Link><div><span>{user.email}</span><form action="/auth/signout" method="post"><button type="submit">Sign out</button></form></div></header><AdminDashboard products={products} orders={orders} returnRequests={returnRequests} customers={customers} sellers={sellers} coupons={coupons} couponPanel={<AdminCoupons initialCoupons={coupons}/>} sellerPanel={<AdminSellers initialSellers={sellers}/>} reportPanel={<AdminReports orders={reportOrders} now={new Date().toISOString()}/>} categories={storefrontContent.categories} storefrontSettings={storefrontContent.settings} /></main>;
+  return <main className="admin-page"><header className="admin-topbar"><Link href="/store" className="wordmark">FLOVEXA<span>PERFUMES</span></Link><div><span>{user.email}</span><form action="/auth/signout" method="post"><button type="submit">Sign out</button></form></div></header><AdminDashboard products={products} orders={orders} returnRequests={returnRequests} customers={customers} sellers={sellers} coupons={coupons} couponPanel={<AdminCoupons initialCoupons={coupons}/>} sellerPanel={<AdminSellers initialSellers={sellers} initialCustomers={customers.map(({ id, email, full_name }) => ({ id, email, full_name }))}/>} reportPanel={<AdminReports orders={reportOrders} now={new Date().toISOString()}/>} categories={storefrontContent.categories} storefrontSettings={storefrontContent.settings} /></main>;
 }

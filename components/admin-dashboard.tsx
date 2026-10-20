@@ -2,20 +2,21 @@
 
 import { useMemo, useState, type FormEvent } from "react";
 import Image from "next/image";
-import { Box, Check, ChevronRight, CircleDollarSign, ImagePlus, Package, Plus, Save, Search, ShoppingBag, Trash2, Undo2, UsersRound } from "lucide-react";
+import { Box, Check, ChevronRight, CircleDollarSign, ImagePlus, Package, Plus, Printer, Save, Search, ShoppingBag, Sparkles, Tag, Trash2, Undo2, UsersRound } from "lucide-react";
 import type { Product } from "@/lib/products";
 import AdminCustomers, { type AdminCustomer } from "@/components/admin-customers";
 import AdminStorefront from "@/components/admin-storefront";
 import type { AdminCoupon } from "@/components/admin-coupons";
 import type { AdminSeller } from "@/components/admin-sellers";
 import type { StorefrontSettings } from "@/lib/storefront-content";
+import ShippingLabelModal, { type ShippingLabelOrder } from "@/components/shipping-label-modal";
 import type { ReactNode } from "react";
 
 export type AdminProduct = Product & { stock: number; createdAt: string };
 export type AdminOrder = {
   id: string; order_number: string; customer_name: string; email: string; phone: string;
   shipping_address: { line1: string; line2?: string; city: string; state: string; pincode: string };
-  total_paise: number; status: string; payment_status: string; tracking_carrier: string | null;
+  total_paise: number; discount_paise: number; coupon_code: string | null; status: string; payment_status: string; tracking_carrier: string | null;
   tracking_number: string | null; tracking_url: string | null; created_at: string;
   order_items: { product_name: string; size: string; quantity: number }[];
   seller_fulfillments: { status: string; tracking_carrier: string | null; tracking_number: string | null; tracking_url: string | null; store_name: string }[];
@@ -41,6 +42,7 @@ export default function AdminDashboard({ products: initialProducts, orders: init
   const [search, setSearch] = useState("");
   const [orderFilter, setOrderFilter] = useState("all");
   const [shipments, setShipments] = useState<Record<string, { trackingCarrier: string; trackingNumber: string; trackingUrl: string }>>({});
+  const [selectedLabelOrder, setSelectedLabelOrder] = useState<ShippingLabelOrder | null>(null);
   const filteredProducts = useMemo(() => products.filter((item) => `${item.name} ${item.slug} ${item.category}`.toLowerCase().includes(search.toLowerCase())), [products, search]);
   const filteredOrders = useMemo(() => orders.filter((order) => orderFilter === "all" || order.status === orderFilter), [orders, orderFilter]);
   function openProduct(product?: AdminProduct) {
@@ -112,15 +114,115 @@ export default function AdminDashboard({ products: initialProducts, orders: init
   const paidTotal = orders.filter((order) => order.payment_status === "captured").reduce((sum, order) => sum + order.total_paise, 0);
 
   return <div className="admin-shell"><aside className="admin-sidebar"><div className="admin-sidebar-label">YOUR STORE</div><button className={tab === "orders" ? "active" : ""} onClick={() => { setTab("orders"); setMessage(""); }}><ShoppingBag size={16}/> Orders <span>{orders.filter((order) => order.status === "paid").length}</span></button><button className={tab === "products" ? "active" : ""} onClick={() => { setTab("products"); setMessage(""); }}><Box size={16}/> Products <span>{products.length}</span></button><button className={tab === "customers" ? "active" : ""} onClick={() => { setTab("customers"); setMessage(""); }}>Customers <span>{customers.length}</span></button><button className={tab === "sellers" ? "active" : ""} onClick={() => { setTab("sellers"); setMessage(""); }}><UsersRound size={16}/> Sellers <span>{sellers.length}</span></button><button className={tab === "returns" ? "active" : ""} onClick={() => { setTab("returns"); setMessage(""); }}><Undo2 size={16}/> Returns <span>{returnRequests.filter((item) => item.status === "requested" || item.status === "under_review").length}</span></button><button className={tab === "reports" ? "active" : ""} onClick={() => { setTab("reports"); setMessage(""); }}>Reports</button><button className={tab === "storefront" ? "active" : ""} onClick={() => { setTab("storefront"); setMessage(""); }}>Storefront</button><button className={tab === "promotions" ? "active" : ""} onClick={() => { setTab("promotions"); setMessage(""); }}>Promotions <span>{coupons.length}</span></button><div className="admin-sidebar-bottom"><span>FLOVEXA PERFUMES</span><small>STORE ADMINISTRATION</small></div></aside>
-    <section className="admin-content"><div className="admin-content-head"><div><span className="eyebrow">STORE MANAGEMENT · INDIA</span><h1>{tab === "orders" ? "Orders" : tab === "products" ? "Your perfumes" : tab === "returns" ? "Return requests" : tab === "customers" ? "Customers" : tab === "sellers" ? "Sellers" : tab === "reports" ? "Sales reports" : tab === "promotions" ? "Promotions" : "Storefront"}</h1><p>{tab === "orders" ? "Keep every order moving, from payment to delivery." : tab === "products" ? "Manage the collection customers see in your storefront." : tab === "returns" ? "Review customer requests and record the next step." : tab === "customers" ? "Customer accounts, order history and private service notes." : tab === "sellers" ? "Review approved seller accounts and control their access." : tab === "reports" ? "Review captured sales and order trends." : tab === "promotions" ? "Create discount codes now; checkout redemption comes later." : "Update homepage messaging and perfume categories."}</p></div>{tab === "products" && <button className="admin-primary" onClick={() => openProduct()}><Plus size={16}/> Add a perfume</button>}</div>
+    <section className="admin-content"><div className="admin-content-head"><div><span className="eyebrow">STORE MANAGEMENT · INDIA</span><h1>{tab === "orders" ? "Orders" : tab === "products" ? "Your perfumes" : tab === "returns" ? "Return requests" : tab === "customers" ? "Customers" : tab === "sellers" ? "Sellers" : tab === "reports" ? "Sales reports" : tab === "promotions" ? "Promotions" : "Storefront"}</h1><p>{tab === "orders" ? "Keep every order moving, from payment to delivery." : tab === "products" ? "Manage the collection customers see in your storefront." : tab === "returns" ? "Review customer requests and record the next step." : tab === "customers" ? "Customer accounts, order history and private service notes." : tab === "sellers" ? "Review approved seller accounts and control their access." : tab === "reports" ? "Review captured sales and order trends." : tab === "promotions" ? "Create discount codes customers can redeem at checkout." : "Update homepage messaging and perfume categories."}</p></div>{tab === "products" && <button className="admin-primary" onClick={() => openProduct()}><Plus size={16}/> Add a perfume</button>}</div>
       {message && <div className="admin-message" role="status"><Check size={16}/>{message}</div>}
       <div className="admin-stats"><div><span><ShoppingBag size={15}/> ORDERS</span><b>{orders.length}</b><small>Latest 50 orders</small></div><div><span><CircleDollarSign size={15}/> PAID VALUE</span><b>{money(paidTotal)}</b><small>Captured payments</small></div><div><span><Package size={15}/> ACTIVE PERFUMES</span><b>{products.filter((item) => item.active).length}</b><small>{products.reduce((sum, item) => sum + item.stock, 0)} units in stock</small></div></div>
       {tab === "orders" ? <div className="admin-panel"><div className="admin-panel-tools"><h2>Recent orders</h2><label className="admin-filter"><Search size={15}/><select value={orderFilter} onChange={(event) => setOrderFilter(event.target.value)}><option value="all">All order statuses</option><option value="pending_payment">Payment pending</option><option value="paid">Paid</option><option value="processing">Processing</option><option value="shipped">Shipped</option><option value="delivered">Delivered</option><option value="cancelled">Cancelled</option><option value="refunded">Refunded</option></select></label></div>
-        {!filteredOrders.length ? <div className="admin-empty"><ShoppingBag size={24}/><b>No orders yet</b><span>New orders will appear here after a customer completes payment.</span></div> : <div className="orders-list">{filteredOrders.map((order) => <article className="order-card" key={order.id}><div className="order-card-head"><div><span>{order.order_number}</span><small>{new Date(order.created_at).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}</small></div><div className={`order-status status-${order.status}`}>{order.status.replaceAll("_", " ")}</div></div><div className="order-card-customer"><div><b>{order.customer_name}</b><span>{order.email} · {order.phone}</span></div><strong>{money(order.total_paise)}</strong></div><div className="order-card-items">{order.order_items.map((item, index) => <span key={`${order.id}-${index}`}>{item.product_name} · {item.size} × {item.quantity}</span>)}</div><div className="order-delivery"><span>{order.shipping_address.line1}{order.shipping_address.line2 ? `, ${order.shipping_address.line2}` : ""}, {order.shipping_address.city}, {order.shipping_address.state} {order.shipping_address.pincode}</span><span className={`payment-pill payment-${order.payment_status}`}>{order.payment_status.replaceAll("_", " ")}</span></div><div className="admin-seller-shipments">{order.seller_fulfillments.map((shipment, index) => <span key={`${order.id}-seller-${index}`}><b>{shipment.store_name}</b> · {shipment.status.replaceAll("_", " ")}{shipment.tracking_number ? ` · ${shipment.tracking_number}` : ""}{shipment.tracking_url && <a href={shipment.tracking_url} target="_blank" rel="noreferrer">Track</a>}</span>)}</div>{order.status !== "cancelled" && order.status !== "refunded" && <div className="order-actions"><label>Status<select value={order.status} onChange={(event) => updateOrder(order, event.target.value)}><option value="paid">Paid</option><option value="processing">Processing</option><option value="shipped">Shipped</option><option value="delivered">Delivered</option></select></label><label>Carrier<input value={shipments[order.id]?.trackingCarrier ?? order.tracking_carrier ?? ""} onChange={(event) => setShipments((all) => ({ ...all, [order.id]: { ...all[order.id], trackingCarrier: event.target.value, trackingNumber: all[order.id]?.trackingNumber ?? order.tracking_number ?? "", trackingUrl: all[order.id]?.trackingUrl ?? order.tracking_url ?? "" } }))} placeholder="Courier partner" /></label><label>Tracking number<input value={shipments[order.id]?.trackingNumber ?? order.tracking_number ?? ""} onChange={(event) => setShipments((all) => ({ ...all, [order.id]: { ...all[order.id], trackingNumber: event.target.value, trackingCarrier: all[order.id]?.trackingCarrier ?? order.tracking_carrier ?? "", trackingUrl: all[order.id]?.trackingUrl ?? order.tracking_url ?? "" } }))} placeholder="Shipment reference" /></label><label>Tracking link<input value={shipments[order.id]?.trackingUrl ?? order.tracking_url ?? ""} onChange={(event) => setShipments((all) => ({ ...all, [order.id]: { ...all[order.id], trackingUrl: event.target.value, trackingCarrier: all[order.id]?.trackingCarrier ?? order.tracking_carrier ?? "", trackingNumber: all[order.id]?.trackingNumber ?? order.tracking_number ?? "" } }))} placeholder="https://…" /></label><button onClick={() => updateOrder(order)}><Save size={14}/> Save fulfillment</button></div>}</article>)}</div>}
+        {!filteredOrders.length ? (
+          <div className="admin-empty">
+            <ShoppingBag size={24}/>
+            <b>No orders yet</b>
+            <span>New orders will appear here after a customer completes payment.</span>
+          </div>
+        ) : (
+          <div className="orders-list">
+            {filteredOrders.map((order) => {
+              const totalBottles = order.order_items.reduce((sum, item) => sum + (item.quantity || 1), 0);
+              const isCombo = totalBottles > 1 || order.order_items.length > 1;
+              return (
+                <article className="order-card" key={order.id}>
+                  <div className="order-card-head">
+                    <div>
+                      <span>{order.order_number}</span>
+                      <small>{new Date(order.created_at).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}</small>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <button
+                        type="button"
+                        className="admin-order-label-btn"
+                        onClick={() => setSelectedLabelOrder(order)}
+                        title="Print 1 consolidated shipping label for this address"
+                      >
+                        <Printer size={12} />
+                        <span>{isCombo ? `Print Combo Label (1 for Address)` : `Print Label`}</span>
+                      </button>
+                      <div className={`order-status status-${order.status}`}>{order.status.replaceAll("_", " ")}</div>
+                    </div>
+                  </div>
+
+                  {isCombo && (
+                    <div className="admin-combo-strip">
+                      <Sparkles size={12} />
+                      <strong>Consolidated Fragrance Combo ({totalBottles} Items)</strong>
+                      <span>· 1 Single Shipping Label Generated for Address</span>
+                    </div>
+                  )}
+
+                  <div className="order-card-customer">
+                    <div>
+                      <b>{order.customer_name}</b>
+                      <span>{order.email} · {order.phone}</span>
+                    </div>
+                    <strong>{money(order.total_paise)}</strong>
+                  </div>
+
+                  <div className="order-card-items">
+                    {order.order_items.map((item, index) => (
+                      <span key={`${order.id}-${index}`}>{item.product_name} · {item.size} × {item.quantity}</span>
+                    ))}
+                    {order.discount_paise > 0 && (
+                      <span className="order-discount">Coupon {order.coupon_code} · −{money(order.discount_paise)}</span>
+                    )}
+                  </div>
+
+                  <div className="order-delivery">
+                    <span>
+                      {order.shipping_address.line1}
+                      {order.shipping_address.line2 ? `, ${order.shipping_address.line2}` : ""},{" "}
+                      {order.shipping_address.city}, {order.shipping_address.state}{" "}
+                      {order.shipping_address.pincode}
+                    </span>
+                    <span className={`payment-pill payment-${order.payment_status}`}>{order.payment_status.replaceAll("_", " ")}</span>
+                  </div>
+
+                  {order.seller_fulfillments && order.seller_fulfillments.length > 0 && (
+                    <div className="admin-seller-shipments">
+                      {order.seller_fulfillments.map((shipment, index) => (
+                        <span key={`${order.id}-seller-${index}`}>
+                          <b>{shipment.store_name}</b> · {shipment.status.replaceAll("_", " ")}
+                          {shipment.tracking_number ? ` · ${shipment.tracking_number}` : ""}
+                          {shipment.tracking_url && (
+                            <a href={shipment.tracking_url} target="_blank" rel="noreferrer">Track</a>
+                          )}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {order.status !== "cancelled" && order.status !== "refunded" && (
+                    <div className="order-actions">
+                      <label>Status<select value={order.status} onChange={(event) => updateOrder(order, event.target.value)}><option value="paid">Paid</option><option value="processing">Processing</option><option value="shipped">Shipped</option><option value="delivered">Delivered</option></select></label>
+                      <label>Carrier<input value={shipments[order.id]?.trackingCarrier ?? order.tracking_carrier ?? ""} onChange={(event) => setShipments((all) => ({ ...all, [order.id]: { ...all[order.id], trackingCarrier: event.target.value, trackingNumber: all[order.id]?.trackingNumber ?? order.tracking_number ?? "", trackingUrl: all[order.id]?.trackingUrl ?? order.tracking_url ?? "" } }))} placeholder="Courier partner" /></label>
+                      <label>Tracking number<input value={shipments[order.id]?.trackingNumber ?? order.tracking_number ?? ""} onChange={(event) => setShipments((all) => ({ ...all, [order.id]: { ...all[order.id], trackingNumber: event.target.value, trackingCarrier: all[order.id]?.trackingCarrier ?? order.tracking_carrier ?? "", trackingUrl: all[order.id]?.trackingUrl ?? order.tracking_url ?? "" } }))} placeholder="Shipment reference" /></label>
+                      <label>Tracking link<input value={shipments[order.id]?.trackingUrl ?? order.tracking_url ?? ""} onChange={(event) => setShipments((all) => ({ ...all, [order.id]: { ...all[order.id], trackingUrl: event.target.value, trackingCarrier: all[order.id]?.trackingCarrier ?? order.tracking_carrier ?? "", trackingNumber: all[order.id]?.trackingNumber ?? order.tracking_number ?? "" } }))} placeholder="https://…" /></label>
+                      <button onClick={() => updateOrder(order)}><Save size={14}/> Save fulfillment</button>
+                    </div>
+                  )}
+                </article>
+              );
+            })}
+          </div>
+        )}
       </div> : tab === "products" ? <div className="admin-panel"><div className="admin-panel-tools"><h2>Product catalogue</h2><label className="admin-filter"><Search size={15}/><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search fragrances" /></label></div>
         {formOpen && <form className="product-edit-form" onSubmit={saveProduct}><div className="edit-form-heading"><div><span className="eyebrow">{selected ? "EDIT PERFUME" : "NEW PERFUME"}</span><h3>{selected ? selected.name : "Add a perfume"}</h3></div><button type="button" onClick={() => { setFormOpen(false); setSelected(null); }}>Close <ChevronRight size={15}/></button></div><div className="edit-fields"><label>Product name<input required value={form.name} onChange={(event) => { const name = event.target.value; setForm((current) => ({ ...current, name, slug: slugTouched ? current.slug : slugFromName(name) })); }}/></label><label>URL slug<input required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" value={form.slug} onChange={(event) => { setSlugTouched(true); setForm((current) => ({ ...current, slug: slugFromName(event.target.value) })); }}/></label><label>Category<select value={form.category} onChange={(event) => setForm({ ...form, category: event.target.value })}>{categories.map((category) => <option key={category}>{category}</option>)}</select></label><label>Selling price (₹)<input required type="number" min="1" step="0.01" value={form.price} onChange={(event) => setForm({ ...form, price: event.target.value })} placeholder="2,499"/></label><label>Regular price (₹) <small>Optional sale price</small><input type="number" min="1" step="0.01" value={form.compareAtPrice} onChange={(event) => setForm({ ...form, compareAtPrice: event.target.value })} placeholder="Leave blank if not discounted"/></label><label>Size<input required value={form.size} onChange={(event) => setForm({ ...form, size: event.target.value })}/></label><label>Concentration<input required value={form.concentration} onChange={(event) => setForm({ ...form, concentration: event.target.value })}/></label><label>Stock quantity<input required type="number" min="0" step="1" value={form.stock} onChange={(event) => setForm({ ...form, stock: event.target.value })}/></label><div className="image-upload-row edit-wide"><div className="image-upload-preview">{form.imageUrl ? <Image src={form.imageUrl} alt={form.name || "Perfume preview"} width={120} height={120} unoptimized/> : <div><ImagePlus size={22}/><span>Photo preview</span></div>}</div><div className="image-upload-controls"><label className="image-upload-button"><ImagePlus size={15}/>{uploadingImage ? "Uploading photo…" : form.imageUrl ? "Choose another photo" : "Upload a photo"}<input type="file" accept="image/jpeg,image/png,image/webp" disabled={uploadingImage} onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ""; void uploadProductImage(file); }}/></label><span>JPG, PNG or WebP · Max 5 MB</span><label className="image-url-field">Or paste an image link<input type="url" value={form.imageUrl} onChange={(event) => setForm({ ...form, imageUrl: event.target.value })} placeholder="https://…"/></label></div></div><label className="edit-wide">Fragrance notes<input required value={form.notes} onChange={(event) => setForm({ ...form, notes: event.target.value })} placeholder="Bergamot, rose, sandalwood"/></label><label className="edit-wide">Description<textarea required rows={3} value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })}/></label><label className="edit-check"><input type="checkbox" checked={form.featured} onChange={(event) => setForm({ ...form, featured: event.target.checked })}/> Feature on the homepage</label><label className="edit-check"><input type="checkbox" checked={form.active} onChange={(event) => setForm({ ...form, active: event.target.checked })}/> Visible in the storefront</label></div><button className="admin-primary" disabled={busy || uploadingImage}><Save size={15}/>{busy ? "Saving…" : selected ? "Save changes" : form.active ? "Publish perfume" : "Save as draft"}</button></form>}
         {!filteredProducts.length ? <div className="admin-empty"><Package size={24}/><b>No products yet</b><span>Add the real product catalogue and images to start building your storefront.</span><button onClick={() => openProduct()}><Plus size={15}/> Add your first perfume</button></div> : <div className="product-admin-list">{filteredProducts.map((product) => <article className="product-admin-row" key={product.id}><div className="admin-product-swatch" style={{ "--juice": product.accent } as React.CSSProperties}>F</div><div className="admin-product-title"><b>{product.name}</b><small>{product.category} · {product.size} · {product.stock} in stock</small></div><strong>{money(product.pricePaise)}</strong><span className={product.active ? "product-active" : "product-inactive"}>{product.active ? "Visible" : "Hidden"}</span><button onClick={() => openProduct(product)}>Edit</button><button onClick={() => toggleProduct(product)}>{product.active ? "Hide" : "Publish"}</button><button className="product-delete" disabled={deletingProductId === product.id} onClick={() => void deleteProduct(product)} aria-label={`Delete ${product.name}`} title="Delete perfume">{deletingProductId === product.id ? "Deleting…" : <><Trash2 size={13}/> Delete</>}</button></article>)}</div>}
       </div> : tab === "returns" ? <div className="admin-panel"><div className="admin-panel-tools"><h2>Customer requests</h2><span>{returnRequests.length} requests</span></div>{!returnRequests.length ? <div className="admin-empty"><Undo2 size={24}/><b>No return requests</b><span>Customer requests will appear here for your review.</span></div> : <div className="orders-list">{returnRequests.map((item) => <article className="order-card" key={item.id}><div className="order-card-head"><div><span>{item.order?.order_number ?? `Order ${item.order_id.slice(0, 8)}`}</span><small>{new Date(item.created_at).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}</small></div><span className="order-status">{item.status.replaceAll("_", " ")}</span></div><div className="order-card-customer"><div><b>{item.order?.customer_name ?? "Customer"}</b><span>{item.order?.email ?? "Customer account"} · {money(item.order?.total_paise ?? 0)}</span></div><strong>{item.reason.replaceAll("_", " ")}</strong></div>{item.details && <p className="return-admin-details">{item.details}</p>}{["requested", "under_review"].includes(item.status) && <div className="return-admin-actions"><button onClick={() => void updateReturn(item, "under_review")}>Mark under review</button><button onClick={() => void updateReturn(item, "approved")}>Approve request</button><button onClick={() => void updateReturn(item, "declined")}>Decline request</button></div>}{item.status === "approved" && <p className="return-admin-note">Approved. Contact the customer with return instructions and process any refund through Razorpay.</p>}</article>)}</div>}</div> : tab === "customers" ? <AdminCustomers customers={customers}/> : tab === "sellers" ? sellerPanel : tab === "promotions" ? couponPanel : tab === "reports" ? reportPanel : <AdminStorefront initialSettings={storefrontSettings} initialCategories={categories.map((name, index) => ({ name, sort_order: index * 10, active: true }))}/>}
     </section>
+    {selectedLabelOrder && (
+      <ShippingLabelModal
+        order={selectedLabelOrder}
+        onClose={() => setSelectedLabelOrder(null)}
+      />
+    )}
   </div>;
 }

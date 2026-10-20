@@ -8,4 +8,5 @@ build/
 .vercel/
 coverage/
 next-env.d.ts
+.vscode/
 *.tsbuildinfo

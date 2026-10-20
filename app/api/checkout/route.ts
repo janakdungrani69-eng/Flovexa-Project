@@ -7,6 +7,7 @@ import { getPricingConfig } from "@/lib/pricing";
 export const runtime = "nodejs";
 const checkoutSchema = z.object({
   items: z.array(z.object({ id: z.string().uuid(), quantity: z.number().int().min(1).max(20) }).strict()).min(1).max(20),
+  couponCode: z.string().trim().toUpperCase().regex(/^[A-Z0-9_-]{3,32}$/).optional(),
   customer: z.object({
     name: z.string().trim().min(2).max(100),
     email: z.email().max(254),
@@ -50,6 +51,7 @@ export async function POST(request: Request) {
       free_shipping_threshold: pricing.freeShippingThresholdPaise,
       tax_rate_bps: pricing.taxRateBps,
       pricing_tax_mode: pricing.taxMode,
+      requested_coupon_code: parsed.data.couponCode ?? null,
     });
     if (error) {
       console.error("Order reservation failed", error.message);
@@ -83,6 +85,8 @@ export async function POST(request: Request) {
       shippingPaise: reserved.created_shipping_paise,
       taxPaise: reserved.created_tax_paise,
       taxIncluded: pricing.taxMode === "inclusive",
+      couponCode: reserved.created_coupon_code,
+      discountPaise: reserved.created_discount_paise,
       currency: "INR",
       items: reserved.reserved_items,
     }, { headers: { "Cache-Control": "no-store" } });

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import Link from "next/link";
 import { createBrowserClient } from "@supabase/ssr";
 import { useRouter } from "next/navigation";
 
@@ -8,21 +9,82 @@ export default function AdminLoginForm() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+
   async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); setError(""); setBusy(true);
+    event.preventDefault();
+    setError("");
+    setBusy(true);
+
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-    if (!url || !key) { setError("Admin sign-in is not configured yet."); setBusy(false); return; }
+    if (!url || !key) {
+      setError("Sign-in is not configured yet.");
+      setBusy(false);
+      return;
+    }
+
     const supabase = createBrowserClient(url, key);
     const { data, error: loginError } = await supabase.auth.signInWithPassword({ email, password });
+
     if (loginError || !data.user) {
       if (data.user) await supabase.auth.signOut();
-      setError(loginError?.message ?? "We could not sign you in."); setBusy(false); return;
+      setError("No account found for this email, or the password is incorrect. Create an account first.");
+      setBusy(false);
+      return;
     }
+
     const role = data.user.app_metadata?.role;
-    router.replace(role === "admin" || role === "owner" ? "/admin" : role === "seller" ? "/seller" : "/account"); router.refresh();
+    const params = new URLSearchParams(window.location.search);
+    const next = params.get("next");
+
+    if (next && next.startsWith("/")) {
+      router.replace(next);
+    } else if (window.location.pathname.startsWith("/admin") && (role === "admin" || role === "owner")) {
+      router.replace("/admin");
+    } else {
+      router.replace("/account");
+    }
+    router.refresh();
   }
-  return <form className="admin-login-form" onSubmit={submit}><label>Email address<input type="email" autoComplete="username" required value={email} onChange={(event) => setEmail(event.target.value)} /></label><label>Password<input type="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} /></label>{error && <p role="alert">{error}</p>}<button className="primary-button" disabled={busy}>{busy ? "Signing in…" : "Sign in securely"}</button></form>;
+
+  return (
+    <form className="admin-login-form" onSubmit={submit}>
+      <label>
+        Email address
+        <input type="email" autoComplete="username" required value={email} onChange={(event) => setEmail(event.target.value)} />
+      </label>
+
+      <label>
+        Password
+        <div className="password-field">
+          <input type={showPassword ? "text" : "password"} autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} />
+          <button type="button" className="inline-password-toggle" onClick={() => setShowPassword((current) => !current)}>
+            {showPassword ? "Hide" : "Show"}
+          </button>
+        </div>
+      </label>
+
+      {error && <p role="alert">{error}</p>}
+
+      {error && (
+        <Link href="/signup" className="admin-back" style={{ display: "inline-block", marginTop: "-6px" }}>
+          Create account
+        </Link>
+      )}
+
+      <button className="primary-button" disabled={busy}>
+        {busy ? "Signing in…" : "Sign in with Email & Password"}
+      </button>
+
+      <div style={{ textAlign: "center", marginTop: "12px", borderTop: "1px solid rgba(29,26,22,0.1)", paddingTop: "14px" }}>
+        <span style={{ fontSize: "10px", color: "#777066" }}>New customer? </span>
+        <Link href="/signup" style={{ fontSize: "10px", color: "#aa8050", fontWeight: 600, textDecoration: "underline" }}>
+          Create account with Email OTP
+        </Link>
+      </div>
+    </form>
+  );
 }

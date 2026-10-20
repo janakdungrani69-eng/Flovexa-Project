@@ -29,17 +29,26 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     }
     const nextRole = parsed.data.status === "active" ? "seller" : "customer";
     const { error: roleError } = await supabase.auth.admin.updateUserById(id, {
-      app_metadata: { ...target.app_metadata, role: nextRole },
+      app_metadata: { ...target.app_metadata, role: nextRole, seller_status: parsed.data.status },
     });
     if (roleError) throw roleError;
-    const { error: updateError } = await supabase.from("seller_profiles").update({ status: parsed.data.status, updated_at: new Date().toISOString() }).eq("user_id", id);
+
+    const note = parsed.data.status === "active"
+      ? `Approved by store owner on ${new Date().toISOString()}`
+      : `Access paused by store owner on ${new Date().toISOString()}`;
+
+    const { error: updateError } = await supabase.from("seller_profiles").update({
+      status: parsed.data.status,
+      admin_note: note,
+      updated_at: new Date().toISOString()
+    }).eq("user_id", id);
     if (updateError) {
       await supabase.auth.admin.updateUserById(id, { app_metadata: { ...target.app_metadata, role: target.app_metadata?.role ?? "seller" } });
       throw updateError;
     }
-    return NextResponse.json({ ok: true, status: parsed.data.status });
+    return NextResponse.json({ ok: true, status: parsed.data.status, admin_note: note });
   } catch (error) {
     console.error("Seller access update failed", error instanceof Error ? error.message : "Unknown error");
-    return NextResponse.json({ error: "Could not update seller access. Apply the latest admin migration and try again." }, { status: 503 });
+    return NextResponse.json({ error: "Could not update seller access." }, { status: 503 });
   }
 }

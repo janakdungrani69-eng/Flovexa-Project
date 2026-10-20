@@ -3,124 +3,1519 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState, type FormEvent } from "react";
-import { ArrowRight, Heart, MapPin, Package, UserRound } from "lucide-react";
+import {
+  ArrowRight,
+  Award,
+  Check,
+  ChevronRight,
+  ExternalLink,
+  FileText,
+  Heart,
+  HelpCircle,
+  MapPin,
+  MessageCircle,
+  Package,
+  Phone,
+  Plus,
+  Printer,
+  ShieldCheck,
+  ShoppingBag,
+  Sparkles,
+  Tag,
+  Trash2,
+  Truck,
+  UserRound,
+} from "lucide-react";
+import ShippingLabelModal from "@/components/shipping-label-modal";
 
-type Tab = "orders" | "wishlist" | "addresses" | "profile";
-type SellerShipment = { status: string; tracking_carrier: string | null; tracking_number: string | null; tracking_url: string | null; seller_profiles: { store_name: string } | null };
-type Order = { id: string; order_number: string; status: string; payment_status: string; total_paise: number; created_at: string; tracking_carrier: string | null; tracking_number: string | null; tracking_url: string | null; seller_fulfillments: SellerShipment[]; order_items: Array<{ product_name: string; size: string; quantity: number }> };
-type Address = { id: string; label: string; full_name: string; phone: string; line1: string; line2: string; city: string; state: string; pincode: string; is_default: boolean };
-type WishlistProduct = { id: string; product_id: string; slug: string; name: string; category: string; price_paise: number; size: string; image_url: string | null; accent: string };
-type ReturnRequest = { id: string; order_id: string; reason: string; details: string; status: string; created_at: string };
-type AccountData = { email: string; profile: { full_name: string; phone: string }; addresses: Address[]; wishlist: WishlistProduct[]; orders: Order[]; returns: ReturnRequest[] };
+type Tab = "orders" | "wishlist" | "addresses" | "profile" | "privilege" | "concierge";
 
-const emptyAddress = { id: "", label: "Home", full_name: "", phone: "", line1: "", line2: "", city: "", state: "", pincode: "", is_default: true };
-const money = (paise: number) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(paise / 100);
+type SellerShipment = {
+  status: string;
+  tracking_carrier: string | null;
+  tracking_number: string | null;
+  tracking_url: string | null;
+  seller_profiles: { store_name: string } | null;
+};
+
+type OrderItem = {
+  product_name: string;
+  size: string;
+  quantity: number;
+};
+
+type Order = {
+  id: string;
+  order_number: string;
+  customer_name?: string;
+  phone?: string;
+  shipping_address?: {
+    line1: string;
+    line2?: string;
+    city: string;
+    state: string;
+    pincode: string;
+    country?: string;
+  } | null;
+  status: string;
+  payment_status: string;
+  total_paise: number;
+  created_at: string;
+  tracking_carrier: string | null;
+  tracking_number: string | null;
+  tracking_url: string | null;
+  seller_fulfillments: SellerShipment[];
+  order_items: OrderItem[];
+};
+
+type Address = {
+  id: string;
+  label: string;
+  full_name: string;
+  phone: string;
+  line1: string;
+  line2: string;
+  city: string;
+  state: string;
+  pincode: string;
+  is_default: boolean;
+};
+
+type WishlistProduct = {
+  id: string;
+  product_id: string;
+  slug: string;
+  name: string;
+  category: string;
+  price_paise: number;
+  size: string;
+  image_url: string | null;
+  accent: string;
+};
+
+type ReturnRequest = {
+  id: string;
+  order_id: string;
+  reason: string;
+  details: string;
+  status: string;
+  created_at: string;
+};
+
+type AccountData = {
+  email: string;
+  profile: { full_name: string; phone: string; gender: string };
+  addresses: Address[];
+  wishlist: WishlistProduct[];
+  orders: Order[];
+  returns: ReturnRequest[];
+};
+
+const emptyAddress: Address = {
+  id: "",
+  label: "Home",
+  full_name: "",
+  phone: "",
+  line1: "",
+  line2: "",
+  city: "",
+  state: "",
+  pincode: "",
+  is_default: true,
+};
+
+const money = (paise: number) =>
+  new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(
+    paise / 100
+  );
+
+function resolvePrimaryImage(imageUrl: string | null): string | null {
+  if (!imageUrl) return null;
+  const trimmed = imageUrl.trim();
+  if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed) && parsed.length > 0 && typeof parsed[0] === "string") {
+        return parsed[0];
+      }
+    } catch {}
+  }
+  if (trimmed.includes(",")) {
+    const first = trimmed.split(",")[0]?.trim();
+    if (first) return first;
+  }
+  return trimmed;
+}
+
+// Curated bestsellers showcase when orders are empty
+const CURATED_RECOMMENDATIONS = [
+  {
+    id: "prod-chocolate-desire",
+    slug: "chocolate-desire",
+    name: "Chocolate Desire",
+    category: "Eau de Parfum",
+    size: "100 ml",
+    pricePaise: 349900,
+    mrpPaise: 499900,
+    imageUrl: "/products/chocolate-desire.jpg",
+    notes: ["Roasted Cocoa", "Dark Chocolate", "Madagascar Vanilla"],
+  },
+  {
+    id: "prod-aqua-blue",
+    slug: "aqua-blue",
+    name: "Aqua Blue",
+    category: "Eau de Parfum",
+    size: "100 ml",
+    pricePaise: 349900,
+    mrpPaise: 499900,
+    imageUrl: "/products/aqua-blue.jpg",
+    notes: ["Calabrian Bergamot", "Marine Driftwood", "White Amber"],
+  },
+  {
+    id: "prod-rose-royale",
+    slug: "rose-royale",
+    name: "Rose Royale",
+    category: "Extrait de Parfum",
+    size: "50 ml",
+    pricePaise: 299900,
+    mrpPaise: 399900,
+    imageUrl: "/products/rose-royale.jpg",
+    notes: ["May Rose Absolute", "Bulgarian Rose", "Warm Cashmere"],
+  },
+];
 
 export default function CustomerAccount({ email }: { email: string }) {
   const [data, setData] = useState<AccountData | null>(null);
+  const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<Tab>("orders");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
-  const [profile, setProfile] = useState({ fullName: "", phone: "" });
-  const [address, setAddress] = useState(emptyAddress);
+  const [profile, setProfile] = useState({ fullName: "", phone: "", gender: "prefer_not_to_say" });
+  const [address, setAddress] = useState<Address>(emptyAddress);
   const [editingAddress, setEditingAddress] = useState(false);
   const [returningOrder, setReturningOrder] = useState("");
   const [returnReason, setReturnReason] = useState("damaged");
   const [returnDetails, setReturnDetails] = useState("");
+  const [addedProductId, setAddedProductId] = useState<string | null>(null);
+  const [orderFilter, setOrderFilter] = useState<"all" | "in_transit" | "delivered">("all");
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [selectedLabelOrder, setSelectedLabelOrder] = useState<Order | null>(null);
 
   useEffect(() => {
     let active = true;
-    (async () => {
-      const pendingProduct = sessionStorage.getItem("flovexa-pending-wishlist");
-      if (pendingProduct) {
-        const saved = await fetch("/api/account/wishlist", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ productId: pendingProduct }) });
-        if (saved.ok || saved.status === 404) sessionStorage.removeItem("flovexa-pending-wishlist");
-      }
-      const response = await fetch("/api/account", { cache: "no-store" });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error ?? "Could not load your account.");
-      if (!active) return;
-      setData(result);
-      setProfile({ fullName: result.profile.full_name, phone: result.profile.phone });
-    })().catch((loadError) => { if (active) setError(loadError instanceof Error ? loadError.message : "Could not load your account."); });
-    return () => { active = false; };
-  }, []);
+
+    fetch("/api/account", { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) {
+          const res = await response.json().catch(() => ({}));
+          throw new Error(res.error || "Could not load account data.");
+        }
+        return response.json();
+      })
+      .then((result) => {
+        if (!active) return;
+        setData(result);
+        setProfile({
+          fullName: result.profile?.full_name || "",
+          phone: result.profile?.phone || "",
+          gender: result.profile?.gender || "prefer_not_to_say",
+        });
+        setLoading(false);
+      })
+      .catch((err) => {
+        if (!active) return;
+        console.warn("Account load fallback:", err);
+        setError(err instanceof Error ? err.message : "Could not load account data.");
+        setData({
+          email,
+          profile: { full_name: "", phone: "", gender: "prefer_not_to_say" },
+          addresses: [],
+          wishlist: [],
+          orders: [],
+          returns: [],
+        });
+        setLoading(false);
+      });
+
+    void (async () => {
+      try {
+        const pendingProduct = sessionStorage.getItem("flovexa-pending-wishlist");
+        if (pendingProduct) {
+          await fetch("/api/account/wishlist", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ productId: pendingProduct }),
+          });
+          sessionStorage.removeItem("flovexa-pending-wishlist");
+        }
+      } catch {}
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [email]);
 
   async function saveProfile(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); setBusy(true); setError(""); setNotice("");
+    event.preventDefault();
+    setBusy(true);
+    setError("");
+    setNotice("");
     try {
-      const response = await fetch("/api/account", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(profile) });
+      const response = await fetch("/api/account", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(profile),
+      });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error ?? "Could not save your profile.");
-      setData((current) => current ? { ...current, profile: result.profile } : current); setNotice("Your profile has been saved.");
-    } catch (saveError) { setError(saveError instanceof Error ? saveError.message : "Could not save your profile."); }
-    finally { setBusy(false); }
+      setData((current) => (current ? { ...current, profile: result.profile } : current));
+      setNotice("Your profile has been saved successfully.");
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "Could not save your profile.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function saveAddress(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); setBusy(true); setError(""); setNotice("");
+    event.preventDefault();
+    setBusy(true);
+    setError("");
+    setNotice("");
     try {
-      const response = await fetch("/api/account/addresses", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(address) });
+      const response = await fetch("/api/account/addresses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(address),
+      });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error ?? "Could not save this address.");
-      setData((current) => current ? { ...current, addresses: [result.address, ...current.addresses.filter((item) => item.id !== result.address.id).map((item) => result.address.is_default ? { ...item, is_default: false } : item)] } : current);
-      setAddress(emptyAddress); setEditingAddress(false); setNotice("Delivery address saved.");
-    } catch (saveError) { setError(saveError instanceof Error ? saveError.message : "Could not save this address."); }
-    finally { setBusy(false); }
+      setData((current) =>
+        current
+          ? {
+              ...current,
+              addresses: [
+                result.address,
+                ...current.addresses
+                  .filter((item) => item.id !== result.address.id)
+                  .map((item) => (result.address.is_default ? { ...item, is_default: false } : item)),
+              ],
+            }
+          : current
+      );
+      setAddress(emptyAddress);
+      setEditingAddress(false);
+      setNotice("Delivery address saved successfully.");
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "Could not save this address.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function deleteAddress(id: string) {
-    setError(""); setNotice("");
-    const response = await fetch(`/api/account/addresses?id=${encodeURIComponent(id)}`, { method: "DELETE" });
-    const result = await response.json();
-    if (!response.ok) { setError(result.error ?? "Could not remove this address."); return; }
-    const refreshed = await fetch("/api/account", { cache: "no-store" }).then((res) => res.json());
-    setData((current) => current ? { ...current, addresses: refreshed.addresses } : current); setNotice("Delivery address removed.");
+    if (!window.confirm("Remove this saved delivery address?")) return;
+    setError("");
+    setNotice("");
+    try {
+      const response = await fetch(`/api/account/addresses?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error ?? "Could not remove this address.");
+      setData((current) =>
+        current ? { ...current, addresses: current.addresses.filter((item) => item.id !== id) } : current
+      );
+      setNotice("Delivery address removed.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not remove this address.");
+    }
   }
 
   async function removeWishlist(productId: string) {
-    const response = await fetch("/api/account/wishlist", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ productId }) });
-    const result = await response.json();
-    if (!response.ok) { setError(result.error ?? "Could not update your saved perfumes."); return; }
-    setData((current) => current ? { ...current, wishlist: current.wishlist.filter((item) => item.product_id !== productId) } : current);
+    try {
+      const response = await fetch("/api/account/wishlist", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId }),
+      });
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error ?? "Could not update saved perfumes.");
+      }
+      setData((current) =>
+        current ? { ...current, wishlist: current.wishlist.filter((item) => item.product_id !== productId) } : current
+      );
+      try {
+        const stored = localStorage.getItem("flovexa-wishlist");
+        if (stored) {
+          const list: string[] = JSON.parse(stored);
+          localStorage.setItem("flovexa-wishlist", JSON.stringify(list.filter((id) => id !== productId)));
+        }
+      } catch {}
+      setNotice("Perfume removed from your saved collection.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not update saved perfumes.");
+    }
+  }
+
+  function handleAddToCart(item: { product_id: string; name: string }) {
+    try {
+      const stored = localStorage.getItem("flovexa-cart");
+      const cart: Array<{ productId: string; quantity: number }> = stored ? JSON.parse(stored) : [];
+      const existing = cart.find((c) => c.productId === item.product_id);
+      if (existing) {
+        existing.quantity += 1;
+      } else {
+        cart.push({ productId: item.product_id, quantity: 1 });
+      }
+      localStorage.setItem("flovexa-cart", JSON.stringify(cart));
+      setAddedProductId(item.product_id);
+      setNotice(`"${item.name}" added to your shopping bag.`);
+      setTimeout(() => setAddedProductId(null), 2500);
+    } catch {
+      setError("Could not add perfume to bag.");
+    }
   }
 
   async function submitReturn(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); setBusy(true); setError(""); setNotice("");
+    event.preventDefault();
+    setBusy(true);
+    setError("");
+    setNotice("");
     try {
-      const response = await fetch("/api/account/returns", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ orderId: returningOrder, reason: returnReason, details: returnDetails }) });
+      const response = await fetch("/api/account/returns", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: returningOrder, reason: returnReason, details: returnDetails }),
+      });
       const result = await response.json();
-      if (!response.ok) throw new Error(result.error ?? "Could not submit your request.");
-      setData((current) => current ? { ...current, returns: [result.returnRequest, ...current.returns] } : current);
-      setReturningOrder(""); setReturnDetails(""); setNotice("Your return request was sent to the store for review.");
-    } catch (requestError) { setError(requestError instanceof Error ? requestError.message : "Could not submit your request."); }
-    finally { setBusy(false); }
+      if (!response.ok) throw new Error(result.error ?? "Could not submit your return request.");
+      setData((current) => (current ? { ...current, returns: [result.returnRequest, ...current.returns] } : current));
+      setReturningOrder("");
+      setReturnDetails("");
+      setNotice("Your return request was submitted. The store concierge will contact you shortly.");
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Could not submit your return request.");
+    } finally {
+      setBusy(false);
+    }
   }
 
-  const tabs: Array<{ id: Tab; label: string; icon: typeof Package }> = [
-    { id: "orders", label: "My orders", icon: Package }, { id: "wishlist", label: "Saved perfumes", icon: Heart }, { id: "addresses", label: "Addresses", icon: MapPin }, { id: "profile", label: "My profile", icon: UserRound },
+  // Derive counts & metadata
+  const ordersCount = data?.orders?.length ?? 0;
+  const wishlistCount = data?.wishlist?.length ?? 0;
+  const addressesCount = data?.addresses?.length ?? 0;
+  const displayName = profile.fullName.trim() || email.split("@")[0] || "Customer";
+  const avatarLetter = (displayName[0] || "F").toUpperCase();
+
+  const filteredOrders = (data?.orders || []).filter((o) => {
+    if (orderFilter === "in_transit") {
+      return ["processing", "packed", "shipped", "out_for_delivery"].includes(o.status);
+    }
+    if (orderFilter === "delivered") {
+      return o.status === "delivered";
+    }
+    return true;
+  });
+
+  const faqs = [
+    {
+      q: "How long does standard delivery take?",
+      a: "All Flovexa orders are dispatched within 24 hours from our luxury fragrance atelier. Standard metro delivery arrives in 2-3 business days, and rest of India takes 3-5 business days via BlueDart & Delhivery Express.",
+    },
+    {
+      q: "Are Flovexa perfumes 100% genuine and original?",
+      a: "Yes. Every perfume is formulated, batch-tested, and matured in certified artisanal laboratories using pure French essential oils and natural extracts with IFRA compliance.",
+    },
+    {
+      q: "What is your return & replacement policy?",
+      a: "We offer hassle-free 7-day replacements for any items that arrive broken, leaking, or damaged in transit. You can initiate a replacement right from the 'My Orders' tab above.",
+    },
   ];
 
-  return <section className="customer-account"><span className="eyebrow">YOUR FLOVEXA ACCOUNT</span><h1>Welcome back.</h1><p>{email} · Manage your orders, saved perfumes and delivery details.</p>
-    <nav className="account-tabs" aria-label="Customer account">{tabs.map(({ id, label, icon: Icon }) => <button key={id} className={tab === id ? "selected" : ""} onClick={() => { setTab(id); setError(""); setNotice(""); }}><Icon size={14}/>{label}{id === "orders" && data ? <small>{data.orders.length}</small> : null}</button>)}</nav>
-    {error && <div className="account-feedback account-error" role="alert">{error}</div>}{notice && <div className="account-feedback" role="status">{notice}</div>}
-    {!data ? <div className="admin-panel account-loading">{error ? "Account details could not be loaded." : "Loading your account…"}</div> : <>
-      {tab === "orders" && <section className="admin-panel account-orders"><div className="admin-panel-tools"><h2>My orders</h2><Link href="/orders">Track an order</Link></div>
-        {!data.orders.length ? <div className="admin-empty"><b>No orders yet</b><span>Once you place an order with this email address, it will appear here.</span><Link className="primary-button" href="/#collection">Explore perfumes</Link></div> : <div className="orders-list">{data.orders.map((order) => {
-          const returnRequest = data.returns.find((item) => item.order_id === order.id);
-          const canRequestReturn = order.payment_status === "captured" && !["cancelled", "refunded", "pending_payment", "payment_review"].includes(order.status);
-          return <article className="order-card" key={order.order_number}><div className="order-card-head"><div><span>{order.order_number}</span><small>{new Date(order.created_at).toLocaleDateString("en-IN", { dateStyle: "long" })}</small></div><span className={`order-status status-${order.status}`}>{order.status.replaceAll("_", " ")}</span></div><div className="order-card-items">{order.order_items.map((item, index) => <span key={`${order.order_number}-${index}`}>{item.product_name} · {item.size} × {item.quantity}</span>)}</div><div className="account-order-bottom"><span className={`payment-pill payment-${order.payment_status}`}>{order.payment_status.replaceAll("_", " ")}</span><strong>{money(order.total_paise)}</strong>{order.seller_fulfillments.length ? order.seller_fulfillments.map((shipment, index) => <span className="account-seller-shipment" key={index}>{shipment.seller_profiles?.store_name || "Seller shipment"} · {shipment.status.replaceAll("_", " ")}{shipment.tracking_url && <a href={shipment.tracking_url} target="_blank" rel="noreferrer">Track <ArrowRight size={13}/></a>}</span>) : order.tracking_url && <a href={order.tracking_url} target="_blank" rel="noreferrer">Track shipment <ArrowRight size={13}/></a>}{canRequestReturn && !returnRequest && <button onClick={() => { setReturningOrder(order.id); setReturnDetails(""); }}>Request a return</button>}{returnRequest && <span className="return-status">Return: {returnRequest.status.replaceAll("_", " ")}</span>}</div>
-            {returningOrder === order.id && <form className="return-request-form" onSubmit={submitReturn}><label>Why are you contacting us?<select value={returnReason} onChange={(event) => setReturnReason(event.target.value)}><option value="damaged">Item arrived damaged</option><option value="wrong_item">I received the wrong item</option><option value="quality">Product quality concern</option><option value="other">Other</option></select></label><label>Details<textarea maxLength={1000} rows={3} value={returnDetails} onChange={(event) => setReturnDetails(event.target.value)} placeholder="Add helpful details for the store team."/></label><div><button type="submit" disabled={busy}>{busy ? "Sending…" : "Send return request"}</button><button type="button" onClick={() => setReturningOrder("")}>Cancel</button></div><small>The store team will review your request and contact you about next steps. Refunds are not issued automatically.</small></form>}
-          </article>;
-        })}</div>}
-      </section>}
-      {tab === "wishlist" && <section className="admin-panel account-orders"><div className="admin-panel-tools"><h2>Saved perfumes</h2><Link href="/#collection">Discover more <ArrowRight size={13}/></Link></div>{!data.wishlist.length ? <div className="admin-empty"><Heart size={22}/><b>Your saved perfumes will appear here</b><span>Save a scent from the collection to keep it close.</span><Link className="primary-button" href="/#collection">Explore perfumes</Link></div> : <div className="wishlist-grid">{data.wishlist.map((item) => <article className="wishlist-card" key={item.product_id}><Link href={`/products/${item.slug}`}><div className="wishlist-art" style={{ "--juice": item.accent } as React.CSSProperties}>{item.image_url ? <Image src={item.image_url} alt={item.name} width={240} height={240} unoptimized/> : <span>F.</span>}</div><small>{item.category} · {item.size}</small><b>{item.name}</b><strong>{money(item.price_paise)}</strong></Link><button onClick={() => removeWishlist(item.product_id)}>Remove</button></article>)}</div>}</section>}
-      {tab === "addresses" && <section className="admin-panel account-orders"><div className="admin-panel-tools"><h2>Delivery addresses</h2>{!editingAddress && <button onClick={() => { setAddress({ ...emptyAddress, full_name: data.profile.full_name, phone: data.profile.phone, is_default: data.addresses.length === 0 }); setEditingAddress(true); }}>Add an address</button>}</div>
-        {editingAddress && <form className="customer-data-form" onSubmit={saveAddress}><div className="edit-fields"><label>Address label<input required maxLength={40} value={address.label} onChange={(event) => setAddress({ ...address, label: event.target.value })} placeholder="Home, work…"/></label><label>Full name<input required maxLength={100} autoComplete="name" value={address.full_name} onChange={(event) => setAddress({ ...address, full_name: event.target.value })}/></label><label>Mobile number<input required type="tel" maxLength={20} value={address.phone} onChange={(event) => setAddress({ ...address, phone: event.target.value })}/></label><label className="edit-wide">Address line 1<input required maxLength={150} autoComplete="address-line1" value={address.line1} onChange={(event) => setAddress({ ...address, line1: event.target.value })}/></label><label className="edit-wide">Apartment, suite or landmark<input maxLength={150} autoComplete="address-line2" value={address.line2} onChange={(event) => setAddress({ ...address, line2: event.target.value })}/></label><label>City<input required maxLength={80} autoComplete="address-level2" value={address.city} onChange={(event) => setAddress({ ...address, city: event.target.value })}/></label><label>State<input required maxLength={80} autoComplete="address-level1" value={address.state} onChange={(event) => setAddress({ ...address, state: event.target.value })}/></label><label>PIN code<input required pattern="\d{6}" maxLength={6} inputMode="numeric" autoComplete="postal-code" value={address.pincode} onChange={(event) => setAddress({ ...address, pincode: event.target.value })}/></label></div><label className="edit-check"><input type="checkbox" checked={address.is_default} onChange={(event) => setAddress({ ...address, is_default: event.target.checked })}/> Set as default delivery address</label><div className="customer-form-actions"><button className="admin-primary" disabled={busy}>{busy ? "Saving…" : "Save address"}</button><button type="button" onClick={() => { setEditingAddress(false); setAddress(emptyAddress); }}>Cancel</button></div></form>}
-        {!data.addresses.length && !editingAddress ? <div className="admin-empty"><MapPin size={22}/><b>No saved addresses</b><span>Save a delivery address to make future checkouts quicker.</span><button onClick={() => { setAddress({ ...emptyAddress, full_name: data.profile.full_name, phone: data.profile.phone, is_default: true }); setEditingAddress(true); }}>Add a delivery address</button></div> : <div className="saved-address-list">{data.addresses.map((item) => <article className="saved-address-card" key={item.id}><div><b>{item.label}</b>{item.is_default && <small>DEFAULT</small>}</div><strong>{item.full_name}</strong><span>{item.phone}</span><p>{item.line1}{item.line2 ? `, ${item.line2}` : ""}<br/>{item.city}, {item.state} {item.pincode}</p><div><button onClick={() => { setAddress(item); setEditingAddress(true); }}>Edit</button><button onClick={() => void deleteAddress(item.id)}>Remove</button></div></article>)}</div>}
-      </section>}
-      {tab === "profile" && <section className="admin-panel account-orders"><div className="admin-panel-tools"><h2>Personal details</h2></div><form className="customer-data-form" onSubmit={saveProfile}><p>Your email address is used to match orders to your account: <b>{data.email}</b></p><div className="edit-fields"><label>Full name<input required minLength={2} maxLength={100} autoComplete="name" value={profile.fullName} onChange={(event) => setProfile({ ...profile, fullName: event.target.value })}/></label><label>Mobile number<input required type="tel" autoComplete="tel" value={profile.phone} onChange={(event) => setProfile({ ...profile, phone: event.target.value })}/></label></div><button className="admin-primary" disabled={busy}>{busy ? "Saving…" : "Save profile"}</button></form></section>}
-    </>}
-  </section>;
+  return (
+    <div className="account-container-v3">
+      {/* 1. VIP Customer Hero Header */}
+      <div className="customer-hero-card">
+        <div className="customer-hero-profile">
+          <div className="customer-avatar-wrap">
+            <span className="customer-avatar-letter">{avatarLetter}</span>
+            <span className="customer-avatar-badge" title="Privilege Member">
+              <Sparkles size={11} />
+            </span>
+          </div>
+          <div className="customer-hero-info">
+            <div className="customer-tier-tag">
+              <Sparkles size={11} /> FLOVEXA PRIVILEGE NOIR CLUB
+            </div>
+            <h1 className="customer-hero-title">Welcome back, {displayName}</h1>
+            <p className="customer-hero-sub">
+              <span>{email}</span>
+              {profile.phone ? (
+                <>
+                  <span className="hero-bullet">•</span>
+                  <span>{profile.phone}</span>
+                </>
+              ) : null}
+            </p>
+          </div>
+        </div>
+
+        <div className="customer-hero-stats">
+          <button
+            type="button"
+            className={`hero-stat-card ${tab === "orders" ? "active" : ""}`}
+            onClick={() => setTab("orders")}
+          >
+            <div className="hero-stat-icon-wrap">
+              <Package size={18} />
+            </div>
+            <div className="hero-stat-text">
+              <strong className="hero-stat-num">{ordersCount}</strong>
+              <span className="hero-stat-lbl">Orders Placed</span>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            className={`hero-stat-card ${tab === "wishlist" ? "active" : ""}`}
+            onClick={() => setTab("wishlist")}
+          >
+            <div className="hero-stat-icon-wrap">
+              <Heart size={18} />
+            </div>
+            <div className="hero-stat-text">
+              <strong className="hero-stat-num">{wishlistCount}</strong>
+              <span className="hero-stat-lbl">Saved Scents</span>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            className={`hero-stat-card ${tab === "addresses" ? "active" : ""}`}
+            onClick={() => setTab("addresses")}
+          >
+            <div className="hero-stat-icon-wrap">
+              <MapPin size={18} />
+            </div>
+            <div className="hero-stat-text">
+              <strong className="hero-stat-num">{addressesCount}</strong>
+              <span className="hero-stat-lbl">Addresses</span>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      {/* 2. Notifications / Feedback Toasts */}
+      {error && (
+        <div className="account-toast-error" role="alert">
+          {error}
+        </div>
+      )}
+      {notice && (
+        <div className="account-toast-success" role="status">
+          <Check size={16} />
+          <span>{notice}</span>
+        </div>
+      )}
+
+      {/* Loading Skeleton */}
+      {loading && !data && (
+        <div className="account-loading-card">
+          <div className="account-loading-spinner" />
+          <p>Loading your fragrance wardrobe &amp; details…</p>
+        </div>
+      )}
+
+      {/* 3. Main Dashboard Two-Column Grid */}
+      {data && (
+        <div className="account-layout-grid">
+          {/* LEFT SIDEBAR NAVIGATION */}
+          <aside className="account-sidebar">
+            <div className="account-menu-card">
+              <div className="account-menu-label">CUSTOMER MENU</div>
+              <nav className="account-sidebar-nav" aria-label="Customer portal menu">
+                <button
+                  type="button"
+                  className={`account-nav-item ${tab === "orders" ? "active" : ""}`}
+                  onClick={() => {
+                    setTab("orders");
+                    setError("");
+                    setNotice("");
+                  }}
+                >
+                  <Package size={17} />
+                  <span>My Orders &amp; Tracking</span>
+                  {ordersCount > 0 && <span className="nav-badge">{ordersCount}</span>}
+                </button>
+
+                <button
+                  type="button"
+                  className={`account-nav-item ${tab === "wishlist" ? "active" : ""}`}
+                  onClick={() => {
+                    setTab("wishlist");
+                    setError("");
+                    setNotice("");
+                  }}
+                >
+                  <Heart size={17} />
+                  <span>Saved Fragrances</span>
+                  {wishlistCount > 0 && <span className="nav-badge">{wishlistCount}</span>}
+                </button>
+
+                <button
+                  type="button"
+                  className={`account-nav-item ${tab === "addresses" ? "active" : ""}`}
+                  onClick={() => {
+                    setTab("addresses");
+                    setError("");
+                    setNotice("");
+                  }}
+                >
+                  <MapPin size={17} />
+                  <span>Delivery Addresses</span>
+                  {addressesCount > 0 && <span className="nav-badge">{addressesCount}</span>}
+                </button>
+
+                <button
+                  type="button"
+                  className={`account-nav-item ${tab === "profile" ? "active" : ""}`}
+                  onClick={() => {
+                    setTab("profile");
+                    setError("");
+                    setNotice("");
+                  }}
+                >
+                  <UserRound size={17} />
+                  <span>Profile &amp; Details</span>
+                </button>
+
+                <div className="sidebar-divider" />
+
+                <button
+                  type="button"
+                  className={`account-nav-item ${tab === "privilege" ? "active" : ""}`}
+                  onClick={() => {
+                    setTab("privilege");
+                    setError("");
+                    setNotice("");
+                  }}
+                >
+                  <Award size={17} />
+                  <span>Privilege Noir Perks</span>
+                  <span className="nav-badge-gold">VIP</span>
+                </button>
+
+                <button
+                  type="button"
+                  className={`account-nav-item ${tab === "concierge" ? "active" : ""}`}
+                  onClick={() => {
+                    setTab("concierge");
+                    setError("");
+                    setNotice("");
+                  }}
+                >
+                  <HelpCircle size={17} />
+                  <span>Concierge &amp; Help</span>
+                </button>
+              </nav>
+            </div>
+
+            {/* Privilege Membership Mini Card */}
+            <div className="privilege-mini-card">
+              <div className="privilege-mini-top">
+                <span className="privilege-mini-tag">MEMBERSHIP</span>
+                <Sparkles size={14} className="privilege-star" />
+              </div>
+              <h4 className="privilege-mini-title">Privilege Noir Member</h4>
+              <p className="privilege-mini-desc">
+                Complimentary 2ml artisanal tester vials with every order + Priority shipping across India.
+              </p>
+              <button
+                type="button"
+                className="privilege-mini-link"
+                onClick={() => setTab("privilege")}
+              >
+                View all VIP perks <ChevronRight size={13} />
+              </button>
+            </div>
+
+            {/* Quick WhatsApp Concierge Button */}
+            <a
+              href="https://wa.me/919876543210?text=Hello%20Flovexa%20Concierge,%20I%20have%20an%20inquiry%20regarding%20my%20perfume%20account"
+              target="_blank"
+              rel="noreferrer"
+              className="account-whatsapp-card"
+            >
+              <div className="whatsapp-icon-circle">
+                <MessageCircle size={18} />
+              </div>
+              <div className="whatsapp-card-text">
+                <strong>Need Fragrance Advice?</strong>
+                <span>Chat with Concierge on WhatsApp</span>
+              </div>
+            </a>
+          </aside>
+
+          {/* RIGHT MAIN CONTENT AREA */}
+          <section className="account-main-pane">
+            {/* TAB 1: MY ORDERS */}
+            {tab === "orders" && (
+              <div className="account-tab-card">
+                <div className="tab-card-header">
+                  <div>
+                    <h2 className="tab-card-title">My Orders &amp; Live Tracking</h2>
+                    <p className="tab-card-sub">
+                      Track your fragrance shipments, view receipts, and manage deliveries.
+                    </p>
+                  </div>
+                  <div className="order-filter-pills">
+                    <button
+                      type="button"
+                      className={`filter-pill ${orderFilter === "all" ? "active" : ""}`}
+                      onClick={() => setOrderFilter("all")}
+                    >
+                      All ({ordersCount})
+                    </button>
+                    <button
+                      type="button"
+                      className={`filter-pill ${orderFilter === "in_transit" ? "active" : ""}`}
+                      onClick={() => setOrderFilter("in_transit")}
+                    >
+                      In Transit
+                    </button>
+                    <button
+                      type="button"
+                      className={`filter-pill ${orderFilter === "delivered" ? "active" : ""}`}
+                      onClick={() => setOrderFilter("delivered")}
+                    >
+                      Delivered
+                    </button>
+                  </div>
+                </div>
+
+                {filteredOrders.length === 0 ? (
+                  <div className="order-empty-experience">
+                    <div className="order-empty-hero">
+                      <div className="order-empty-icon-ring">
+                        <Package size={34} />
+                      </div>
+                      <h3>Your Fragrance Wardrobe is Waiting</h3>
+                      <p>
+                        You haven’t placed any orders yet. Every handcrafted Flovexa fragrance arrives in our
+                        signature rigid gold-embossed gift box with 2 complimentary tester vials.
+                      </p>
+                      <Link href="/store" className="primary-gold-btn">
+                        <ShoppingBag size={15} /> Explore Fragrance Collection
+                      </Link>
+                    </div>
+
+                    {/* Curated Bestseller Perfumes Showcase */}
+                    <div className="curated-bestsellers-box">
+                      <div className="bestsellers-head">
+                        <h4>✨ Popular Signature Fragrances to Discover</h4>
+                        <Link href="/store" className="bestsellers-link">
+                          View all perfumes <ArrowRight size={13} />
+                        </Link>
+                      </div>
+
+                      <div className="bestsellers-grid">
+                        {CURATED_RECOMMENDATIONS.map((perfume) => (
+                          <div key={perfume.id} className="bestseller-item-card">
+                            <div className="bestseller-thumb">
+                              <Image
+                                src={perfume.imageUrl}
+                                alt={perfume.name}
+                                width={160}
+                                height={160}
+                                unoptimized
+                                className="bestseller-img"
+                              />
+                            </div>
+                            <div className="bestseller-info">
+                              <span className="bestseller-cat">
+                                {perfume.category} · {perfume.size}
+                              </span>
+                              <strong className="bestseller-title">{perfume.name}</strong>
+                              <div className="bestseller-price-row">
+                                <span className="bestseller-price">{money(perfume.pricePaise)}</span>
+                                <del className="bestseller-mrp">{money(perfume.mrpPaise)}</del>
+                              </div>
+                              <div className="bestseller-notes-tags">
+                                {perfume.notes.slice(0, 2).map((n) => (
+                                  <span key={n} className="note-pill">
+                                    {n}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="bestseller-actions">
+                              <button
+                                type="button"
+                                className="bestseller-btn-add"
+                                onClick={() => handleAddToCart({ product_id: perfume.id, name: perfume.name })}
+                              >
+                                {addedProductId === perfume.id ? (
+                                  <>
+                                    <Check size={13} /> Added!
+                                  </>
+                                ) : (
+                                  <>
+                                    <ShoppingBag size={13} /> Add to Bag
+                                  </>
+                                )}
+                              </button>
+                              <Link href={`/products/${perfume.slug}`} className="bestseller-btn-view">
+                                View
+                              </Link>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="orders-rich-list">
+                    {filteredOrders.map((order) => {
+                      const returnRequest = data.returns.find((item) => item.order_id === order.id);
+                      const canReturn =
+                        order.payment_status === "captured" &&
+                        !["cancelled", "refunded", "pending_payment"].includes(order.status);
+                      const orderDate = new Date(order.created_at).toLocaleDateString("en-IN", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      });
+
+                      const isDelivered = order.status === "delivered";
+                      const isShipped = ["shipped", "out_for_delivery"].includes(order.status);
+                      const isConfirmed = ["confirmed", "processing", "packed"].includes(order.status) || isShipped || isDelivered;
+
+                      const totalBottles = order.order_items.reduce((sum, item) => sum + (item.quantity || 1), 0);
+                      const isCombo = totalBottles > 1 || order.order_items.length > 1;
+
+                      return (
+                        <div key={order.order_number} className="order-rich-card">
+                          <div className="order-card-topbar">
+                            <div className="order-topbar-meta">
+                              <span className="order-badge-num">Order #{order.order_number}</span>
+                              <span className="order-placed-date">Placed on {orderDate}</span>
+                            </div>
+                            <div className="order-topbar-right">
+                              {isCombo && (
+                                <span className="order-combo-micro-tag">
+                                  <Sparkles size={11} /> Combo Pack ({totalBottles})
+                                </span>
+                              )}
+                              <span className={`order-status-badge status-${order.status}`}>
+                                {order.status.replaceAll("_", " ")}
+                              </span>
+                              <strong className="order-total-price">{money(order.total_paise)}</strong>
+                            </div>
+                          </div>
+
+                          {/* 4-Step Visual Delivery Progress */}
+                          <div className="order-progress-stepper">
+                            <div className="stepper-step completed">
+                              <div className="stepper-circle">✓</div>
+                              <span>Placed</span>
+                            </div>
+                            <div className={`stepper-line ${isConfirmed ? "active" : ""}`} />
+                            <div className={`stepper-step ${isConfirmed ? "completed" : ""}`}>
+                              <div className="stepper-circle">{isConfirmed ? "✓" : "2"}</div>
+                              <span>Confirmed</span>
+                            </div>
+                            <div className={`stepper-line ${isShipped ? "active" : ""}`} />
+                            <div className={`stepper-step ${isShipped ? "completed" : ""}`}>
+                              <div className="stepper-circle">{isShipped ? "✓" : "3"}</div>
+                              <span>Dispatched</span>
+                            </div>
+                            <div className={`stepper-line ${isDelivered ? "active" : ""}`} />
+                            <div className={`stepper-step ${isDelivered ? "completed" : ""}`}>
+                              <div className="stepper-circle">{isDelivered ? "✓" : "4"}</div>
+                              <span>Delivered</span>
+                            </div>
+                          </div>
+
+                          {/* Multi-Perfume Consolidated Combo Banner */}
+                          {isCombo && (
+                            <div className="order-combo-banner">
+                              <div className="order-combo-badge-row">
+                                <span className="order-combo-pill">
+                                  <Sparkles size={12} /> Multi-Perfume Combo ({totalBottles} Fragrances)
+                                </span>
+                                <span className="order-combo-label-tag">
+                                  📦 1 Consolidated Shipping Label
+                                </span>
+                              </div>
+                              <p className="order-combo-desc">
+                                All {totalBottles} perfumes are consolidated and packed together in 1 signature luxury presentation box under <strong>1 single shipping label</strong> to your delivery address.
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Order Products List */}
+                          <div className="order-items-grid">
+                            {order.order_items.map((item, idx) => (
+                              <div key={`${order.order_number}-${idx}`} className="order-item-chip">
+                                <div className="order-item-bullet-icon">
+                                  <Package size={14} />
+                                </div>
+                                <div className="order-item-desc">
+                                  <strong className="item-name">{item.product_name}</strong>
+                                  <span className="item-meta">
+                                    Size: {item.size} · Quantity: {item.quantity}
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Order Footer & Actions */}
+                          <div className="order-card-actions">
+                            <div className="order-shipment-meta">
+                              {order.tracking_url ? (
+                                <a
+                                  href={order.tracking_url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="track-package-btn"
+                                >
+                                  <ExternalLink size={13} />
+                                  <span>Track Courier Package</span>
+                                </a>
+                              ) : (
+                                <span className="order-dispatch-text">
+                                  <Truck size={14} /> Being carefully packed at our fragrance atelier
+                                </span>
+                              )}
+
+                              <button
+                                type="button"
+                                className="order-btn-view-label"
+                                onClick={() => setSelectedLabelOrder(order)}
+                                title="View consolidated parcel shipping label & packing manifest"
+                              >
+                                <Tag size={13} />
+                                <span>{isCombo ? `View Combo Shipping Label (${totalBottles} in 1 Box)` : "View Shipping Label"}</span>
+                              </button>
+                            </div>
+
+                            <div className="order-support-actions">
+                              {canReturn && !returnRequest && (
+                                <button
+                                  type="button"
+                                  className="return-btn-link"
+                                  onClick={() => {
+                                    setReturningOrder(order.id);
+                                    setReturnDetails("");
+                                  }}
+                                >
+                                  Request Return / Help
+                                </button>
+                              )}
+                              {returnRequest && (
+                                <span className="return-status-pill">
+                                  Return Status: {returnRequest.status.replaceAll("_", " ")}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Return Drawer */}
+                          {returningOrder === order.id && (
+                            <form className="order-return-form" onSubmit={submitReturn}>
+                              <h5>Request Return or Replacement for #{order.order_number}</h5>
+                              <label>
+                                Reason for request *
+                                <select
+                                  value={returnReason}
+                                  onChange={(e) => setReturnReason(e.target.value)}
+                                >
+                                  <option value="damaged">Perfume arrived damaged or broken bottle</option>
+                                  <option value="wrong_item">Received different perfume than ordered</option>
+                                  <option value="quality">Atomizer or spray nozzle issue</option>
+                                  <option value="other">Other reason</option>
+                                </select>
+                              </label>
+                              <label>
+                                Describe details &amp; batch details *
+                                <textarea
+                                  required
+                                  maxLength={1000}
+                                  rows={3}
+                                  value={returnDetails}
+                                  onChange={(e) => setReturnDetails(e.target.value)}
+                                  placeholder="Please provide details regarding the bottle or courier issue..."
+                                />
+                              </label>
+                              <div className="return-form-btns">
+                                <button type="submit" className="primary-gold-btn" disabled={busy}>
+                                  {busy ? "Submitting…" : "Submit Return Request"}
+                                </button>
+                                <button
+                                  type="button"
+                                  className="secondary-btn"
+                                  onClick={() => setReturningOrder("")}
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </form>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* TAB 2: SAVED FRAGRANCES (WISHLIST) */}
+            {tab === "wishlist" && (
+              <div className="account-tab-card">
+                <div className="tab-card-header">
+                  <div>
+                    <h2 className="tab-card-title">Saved Fragrances &amp; Wishlist ({wishlistCount})</h2>
+                    <p className="tab-card-sub">
+                      Your curated collection of artisanal fragrances ready to purchase.
+                    </p>
+                  </div>
+                  <Link href="/store" className="secondary-btn">
+                    Browse More Scents <ArrowRight size={13} />
+                  </Link>
+                </div>
+
+                {data.wishlist.length === 0 ? (
+                  <div className="order-empty-hero">
+                    <div className="order-empty-icon-ring">
+                      <Heart size={34} />
+                    </div>
+                    <h3>Your Saved Fragrance Collection is Empty</h3>
+                    <p>
+                      Tap the heart ♡ icon on any fragrance in the store to save it here for later.
+                    </p>
+                    <Link href="/store" className="primary-gold-btn">
+                      <ShoppingBag size={15} /> Discover Signature Perfumes
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="wishlist-rich-grid">
+                    {data.wishlist.map((item) => {
+                      const imageSrc = resolvePrimaryImage(item.image_url);
+                      return (
+                        <div key={item.product_id} className="wishlist-rich-card">
+                          <Link href={`/products/${item.slug}`} className="wishlist-thumb-wrap">
+                            {imageSrc ? (
+                              <Image
+                                src={imageSrc}
+                                alt={item.name}
+                                width={220}
+                                height={220}
+                                unoptimized
+                                className="wishlist-image"
+                              />
+                            ) : (
+                              <div
+                                className="wishlist-fallback-box"
+                                style={{ background: item.accent || "#ad7045" }}
+                              >
+                                <span>F.</span>
+                              </div>
+                            )}
+                          </Link>
+
+                          <div className="wishlist-details">
+                            <span className="wishlist-category">
+                              {item.category} · {item.size}
+                            </span>
+                            <Link href={`/products/${item.slug}`} className="wishlist-name">
+                              {item.name}
+                            </Link>
+                            <strong className="wishlist-price">{money(item.price_paise)}</strong>
+                          </div>
+
+                          <div className="wishlist-card-actions">
+                            <button
+                              type="button"
+                              className="wishlist-add-bag-btn"
+                              onClick={() => handleAddToCart({ product_id: item.product_id, name: item.name })}
+                            >
+                              {addedProductId === item.product_id ? (
+                                <>
+                                  <Check size={14} /> In Shopping Bag!
+                                </>
+                              ) : (
+                                <>
+                                  <ShoppingBag size={14} /> Move to Bag
+                                </>
+                              )}
+                            </button>
+                            <button
+                              type="button"
+                              className="wishlist-delete-btn"
+                              onClick={() => void removeWishlist(item.product_id)}
+                              title="Remove from saved"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* TAB 3: DELIVERY ADDRESSES */}
+            {tab === "addresses" && (
+              <div className="account-tab-card">
+                <div className="tab-card-header">
+                  <div>
+                    <h2 className="tab-card-title">Saved Delivery Addresses ({addressesCount})</h2>
+                    <p className="tab-card-sub">
+                      Manage delivery destinations across India for 1-click expedited checkout.
+                    </p>
+                  </div>
+                  {!editingAddress && (
+                    <button
+                      type="button"
+                      className="primary-gold-btn"
+                      onClick={() => {
+                        setAddress({
+                          ...emptyAddress,
+                          full_name: profile.fullName || "",
+                          phone: profile.phone || "",
+                          is_default: data.addresses.length === 0,
+                        });
+                        setEditingAddress(true);
+                      }}
+                    >
+                      <Plus size={15} /> Add New Address
+                    </button>
+                  )}
+                </div>
+
+                {editingAddress && (
+                  <form className="rich-address-form" onSubmit={saveAddress}>
+                    <h3>{address.id ? "Edit Delivery Address" : "Add a New Delivery Address"}</h3>
+
+                    <div className="form-fields-grid-2">
+                      <label>
+                        Address Tag / Label *
+                        <input
+                          required
+                          maxLength={40}
+                          value={address.label}
+                          onChange={(e) => setAddress({ ...address, label: e.target.value })}
+                          placeholder="e.g. Home, Office, Studio"
+                        />
+                      </label>
+
+                      <label>
+                        Recipient Full Name *
+                        <input
+                          required
+                          maxLength={100}
+                          value={address.full_name}
+                          onChange={(e) => setAddress({ ...address, full_name: e.target.value })}
+                          placeholder="Recipient name for parcel"
+                        />
+                      </label>
+
+                      <label>
+                        Contact Mobile Phone *
+                        <input
+                          required
+                          type="tel"
+                          maxLength={20}
+                          value={address.phone}
+                          onChange={(e) => setAddress({ ...address, phone: e.target.value })}
+                          placeholder="+91 98765 43210"
+                        />
+                      </label>
+
+                      <label>
+                        PIN Code (6 digits) *
+                        <input
+                          required
+                          pattern="\d{6}"
+                          maxLength={6}
+                          inputMode="numeric"
+                          value={address.pincode}
+                          onChange={(e) => setAddress({ ...address, pincode: e.target.value })}
+                          placeholder="e.g. 400001"
+                        />
+                      </label>
+
+                      <label className="span-full">
+                        Flat / House No. / Building / Street Address *
+                        <input
+                          required
+                          maxLength={150}
+                          value={address.line1}
+                          onChange={(e) => setAddress({ ...address, line1: e.target.value })}
+                          placeholder="e.g. 402, Royale Heights, Linking Road"
+                        />
+                      </label>
+
+                      <label className="span-full">
+                        Locality / Landmark
+                        <input
+                          maxLength={150}
+                          value={address.line2}
+                          onChange={(e) => setAddress({ ...address, line2: e.target.value })}
+                          placeholder="e.g. Near Rose Garden, Bandra West"
+                        />
+                      </label>
+
+                      <label>
+                        City *
+                        <input
+                          required
+                          maxLength={80}
+                          value={address.city}
+                          onChange={(e) => setAddress({ ...address, city: e.target.value })}
+                          placeholder="e.g. Mumbai"
+                        />
+                      </label>
+
+                      <label>
+                        State *
+                        <input
+                          required
+                          maxLength={80}
+                          value={address.state}
+                          onChange={(e) => setAddress({ ...address, state: e.target.value })}
+                          placeholder="e.g. Maharashtra"
+                        />
+                      </label>
+                    </div>
+
+                    <label className="checkbox-gold-label">
+                      <input
+                        type="checkbox"
+                        checked={address.is_default}
+                        onChange={(e) => setAddress({ ...address, is_default: e.target.checked })}
+                      />
+                      <span>Set this as my default delivery address</span>
+                    </label>
+
+                    <div className="form-action-row">
+                      <button type="submit" className="primary-gold-btn" disabled={busy}>
+                        {busy ? "Saving…" : "Save Address"}
+                      </button>
+                      <button
+                        type="button"
+                        className="secondary-btn"
+                        onClick={() => {
+                          setEditingAddress(false);
+                          setAddress(emptyAddress);
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                {data.addresses.length === 0 && !editingAddress ? (
+                  <div className="order-empty-hero">
+                    <div className="order-empty-icon-ring">
+                      <MapPin size={34} />
+                    </div>
+                    <h3>No Saved Delivery Addresses</h3>
+                    <p>
+                      Save your home, office, or gifting address to enjoy rapid 1-click fragrance checkout.
+                    </p>
+                    <button
+                      type="button"
+                      className="primary-gold-btn"
+                      onClick={() => {
+                        setAddress({
+                          ...emptyAddress,
+                          full_name: profile.fullName || "",
+                          phone: profile.phone || "",
+                          is_default: true,
+                        });
+                        setEditingAddress(true);
+                      }}
+                    >
+                      <Plus size={15} /> Add Delivery Address
+                    </button>
+                  </div>
+                ) : (
+                  <div className="address-rich-grid">
+                    {data.addresses.map((item) => (
+                      <div
+                        key={item.id}
+                        className={`address-rich-card ${item.is_default ? "is-default" : ""}`}
+                      >
+                        <div className="address-card-header">
+                          <span className="address-label-badge">{item.label}</span>
+                          {item.is_default && <span className="default-pill">PRIMARY DEFAULT</span>}
+                        </div>
+
+                        <strong className="address-recipient-name">{item.full_name}</strong>
+                        <span className="address-recipient-phone">{item.phone}</span>
+                        <p className="address-full-text">
+                          {item.line1}
+                          {item.line2 ? `, ${item.line2}` : ""}
+                          <br />
+                          {item.city}, {item.state} – {item.pincode}
+                        </p>
+
+                        <div className="address-card-btns">
+                          <button
+                            type="button"
+                            className="address-action-btn"
+                            onClick={() => {
+                              setAddress(item);
+                              setEditingAddress(true);
+                            }}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            className="address-action-btn danger"
+                            onClick={() => void deleteAddress(item.id)}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* TAB 4: PROFILE & PREFERENCES */}
+            {tab === "profile" && (
+              <div className="account-tab-card">
+                <div className="tab-card-header">
+                  <div>
+                    <h2 className="tab-card-title">Personal Profile &amp; Preferences</h2>
+                    <p className="tab-card-sub">
+                      Update your contact information and customize your fragrance journey.
+                    </p>
+                  </div>
+                </div>
+
+                <form className="profile-rich-form" onSubmit={saveProfile}>
+                  <div className="profile-verified-banner">
+                    <div className="verified-icon-wrap">
+                      <ShieldCheck size={20} />
+                    </div>
+                    <div>
+                      <span className="verified-label">Registered Account Email</span>
+                      <strong className="verified-email">{data.email}</strong>
+                      <small className="verified-note">
+                        Order confirmations and courier dispatch receipts are sent here.
+                      </small>
+                    </div>
+                  </div>
+
+                  <div className="form-fields-grid-2">
+                    <label>
+                      Full Name *
+                      <input
+                        required
+                        minLength={2}
+                        maxLength={100}
+                        value={profile.fullName}
+                        onChange={(e) => setProfile({ ...profile, fullName: e.target.value })}
+                        placeholder="e.g. Aryan Sharma"
+                      />
+                    </label>
+
+                    <label>
+                      Contact Mobile Number *
+                      <input
+                        required
+                        type="tel"
+                        value={profile.phone}
+                        onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                        placeholder="+91 98765 43210"
+                      />
+                    </label>
+
+                    <label className="span-full">
+                      Gender
+                      <select
+                        value={profile.gender}
+                        onChange={(e) => setProfile({ ...profile, gender: e.target.value })}
+                      >
+                        <option value="prefer_not_to_say">Prefer not to say</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </label>
+                  </div>
+
+                  <div className="form-action-row">
+                    <button type="submit" className="primary-gold-btn" disabled={busy}>
+                      {busy ? "Saving Changes…" : "Save Profile Details"}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {/* TAB 5: PRIVILEGE NOIR CLUB PERKS */}
+            {tab === "privilege" && (
+              <div className="account-tab-card">
+                <div className="tab-card-header">
+                  <div>
+                    <h2 className="tab-card-title">Flovexa Privilege Noir Club</h2>
+                    <p className="tab-card-sub">
+                      Exclusive rewards, private invitations, and artisanal privileges reserved for you.
+                    </p>
+                  </div>
+                  <span className="privilege-active-tag">
+                    <Sparkles size={12} /> Status: Active Member
+                  </span>
+                </div>
+
+                {/* Metallic VIP Card Graphic */}
+                <div className="privilege-membership-card">
+                  <div className="card-top-row">
+                    <div className="card-logo">FLOVEXA<span>PERFUMES</span></div>
+                    <span className="card-tier-label">NOIR PRIVILEGE</span>
+                  </div>
+                  <div className="card-middle">
+                    <div className="card-chip" />
+                    <span className="card-holder-name">{displayName.toUpperCase()}</span>
+                  </div>
+                  <div className="card-bottom-row">
+                    <span>MEMBER SINCE 2026</span>
+                    <span>TIER: CONNOISSEUR</span>
+                  </div>
+                </div>
+
+                {/* 4 Member Privileges Grid */}
+                <div className="privilege-perks-grid">
+                  <div className="perk-card">
+                    <div className="perk-icon-wrap">
+                      <Sparkles size={20} />
+                    </div>
+                    <h4>Complimentary 2ml Tester Vials</h4>
+                    <p>
+                      Receive two complimentary artisanal 2ml sample sprays with every full-size perfume order to discover new scents.
+                    </p>
+                  </div>
+
+                  <div className="perk-card">
+                    <div className="perk-icon-wrap">
+                      <Truck size={20} />
+                    </div>
+                    <h4>Priority Express Air Courier</h4>
+                    <p>
+                      All your packages receive priority dispatch with BlueDart Air express courier at zero extra shipping charges.
+                    </p>
+                  </div>
+
+                  <div className="perk-card">
+                    <div className="perk-icon-wrap">
+                      <Award size={20} />
+                    </div>
+                    <h4>Early Access to Limited Batches</h4>
+                    <p>
+                      Get 48-hour private early access to small-batch seasonal Extrait de Parfums before public releases.
+                    </p>
+                  </div>
+
+                  <div className="perk-card">
+                    <div className="perk-icon-wrap">
+                      <ShoppingBag size={20} />
+                    </div>
+                    <h4>Handcrafted Gift Presentation</h4>
+                    <p>
+                      Complimentary luxury rigid presentation gift box and wax-sealed handwritten notes for all gift orders.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 6: CONCIERGE & HELP */}
+            {tab === "concierge" && (
+              <div className="account-tab-card">
+                <div className="tab-card-header">
+                  <div>
+                    <h2 className="tab-card-title">Flovexa Concierge &amp; Customer Care</h2>
+                    <p className="tab-card-sub">
+                      Personalized fragrance recommendations, order tracking, and bespoke client support.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="concierge-contact-cards">
+                  <a
+                    href="https://wa.me/919876543210?text=Hello%20Flovexa%20Concierge,%20I%20need%20assistance%20with%20my%20order"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="concierge-box whatsapp"
+                  >
+                    <div className="concierge-box-icon">
+                      <MessageCircle size={22} />
+                    </div>
+                    <div className="concierge-box-text">
+                      <strong>WhatsApp Fragrance Concierge</strong>
+                      <span>+91 98765 43210 · Instant chat assistance</span>
+                    </div>
+                    <ArrowRight size={16} className="concierge-arrow" />
+                  </a>
+
+                  <a href="mailto:concierge@flovexa.com" className="concierge-box email">
+                    <div className="concierge-box-icon">
+                      <HelpCircle size={22} />
+                    </div>
+                    <div className="concierge-box-text">
+                      <strong>Email Support Desk</strong>
+                      <span>concierge@flovexa.com · Replies within 4 hours</span>
+                    </div>
+                    <ArrowRight size={16} className="concierge-arrow" />
+                  </a>
+                </div>
+
+                {/* FAQ Accordion */}
+                <div className="concierge-faqs">
+                  <h3>Frequently Asked Questions</h3>
+                  <div className="faq-list">
+                    {faqs.map((faq, index) => (
+                      <div
+                        key={index}
+                        className={`faq-item ${openFaq === index ? "open" : ""}`}
+                        onClick={() => setOpenFaq(openFaq === index ? null : index)}
+                      >
+                        <div className="faq-question">
+                          <span>{faq.q}</span>
+                          <span className="faq-toggle">{openFaq === index ? "−" : "+"}</span>
+                        </div>
+                        {openFaq === index && <p className="faq-answer">{faq.a}</p>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </section>
+        </div>
+      )}
+      {/* Printable Consolidated Shipping Label Modal */}
+      {selectedLabelOrder && (
+        <ShippingLabelModal
+          order={selectedLabelOrder}
+          fallbackCustomerName={data?.profile.full_name || profile.fullName}
+          fallbackPhone={data?.profile.phone || profile.phone}
+          onClose={() => setSelectedLabelOrder(null)}
+        />
+      )}
+    </div>
+  );
 }

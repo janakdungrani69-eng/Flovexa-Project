@@ -1,25 +1,29 @@
 import type { Metadata } from "next";
+import { siteUrl } from "@/lib/seo";
 import "./globals.css";
 import "./checkout.css";
 import "./product-detail.css";
 import "./operations.css";
 
-const configuredSiteUrl = process.env.NEXT_PUBLIC_SITE_URL;
-const metadataBase = configuredSiteUrl && URL.canParse(configuredSiteUrl)
-  ? new URL(configuredSiteUrl)
-  : new URL("http://localhost:3000");
-
 export const metadata: Metadata = {
-  metadataBase,
-  title: { default: "Flovexa Perfumes — Find your signature scent", template: "%s | Flovexa Perfumes" },
-  description: "Discover thoughtful fragrances, modern attars and scent discovery sets from Flovexa Perfumes.",
+  metadataBase: new URL(siteUrl),
+  title: { default: "Flovexa — Luxury Perfumes & Fragrance Oils", template: "%s | Flovexa Perfumes" },
+  description: "Discover luxury Eau de Parfums and pure concentrated fragrance oils from Flovexa Perfumes.",
   applicationName: "Flovexa Perfumes",
   openGraph: {
-    title: "Flovexa Perfumes — Find your signature scent",
-    description: "A considered collection of fragrances for every mood and moment.",
+    title: "Flovexa — Luxury Perfumes & Fragrance Oils",
+    description: "Discover luxury Eau de Parfums and pure concentrated fragrance oils for every mood and moment.",
     type: "website",
     locale: "en_IN",
+    siteName: "Flovexa Perfumes",
+    url: "/",
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "Flovexa — Luxury Perfumes & Fragrance Oils",
+    description: "Discover luxury Eau de Parfums and pure concentrated fragrance oils for every mood and moment.",
+  },
+  robots: { index: true, follow: true },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

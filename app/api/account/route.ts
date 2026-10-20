@@ -4,7 +4,11 @@ import { createAdminSupabase } from "@/lib/supabase/admin";
 import { getCustomerUser } from "@/lib/supabase/customer-user";
 
 export const runtime = "nodejs";
-const profileSchema = z.object({ fullName: z.string().trim().min(2).max(100), phone: z.string().trim().regex(/^[+\d][\d\s()-]{7,18}$/) }).strict();
+const profileSchema = z.object({
+  fullName: z.string().trim().min(2).max(100),
+  phone: z.string().trim().regex(/^[+\d][\d\s()-]{7,18}$/),
+  gender: z.enum(["male", "female", "other", "prefer_not_to_say"]).default("prefer_not_to_say"),
+}).strict();
 
 export async function GET() {
   const user = await getCustomerUser();
@@ -12,10 +16,10 @@ export async function GET() {
   try {
     const supabase = createAdminSupabase();
     const [profileResult, addressResult, wishlistResult, orderResult, returnsResult] = await Promise.all([
-      supabase.from("customer_profiles").upsert({ user_id: user.id, full_name: user.user_metadata?.full_name ?? "" }, { onConflict: "user_id", ignoreDuplicates: true }).select("user_id"),
+      supabase.from("customer_profiles").upsert({ user_id: user.id, full_name: user.user_metadata?.full_name ?? "", phone: user.user_metadata?.phone ?? "" }, { onConflict: "user_id" }).select("user_id"),
       supabase.from("customer_addresses").select("id, label, full_name, phone, line1, line2, city, state, pincode, is_default").eq("user_id", user.id).order("is_default", { ascending: false }).order("created_at", { ascending: false }),
       supabase.from("customer_wishlist").select("product_id, products(id, slug, name, category, price_paise, size, image_url, accent)").eq("user_id", user.id).order("created_at", { ascending: false }),
-      supabase.from("orders").select("id, order_number, status, payment_status, total_paise, created_at, tracking_carrier, tracking_number, tracking_url, order_items(product_name, size, quantity)").eq("email", (user.email ?? "").toLowerCase()).order("created_at", { ascending: false }).limit(50),
+      supabase.from("orders").select("id, order_number, customer_name, phone, shipping_address, status, payment_status, total_paise, created_at, tracking_carrier, tracking_number, tracking_url, order_items(product_name, size, quantity)").eq("email", (user.email ?? "").toLowerCase()).order("created_at", { ascending: false }).limit(50),
       supabase.from("return_requests").select("id, order_id, reason, details, status, created_at").eq("user_id", user.id).order("created_at", { ascending: false }),
     ]);
     const orderIds = (orderResult.data ?? []).map((order) => order.id);
@@ -23,11 +27,32 @@ export async function GET() {
       ? await supabase.from("seller_fulfillments").select("order_id, status, tracking_carrier, tracking_number, tracking_url, seller_profiles(store_name)").in("order_id", orderIds)
       : { data: [], error: null };
     const failure = profileResult.error ?? addressResult.error ?? wishlistResult.error ?? orderResult.error ?? returnsResult.error ?? shipmentResult.error;
-    if (failure) throw failure;
-    const { data: profile } = await supabase.from("customer_profiles").select("full_name, phone").eq("user_id", user.id).single();
+    if (failure) {
+      console.error("Account query partial failure:", failure);
+      throw failure;
+    }
+    function parsePrimaryImage(imageUrl: string | null): string | null {
+      if (!imageUrl) return null;
+      const trimmed = imageUrl.trim();
+      if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+        try {
+          const parsed = JSON.parse(trimmed);
+          if (Array.isArray(parsed) && parsed.length > 0 && typeof parsed[0] === "string") {
+            return parsed[0];
+          }
+        } catch {}
+      }
+      if (trimmed.includes(",")) {
+        const first = trimmed.split(",")[0]?.trim();
+        if (first) return first;
+      }
+      return trimmed;
+    }
+
+    const { data: profile } = await supabase.from("customer_profiles").select("full_name, phone").eq("user_id", user.id).maybeSingle();
     const wishlist = (wishlistResult.data ?? []).flatMap((entry) => {
       const product = entry.products as unknown as { id: string; slug: string; name: string; category: string; price_paise: number; size: string; image_url: string | null; accent: string } | null;
-      return product ? [{ ...product, product_id: entry.product_id }] : [];
+      return product ? [{ ...product, image_url: parsePrimaryImage(product.image_url), product_id: entry.product_id }] : [];
     });
     const shipmentsByOrder = new Map<string, typeof shipmentResult.data>();
     for (const shipment of shipmentResult.data ?? []) {
@@ -37,14 +62,18 @@ export async function GET() {
     }
     return NextResponse.json({
       email: user.email,
-      profile: profile ?? { full_name: user.user_metadata?.full_name ?? "", phone: "" },
+      profile: {
+        full_name: profile?.full_name || user.user_metadata?.full_name || "",
+        phone: profile?.phone || user.user_metadata?.phone || "",
+        gender: user.user_metadata?.gender ?? "prefer_not_to_say",
+      },
       addresses: addressResult.data ?? [],
       wishlist,
       orders: (orderResult.data ?? []).map((order) => ({ ...order, seller_fulfillments: shipmentsByOrder.get(order.id) ?? [] })),
       returns: returnsResult.data ?? [],
     }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
-    console.error("Customer account could not be loaded", error instanceof Error ? error.message : "Unknown error");
+    console.error("Customer account could not be loaded:", error);
     return NextResponse.json({ error: "Your account data is unavailable. Please confirm the latest account migration has been applied." }, { status: 503 });
   }
 }
@@ -54,7 +83,24 @@ export async function PATCH(request: Request) {
   if (!user) return NextResponse.json({ error: "Sign in to update your profile." }, { status: 401 });
   const parsed = profileSchema.safeParse(await request.json());
   if (!parsed.success) return NextResponse.json({ error: "Enter your name and a valid mobile number." }, { status: 400 });
-  const { error } = await createAdminSupabase().from("customer_profiles").upsert({ user_id: user.id, full_name: parsed.data.fullName, phone: parsed.data.phone, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+  const adminSupabase = createAdminSupabase();
+  const { error } = await adminSupabase.from("customer_profiles").upsert({
+    user_id: user.id,
+    full_name: parsed.data.fullName,
+    phone: parsed.data.phone,
+    updated_at: new Date().toISOString()
+  }, { onConflict: "user_id" });
   if (error) return NextResponse.json({ error: "Could not save your profile." }, { status: 503 });
-  return NextResponse.json({ profile: { full_name: parsed.data.fullName, phone: parsed.data.phone } }, { headers: { "Cache-Control": "no-store" } });
+
+  // Update user metadata in Supabase auth
+  await adminSupabase.auth.admin.updateUserById(user.id, {
+    user_metadata: {
+      ...user.user_metadata,
+      full_name: parsed.data.fullName,
+      phone: parsed.data.phone,
+      gender: parsed.data.gender,
+    }
+  });
+
+  return NextResponse.json({ profile: { full_name: parsed.data.fullName, phone: parsed.data.phone, gender: parsed.data.gender } }, { headers: { "Cache-Control": "no-store" } });
 }

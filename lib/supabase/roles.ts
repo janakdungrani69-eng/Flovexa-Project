@@ -20,5 +20,5 @@ export async function getSignedInUser(): Promise<User | null> {
 }
 
 export function storeRoleHome(role: StoreRole) {
-  return role === "admin" ? "/admin" : role === "seller" ? "/seller" : "/account";
+  return role === "admin" ? "/admin" : "/account";
 }
