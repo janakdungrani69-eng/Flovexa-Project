@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import type { Product } from "@/lib/products";
 
@@ -35,6 +35,18 @@ export default function ProductGallery({ product }: ProductGalleryProps) {
         ];
 
   const [activeIndex, setActiveIndex] = useState(0);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const custom = e as CustomEvent<{ imageUrl?: string }>;
+      if (custom.detail?.imageUrl) {
+        const found = galleryImages.findIndex((img) => img.url === custom.detail?.imageUrl);
+        if (found !== -1) setActiveIndex(found);
+      }
+    };
+    window.addEventListener("flovexa-select-image", handler);
+    return () => window.removeEventListener("flovexa-select-image", handler);
+  }, [galleryImages]);
   const activeImage = galleryImages[activeIndex] || galleryImages[0];
 
   const badgeLabels = galleryImages.map((img, idx) =>

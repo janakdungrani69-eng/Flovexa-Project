@@ -1,6 +1,6 @@
 import "server-only";
 import { createClient } from "@supabase/supabase-js";
-import type { Product } from "@/lib/products";
+import { extractProductVariants, type Product } from "@/lib/products";
 
 function parseStoredImages(imageUrl: string | null): { primary: string | null; all: string[] } {
   if (!imageUrl) return { primary: null, all: [] };
@@ -39,6 +39,15 @@ export async function getProducts(): Promise<Product[]> {
   }
   return (data ?? []).map((product) => {
     const { primary, all } = parseStoredImages(product.image_url);
+    const { cleanDescription, variants } = extractProductVariants(product.description, {
+      size: product.size,
+      pricePaise: product.price_paise,
+      compareAtPaise: product.compare_at_paise ?? undefined,
+      stock: product.stock,
+      imageUrl: primary,
+      images: all,
+    });
+
     return {
       id: product.id,
       slug: product.slug,
@@ -49,13 +58,14 @@ export async function getProducts(): Promise<Product[]> {
       size: product.size,
       concentration: product.concentration,
       notes: product.notes,
-      description: product.description,
+      description: cleanDescription,
       imageUrl: primary,
       images: all,
       accent: product.accent,
       stock: product.stock,
       featured: product.featured,
       active: product.active,
+      variants,
     };
   });
 }

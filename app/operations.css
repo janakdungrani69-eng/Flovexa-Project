@@ -3619,3 +3619,238 @@
 
 
 
+
+/* ==========================================================================
+   FLOVEXA SELLER MULTI-SIZE VARIATIONS MANAGEMENT
+   ========================================================================== */
+.seller-variant-presets-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.seller-variant-presets-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #7a6e65;
+  font-weight: 600;
+}
+
+.seller-variant-presets-btns {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.seller-variant-preset-btn {
+  font-size: 0.76rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  background: #fbf7f4;
+  border: 1px solid #e5d7cc;
+  border-radius: 20px;
+  color: #6e4b2d;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.seller-variant-preset-btn:hover {
+  background: #ad7045;
+  color: #ffffff;
+  border-color: #ad7045;
+}
+
+.seller-variants-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.seller-variant-card {
+  background: #ffffff;
+  border: 1.5px solid #ebd9c8;
+  border-radius: 10px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  transition: border-color 0.2s ease;
+}
+
+.seller-variant-card:hover {
+  border-color: #d1b49c;
+}
+
+.seller-variant-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f2ebe4;
+}
+
+.seller-variant-card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.seller-variant-num-badge {
+  background: #f0e4d8;
+  color: #8c5222;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.seller-variant-primary-badge {
+  background: #e8f5e9;
+  color: #2e7d32;
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+
+.seller-variant-delete-btn {
+  background: none;
+  border: none;
+  color: #c62828;
+  font-size: 0.74rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background 0.15s ease;
+}
+
+.seller-variant-delete-btn:hover {
+  background: #ffebee;
+}
+
+.seller-variant-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+}
+
+.seller-variant-grid .span-full {
+  grid-column: 1 / -1;
+}
+
+.seller-variant-image-control {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.seller-variant-pick-photos {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.seller-variant-pick-photos small {
+  font-size: 0.68rem;
+  color: #777;
+}
+
+.seller-variant-thumb-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.seller-variant-thumb-btn {
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: pointer;
+  padding: 0;
+  line-height: 0;
+  background: #fff;
+  transition: all 0.15s ease;
+}
+
+.seller-variant-thumb-btn.selected {
+  border-color: #ad7045;
+  box-shadow: 0 0 0 2px rgba(173, 112, 69, 0.35);
+}
+
+.seller-variant-thumb-clear {
+  background: none;
+  border: none;
+  font-size: 0.7rem;
+  color: #777;
+  text-decoration: underline;
+  cursor: pointer;
+  margin-left: 4px;
+}
+
+.seller-add-variant-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px;
+  border: 1.5px dashed #ad7045;
+  background: #faf6f2;
+  color: #ad7045;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.82rem;
+  cursor: pointer;
+  margin-top: 14px;
+  transition: all 0.15s ease;
+}
+
+.seller-add-variant-btn:hover {
+  background: #f3e6d8;
+  border-color: #8c5222;
+  color: #8c5222;
+}
+
+.seller-variants-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #faf3ea;
+  border: 1px solid #ebd9c3;
+  color: #9c5c2a;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 4px;
+  margin-top: 4px;
+  width: fit-content;
+}
+
+.seller-variants-count-pill {
+  display: inline-block;
+  background: #f0e6dc;
+  color: #7a4f27;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 10px;
+  margin-top: 3px;
+  width: fit-content;
+}
+
+.seller-stock-breakdown {
+  display: block;
+  font-size: 0.68rem;
+  color: #736d66;
+  margin-top: 3px;
+  font-family: var(--font-mono, monospace);
+}

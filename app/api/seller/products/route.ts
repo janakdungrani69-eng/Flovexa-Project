@@ -1,24 +1,36 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getActiveSeller } from "@/lib/supabase/seller-user";
+import { extractProductVariants, attachVariantsToDescription, type ProductVariant } from "@/lib/products";
+
+const variantItemSchema = z.object({
+  id: z.string().optional(),
+  size: z.string().trim().min(1).max(40),
+  price: z.coerce.number().finite().min(1).max(1000000),
+  compareAtPrice: z.coerce.number().finite().positive().max(1000000).optional().nullable(),
+  stock: z.coerce.number().int().min(0).max(100000).default(10),
+  imageUrl: z.string().optional().nullable(),
+  images: z.array(z.string()).optional(),
+});
 
 const fields = z.object({
   name: z.string().trim().min(2).max(120),
   slug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).max(140),
   category: z.string().trim().min(2).max(60),
-  price: z.coerce.number().finite().min(1).max(1000000),
-  compareAtPrice: z.number().finite().positive().max(1000000).nullable(),
-  size: z.string().trim().min(1).max(40),
+  price: z.coerce.number().finite().min(1).max(1000000).optional(),
+  compareAtPrice: z.coerce.number().finite().positive().max(1000000).nullable().optional(),
+  size: z.string().trim().min(1).max(40).optional(),
   concentration: z.string().trim().min(1).max(80),
-  notes: z.string().trim().min(2).max(240),
-  description: z.string().trim().min(10).max(1600),
+  notes: z.string().trim().min(2).max(500),
+  description: z.string().trim().min(10).max(32000),
   imageUrl: z.string().max(32000).optional(),
   images: z.array(z.string()).optional(),
   accent: z.string().regex(/^#[0-9a-f]{6}$/i),
-  stock: z.coerce.number().int().min(0).max(100000),
+  stock: z.coerce.number().int().min(0).max(100000).optional(),
   active: z.boolean(),
+  variants: z.array(variantItemSchema).optional(),
 }).strict().superRefine((value, context) => {
-  if (value.compareAtPrice !== null && value.compareAtPrice <= value.price) {
+  if (value.compareAtPrice !== null && value.compareAtPrice !== undefined && value.price !== undefined && value.compareAtPrice <= value.price) {
     context.addIssue({ code: "custom", path: ["compareAtPrice"], message: "The regular price must be higher than the selling price." });
   }
 });
@@ -26,7 +38,7 @@ const fields = z.object({
 const productWithId = fields.extend({ id: z.string().uuid() }).strict();
 
 function parseStoredImages(imageUrl: unknown): { primary: string | undefined; images: string[] } {
-  if (typeof imageUrl !== "string" || !imageUrl.trim()) {
+  if (!imageUrl || typeof imageUrl !== "string" || !imageUrl.trim()) {
     return { primary: undefined, images: [] };
   }
   const trimmed = imageUrl.trim();
@@ -47,6 +59,15 @@ function parseStoredImages(imageUrl: unknown): { primary: string | undefined; im
 
 function toClientProduct(item: Record<string, unknown>) {
   const { primary, images } = parseStoredImages(item.image_url);
+  const { cleanDescription, variants } = extractProductVariants(String(item.description || ""), {
+    size: String(item.size || "50 ml"),
+    pricePaise: Number(item.price_paise || 0),
+    compareAtPaise: item.compare_at_paise ? Number(item.compare_at_paise) : undefined,
+    stock: Number(item.stock || 0),
+    imageUrl: primary,
+    images,
+  });
+
   return {
     id: item.id,
     slug: item.slug,
@@ -57,7 +78,7 @@ function toClientProduct(item: Record<string, unknown>) {
     size: item.size,
     concentration: item.concentration,
     notes: item.notes,
-    description: item.description,
+    description: cleanDescription,
     imageUrl: primary,
     images,
     accent: item.accent,
@@ -65,6 +86,7 @@ function toClientProduct(item: Record<string, unknown>) {
     featured: item.featured,
     active: item.active,
     createdAt: item.created_at,
+    variants,
   };
 }
 
@@ -74,6 +96,37 @@ function validationMessage(value: z.infer<typeof fields>) {
     : value.imageUrl
     ? value.imageUrl.split(",").map((s) => s.trim()).filter(Boolean)
     : [];
+
+  let basePricePaise = value.price ? Math.round(value.price * 100) : 49900;
+  let baseCompareAtPaise = value.compareAtPrice ? Math.round(value.compareAtPrice * 100) : null;
+  let baseSize = value.size || "50 ml";
+  let baseStock = value.stock ?? 10;
+  let finalDescription = value.description;
+
+  if (value.variants && value.variants.length > 0) {
+    const formattedVariants: ProductVariant[] = value.variants.map((v, i) => ({
+      id: v.id || `var-${Date.now()}-${i + 1}`,
+      size: v.size.trim(),
+      pricePaise: Math.round(v.price * 100),
+      compareAtPaise: v.compareAtPrice ? Math.round(v.compareAtPrice * 100) : undefined,
+      stock: v.stock,
+      imageUrl: v.imageUrl || undefined,
+      images: v.images || (v.imageUrl ? [v.imageUrl] : []),
+    }));
+
+    const primaryVariant = formattedVariants[0];
+    basePricePaise = primaryVariant.pricePaise;
+    baseCompareAtPaise = primaryVariant.compareAtPaise ?? null;
+    baseSize = primaryVariant.size;
+    baseStock = formattedVariants.reduce((sum, v) => sum + v.stock, 0);
+    finalDescription = attachVariantsToDescription(value.description, formattedVariants);
+
+    // Merge any variant images into product photos
+    const variantImgs = formattedVariants.map((v) => v.imageUrl).filter(Boolean) as string[];
+    variantImgs.forEach((img) => {
+      if (!allImages.includes(img)) allImages.push(img);
+    });
+  }
 
   const storedImageUrl = allImages.length > 1
     ? JSON.stringify(allImages)
@@ -85,15 +138,15 @@ function validationMessage(value: z.infer<typeof fields>) {
     name: value.name,
     slug: value.slug,
     category: value.category,
-    price_paise: Math.round(value.price * 100),
-    compare_at_paise: value.compareAtPrice === null ? null : Math.round(value.compareAtPrice * 100),
-    size: value.size,
+    price_paise: basePricePaise,
+    compare_at_paise: baseCompareAtPaise,
+    size: baseSize,
     concentration: value.concentration,
     notes: value.notes.split(",").map((note) => note.trim()).filter(Boolean),
-    description: value.description,
+    description: finalDescription,
     image_url: storedImageUrl,
     accent: value.accent,
-    stock: value.stock,
+    stock: baseStock,
     active: value.active,
   };
 }
@@ -116,7 +169,10 @@ export async function POST(request: Request) {
     const seller = await getActiveSeller();
     if (!seller) return NextResponse.json({ error: "Active seller access is required." }, { status: 403 });
     const parsed = fields.safeParse(await request.json().catch(() => null));
-    if (!parsed.success) return NextResponse.json({ error: "Please check all perfume details." }, { status: 400 });
+    if (!parsed.success) {
+      const issue = parsed.error.issues[0]?.message || "Please check all perfume details.";
+      return NextResponse.json({ error: issue }, { status: 400 });
+    }
     const { data: category } = await seller.supabase.from("store_categories").select("name").eq("name", parsed.data.category).eq("active", true).maybeSingle();
     if (!category && !["Perfume", "Fragrance", "Unisex"].includes(parsed.data.category)) {
       return NextResponse.json({ error: "Choose an active store category." }, { status: 400 });
@@ -181,7 +237,10 @@ export async function PATCH(request: Request) {
 
     // 3. Full product update
     const parsed = productWithId.safeParse(raw);
-    if (!parsed.success) return NextResponse.json({ error: "Please check all perfume details." }, { status: 400 });
+    if (!parsed.success) {
+      const issue = parsed.error.issues[0]?.message || "Please check all perfume details.";
+      return NextResponse.json({ error: issue }, { status: 400 });
+    }
     const { id, ...value } = parsed.data;
     const { data: category } = await seller.supabase.from("store_categories").select("name").eq("name", value.category).eq("active", true).maybeSingle();
     if (!category && !["Perfume", "Fragrance", "Unisex"].includes(value.category)) {
@@ -199,28 +258,5 @@ export async function PATCH(request: Request) {
     const message = error instanceof Error && error.message.includes("products_slug_key") ? "That product URL is already in use." : "Could not update this perfume.";
     console.error("Seller product update failed", error instanceof Error ? error.message : "Unknown error");
     return NextResponse.json({ error: message }, { status: 409 });
-  }
-}
-
-export async function DELETE(request: Request) {
-  try {
-    const seller = await getActiveSeller();
-    if (!seller) return NextResponse.json({ error: "Active seller access is required." }, { status: 403 });
-    const parsed = z.object({ id: z.uuid() }).strict().safeParse(await request.json().catch(() => null));
-    if (!parsed.success) return NextResponse.json({ error: "Choose a valid perfume to delete." }, { status: 400 });
-
-    const { data, error } = await seller.supabase.rpc("seller_delete_product_if_unused", {
-      product_uuid: parsed.data.id,
-      seller_uuid: seller.user.id,
-    });
-    if (error) throw error;
-    if (data === "not_found") return NextResponse.json({ error: "This perfume no longer exists." }, { status: 404 });
-    if (data === "forbidden") return NextResponse.json({ error: "This perfume is not in your catalogue." }, { status: 403 });
-    if (data === "has_orders") return NextResponse.json({ error: "This perfume has order history and cannot be deleted. Hide it from the store instead." }, { status: 409 });
-    if (data !== "deleted") throw new Error("Unexpected product deletion result.");
-    return NextResponse.json({ deletedId: parsed.data.id });
-  } catch (error) {
-    console.error("Seller product deletion failed", error instanceof Error ? error.message : "Unknown error");
-    return NextResponse.json({ error: "Could not delete this perfume." }, { status: 500 });
   }
 }

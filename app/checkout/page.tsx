@@ -10,15 +10,20 @@ import { noIndexMetadata } from "@/lib/seo";
 
 export const metadata = noIndexMetadata("Checkout");
 
-type CartLine = { productId: string; quantity: number };
+type CartLine = { productId: string; quantity: number; variantId?: string; size?: string };
 function parseCart(value?: string): CartLine[] {
   if (!value) return [];
   try {
     const parsed: unknown = JSON.parse(value);
     if (!Array.isArray(parsed)) return [];
-    return parsed.flatMap((line): CartLine[] => {
+    return parsed.flatMap((line: any): CartLine[] => {
       if (!line || typeof line.productId !== "string" || !Number.isInteger(line.quantity)) return [];
-      return [{ productId: line.productId, quantity: Math.max(1, Math.min(20, line.quantity)) }];
+      return [{
+        productId: line.productId,
+        quantity: Math.max(1, Math.min(20, line.quantity)),
+        variantId: typeof line.variantId === "string" ? line.variantId : undefined,
+        size: typeof line.size === "string" ? line.size : undefined,
+      }];
     }).slice(0, 20);
   } catch { return []; }
 }
@@ -32,7 +37,16 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
   const requested = parseCart(items);
   const lines = requested.flatMap((item) => {
     const product = products.find((candidate) => candidate.id === item.productId);
-    return product ? [{ product, quantity: item.quantity }] : [];
+    if (!product) return [];
+    const variant = product.variants?.find((v) => (item.variantId && v.id === item.variantId) || (item.size && v.size.toLowerCase() === item.size.toLowerCase()));
+    const resolvedProduct = variant ? {
+      ...product,
+      size: variant.size,
+      pricePaise: variant.pricePaise,
+      compareAtPaise: variant.compareAtPaise ?? product.compareAtPaise,
+      imageUrl: variant.imageUrl || product.imageUrl,
+    } : product;
+    return [{ product: resolvedProduct, quantity: item.quantity }];
   });
   const subtotal = lines.reduce((sum, line) => sum + line.product.pricePaise * line.quantity, 0);
   const pricingConfig = getPricingConfig();

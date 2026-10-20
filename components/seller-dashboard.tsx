@@ -29,6 +29,25 @@ import {
 } from "lucide-react";
 import ShippingLabelModal, { type ShippingLabelOrder } from "@/components/shipping-label-modal";
 
+export type ProductVariantItem = {
+  id?: string;
+  size: string;
+  pricePaise: number;
+  compareAtPaise?: number;
+  stock: number;
+  imageUrl?: string;
+  images?: string[];
+};
+
+export type VariantForm = {
+  id?: string;
+  size: string;
+  price: string;
+  compareAtPrice: string;
+  stock: string;
+  imageUrl: string;
+};
+
 type SellerProduct = {
   id: string;
   slug: string;
@@ -46,6 +65,7 @@ type SellerProduct = {
   stock: number;
   active: boolean;
   createdAt: string;
+  variants?: ProductVariantItem[];
 };
 
 type ProductForm = {
@@ -63,6 +83,7 @@ type ProductForm = {
   accent: string;
   stock: string;
   active: boolean;
+  variants: VariantForm[];
 };
 
 type SellerOrderItem = {
@@ -121,6 +142,9 @@ const blankForm = (category: string): ProductForm => ({
   accent: "#ad7045",
   stock: "10",
   active: true,
+  variants: [
+    { size: "50 ml", price: "", compareAtPrice: "", stock: "10", imageUrl: "" },
+  ],
 });
 
 const slugify = (value: string) =>
@@ -266,6 +290,43 @@ export default function SellerDashboard({
     setErrorMessage("");
   }
 
+  function handleAddVariant(presetSize?: string) {
+    setForm((current) => ({
+      ...current,
+      variants: [
+        ...current.variants,
+        {
+          size: presetSize || "",
+          price: "",
+          compareAtPrice: "",
+          stock: "10",
+          imageUrl: "",
+        },
+      ],
+    }));
+  }
+
+  function handleRemoveVariant(index: number) {
+    setForm((current) => {
+      if (current.variants.length <= 1) return current;
+      return {
+        ...current,
+        variants: current.variants.filter((_, idx) => idx !== index),
+      };
+    });
+  }
+
+  function handleUpdateVariant(index: number, patch: Partial<VariantForm>) {
+    setForm((current) => {
+      const next = [...current.variants];
+      next[index] = { ...next[index], ...patch };
+      return {
+        ...current,
+        variants: next,
+      };
+    });
+  }
+
   function beginEdit(product: SellerProduct) {
     setEditingId(product.id);
     const existingImages =
@@ -275,13 +336,34 @@ export default function SellerDashboard({
         ? [product.imageUrl]
         : [];
     setManualImageUrl("");
+
+    const initialVariants: VariantForm[] =
+      product.variants && product.variants.length > 0
+        ? product.variants.map((v) => ({
+            id: v.id,
+            size: v.size,
+            price: String(v.pricePaise / 100),
+            compareAtPrice: v.compareAtPaise ? String(v.compareAtPaise / 100) : "",
+            stock: String(v.stock),
+            imageUrl: v.imageUrl || "",
+          }))
+        : [
+            {
+              size: product.size || "50 ml",
+              price: String(product.pricePaise / 100),
+              compareAtPrice: product.compareAtPaise ? String(product.compareAtPaise / 100) : "",
+              stock: String(product.stock),
+              imageUrl: product.imageUrl || "",
+            },
+          ];
+
     setForm({
       name: product.name,
       slug: product.slug,
       category: product.category,
-      price: String(product.pricePaise / 100),
-      compareAtPrice: product.compareAtPaise ? String(product.compareAtPaise / 100) : "",
-      size: product.size,
+      price: initialVariants[0]?.price || String(product.pricePaise / 100),
+      compareAtPrice: initialVariants[0]?.compareAtPrice || (product.compareAtPaise ? String(product.compareAtPaise / 100) : ""),
+      size: initialVariants[0]?.size || product.size,
       concentration: product.concentration,
       notes: product.notes.join(", "),
       description: product.description,
@@ -290,6 +372,7 @@ export default function SellerDashboard({
       accent: product.accent,
       stock: String(product.stock),
       active: product.active,
+      variants: initialVariants,
     });
     setFormOpen(true);
     setMessage("");
@@ -302,19 +385,48 @@ export default function SellerDashboard({
     setMessage("");
     setErrorMessage("");
     try {
+      if (!form.variants || form.variants.length === 0) {
+        throw new Error("Please add at least one bottle size variation.");
+      }
+
+      for (let i = 0; i < form.variants.length; i++) {
+        const v = form.variants[i];
+        if (!v.size.trim()) {
+          throw new Error(`Size name is required for size variation #${i + 1}`);
+        }
+        const p = Number(v.price);
+        if (Number.isNaN(p) || p <= 0) {
+          throw new Error(`Valid selling price in ₹ is required for variation "${v.size}"`);
+        }
+      }
+
       const allImages = form.images.filter(Boolean);
       const primaryImage = allImages[0] || form.imageUrl.trim() || undefined;
       const finalImages = allImages.length > 0 ? allImages : primaryImage ? [primaryImage] : [];
 
+      const primaryVar = form.variants[0];
+      const primaryPrice = Number(primaryVar.price);
+      const primaryCompareAt = primaryVar.compareAtPrice ? Number(primaryVar.compareAtPrice) : null;
+      const totalStock = form.variants.reduce((acc, v) => acc + (Number(v.stock) || 0), 0);
+
       const payload = {
         ...(editingId ? { id: editingId } : {}),
         ...form,
+        size: primaryVar.size.trim(),
+        price: primaryPrice,
+        compareAtPrice: primaryCompareAt,
+        stock: totalStock,
         imageUrl: primaryImage,
         images: finalImages,
-        price: Number(form.price),
-        compareAtPrice: form.compareAtPrice ? Number(form.compareAtPrice) : null,
-        stock: Number(form.stock),
         slug: slugify(form.slug || form.name) || `perfume-${Date.now()}`,
+        variants: form.variants.map((v) => ({
+          id: v.id,
+          size: v.size.trim(),
+          price: Number(v.price),
+          compareAtPrice: v.compareAtPrice ? Number(v.compareAtPrice) : null,
+          stock: Number(v.stock) || 0,
+          imageUrl: v.imageUrl.trim() || null,
+        })),
       };
       const response = await fetch("/api/seller/products", {
         method: editingId ? "PATCH" : "POST",
@@ -737,20 +849,6 @@ export default function SellerDashboard({
 
                       <div className="seller-form-group">
                         <label>
-                          Bottle Size <span className="req">*</span>
-                        </label>
-                        <input
-                          required
-                          maxLength={40}
-                          value={form.size}
-                          onChange={(event) => setForm((current) => ({ ...current, size: event.target.value }))}
-                          placeholder="e.g. 50 ml, 100 ml, 12 ml Oil"
-                        />
-                        <small>Volume or bottle capacity</small>
-                      </div>
-
-                      <div className="seller-form-group span-2">
-                        <label>
                           Concentration Type <span className="req">*</span>
                         </label>
                         <input
@@ -762,74 +860,182 @@ export default function SellerDashboard({
                           }
                           placeholder="e.g. Eau de Parfum / Extrait de Parfum / Concentrated Perfume Oil"
                         />
-                        <small>Fragrance oil potency and formulation level</small>
+                        <small>Fragrance potency and formulation level</small>
                       </div>
                     </div>
                   </div>
 
-                  {/* SECTION 2: Pricing & Stock Inventory */}
+                  {/* SECTION 2: Bottle Sizes & Variations */}
                   <div className="seller-form-section">
                     <div className="seller-form-section-title">
                       <BadgeIndianRupee size={17} />
-                      <span>2. Pricing & Stock Inventory</span>
+                      <span>2. Bottle Size & Volume Variations ({form.variants.length} size{form.variants.length > 1 ? "s" : ""})</span>
+                    </div>
+                    <p className="seller-section-desc">
+                      Add all available bottle sizes (e.g. 50 ml, 20 ml, 10 ml) for this perfume. Customers can select their desired size on the storefront with live price and bottle photo updates.
+                    </p>
+
+                    {/* Quick Add Size Presets */}
+                    <div className="seller-variant-presets-row">
+                      <span className="seller-variant-presets-label">Quick Add Common Size:</span>
+                      <div className="seller-variant-presets-btns">
+                        {["10 ml", "20 ml", "30 ml", "50 ml", "100 ml"].map((preset) => (
+                          <button
+                            key={preset}
+                            type="button"
+                            className="seller-variant-preset-btn"
+                            onClick={() => handleAddVariant(preset)}
+                          >
+                            + {preset}
+                          </button>
+                        ))}
+                      </div>
                     </div>
 
-                    <div className="seller-form-grid-3">
-                      <div className="seller-form-group">
-                        <label>
-                          Selling Price (₹) <span className="req">*</span>
-                        </label>
-                        <div className="seller-input-prefix">
-                          <span>₹</span>
-                          <input
-                            required
-                            type="number"
-                            min="1"
-                            step="0.01"
-                            value={form.price}
-                            onChange={(event) => setForm((current) => ({ ...current, price: event.target.value }))}
-                            placeholder="2499"
-                          />
-                        </div>
-                        <small>Customer purchase price</small>
-                      </div>
+                    {/* Variant Cards List */}
+                    <div className="seller-variants-list">
+                      {form.variants.map((v, idx) => (
+                        <div key={idx} className="seller-variant-card">
+                          <div className="seller-variant-card-header">
+                            <div className="seller-variant-card-title">
+                              <span className="seller-variant-num-badge">Size #{idx + 1}</span>
+                              <strong>{v.size || "Unnamed Size"}</strong>
+                              {idx === 0 && <span className="seller-variant-primary-badge">★ Primary / Default</span>}
+                            </div>
+                            {form.variants.length > 1 && (
+                              <button
+                                type="button"
+                                className="seller-variant-delete-btn"
+                                onClick={() => handleRemoveVariant(idx)}
+                                title="Remove this size variation"
+                              >
+                                <Trash2 size={13} /> Remove
+                              </button>
+                            )}
+                          </div>
 
-                      <div className="seller-form-group">
-                        <label>
-                          MRP / Regular Price (₹) <small className="opt">(Optional)</small>
-                        </label>
-                        <div className="seller-input-prefix">
-                          <span>₹</span>
-                          <input
-                            type="number"
-                            min="1"
-                            step="0.01"
-                            value={form.compareAtPrice}
-                            onChange={(event) =>
-                              setForm((current) => ({ ...current, compareAtPrice: event.target.value }))
-                            }
-                            placeholder="2999"
-                          />
-                        </div>
-                        <small>Strikethrough discount price</small>
-                      </div>
+                          <div className="seller-variant-grid">
+                            <div className="seller-form-group">
+                              <label>
+                                Bottle Size / Volume <span className="req">*</span>
+                              </label>
+                              <input
+                                required
+                                maxLength={40}
+                                value={v.size}
+                                onChange={(e) => handleUpdateVariant(idx, { size: e.target.value })}
+                                placeholder="e.g. 50 ml, 20 ml, 10 ml"
+                              />
+                              <small>Volume shown on size selection pill</small>
+                            </div>
 
-                      <div className="seller-form-group">
-                        <label>
-                          Available Stock (Bottles) <span className="req">*</span>
-                        </label>
-                        <input
-                          required
-                          type="number"
-                          min="0"
-                          step="1"
-                          value={form.stock}
-                          onChange={(event) => setForm((current) => ({ ...current, stock: event.target.value }))}
-                          placeholder="10"
-                        />
-                        <small>Units in stock ready to ship</small>
-                      </div>
+                            <div className="seller-form-group">
+                              <label>
+                                Selling Price (₹) <span className="req">*</span>
+                              </label>
+                              <div className="seller-input-prefix">
+                                <span>₹</span>
+                                <input
+                                  required
+                                  type="number"
+                                  min="1"
+                                  step="0.01"
+                                  value={v.price}
+                                  onChange={(e) => handleUpdateVariant(idx, { price: e.target.value })}
+                                  placeholder="499"
+                                />
+                              </div>
+                              <small>Purchase price for this volume</small>
+                            </div>
+
+                            <div className="seller-form-group">
+                              <label>
+                                MRP / Regular Price (₹) <small className="opt">(Optional)</small>
+                              </label>
+                              <div className="seller-input-prefix">
+                                <span>₹</span>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  step="0.01"
+                                  value={v.compareAtPrice}
+                                  onChange={(e) => handleUpdateVariant(idx, { compareAtPrice: e.target.value })}
+                                  placeholder="999"
+                                />
+                              </div>
+                              <small>Strikethrough discount price</small>
+                            </div>
+
+                            <div className="seller-form-group">
+                              <label>
+                                Available Stock (Bottles) <span className="req">*</span>
+                              </label>
+                              <input
+                                required
+                                type="number"
+                                min="0"
+                                step="1"
+                                value={v.stock}
+                                onChange={(e) => handleUpdateVariant(idx, { stock: e.target.value })}
+                                placeholder="10"
+                              />
+                              <small>Units in stock ready to ship</small>
+                            </div>
+
+                            {/* Specific Bottle Photo for this size */}
+                            <div className="seller-form-group span-full">
+                              <label>
+                                Specific Bottle Photo for {v.size || "this size"} <small className="opt">(Optional)</small>
+                              </label>
+                              <div className="seller-variant-image-control">
+                                <input
+                                  type="url"
+                                  value={v.imageUrl}
+                                  onChange={(e) => handleUpdateVariant(idx, { imageUrl: e.target.value })}
+                                  placeholder="Paste specific photo URL (or leave empty to use main product photo)"
+                                />
+                                {form.images.length > 0 && (
+                                  <div className="seller-variant-pick-photos">
+                                    <small>Or pick from uploaded photos:</small>
+                                    <div className="seller-variant-thumb-row">
+                                      {form.images.map((imgUrl, thumbIdx) => (
+                                        <button
+                                          key={`${imgUrl}-${thumbIdx}`}
+                                          type="button"
+                                          className={`seller-variant-thumb-btn ${v.imageUrl === imgUrl ? "selected" : ""}`}
+                                          onClick={() => handleUpdateVariant(idx, { imageUrl: imgUrl })}
+                                          title={`Use photo #${thumbIdx + 1} for this size`}
+                                        >
+                                          <Image src={imgUrl} alt="" width={36} height={36} unoptimized />
+                                        </button>
+                                      ))}
+                                      {v.imageUrl && (
+                                        <button
+                                          type="button"
+                                          className="seller-variant-thumb-clear"
+                                          onClick={() => handleUpdateVariant(idx, { imageUrl: "" })}
+                                        >
+                                          Reset to default
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                              <small>When a customer selects this size on Flovexa storefront, the gallery switches to this bottle view</small>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
+
+                    <button
+                      type="button"
+                      className="seller-add-variant-btn"
+                      onClick={() => handleAddVariant()}
+                    >
+                      <Plus size={16} /> + Add Another Bottle Size Variation
+                    </button>
                   </div>
 
                   {/* SECTION 3: Product Photos & Multi-Image Gallery */}
@@ -1190,6 +1396,11 @@ export default function SellerDashboard({
                                 <span>·</span>
                                 <span>{product.concentration}</span>
                               </div>
+                              {product.variants && product.variants.length > 1 && (
+                                <div className="seller-variants-badge">
+                                  ✨ {product.variants.length} Sizes: {product.variants.map((v) => v.size).join(" · ")}
+                                </div>
+                              )}
                               <div className="seller-notes-chips">
                                 {product.notes.slice(0, 3).map((n) => (
                                   <span key={n} className="seller-note-tag">
@@ -1205,12 +1416,28 @@ export default function SellerDashboard({
 
                           {/* Column 2: Price & Discount */}
                           <div className="seller-product-col-price">
-                            <div className="seller-price-wrap">
-                              <strong>{money(product.pricePaise)}</strong>
-                              {product.compareAtPaise && <del>{money(product.compareAtPaise)}</del>}
-                            </div>
-                            {discountPercent > 0 && (
-                              <span className="seller-discount-badge">{discountPercent}% OFF</span>
+                            {product.variants && product.variants.length > 1 ? (
+                              (() => {
+                                const prices = product.variants.map((v) => v.pricePaise);
+                                const min = Math.min(...prices);
+                                const max = Math.max(...prices);
+                                return (
+                                  <div className="seller-price-wrap">
+                                    <strong>{min === max ? money(min) : `${money(min)} – ${money(max)}`}</strong>
+                                    <span className="seller-variants-count-pill">{product.variants.length} Sizes</span>
+                                  </div>
+                                );
+                              })()
+                            ) : (
+                              <>
+                                <div className="seller-price-wrap">
+                                  <strong>{money(product.pricePaise)}</strong>
+                                  {product.compareAtPaise && <del>{money(product.compareAtPaise)}</del>}
+                                </div>
+                                {discountPercent > 0 && (
+                                  <span className="seller-discount-badge">{discountPercent}% OFF</span>
+                                )}
+                              </>
                             )}
                           </div>
 
@@ -1273,6 +1500,11 @@ export default function SellerDashboard({
                                 <>In stock ({product.stock})</>
                               )}
                             </span>
+                            {product.variants && product.variants.length > 1 && (
+                              <small className="seller-stock-breakdown">
+                                {product.variants.map((v) => `${v.size}: ${v.stock}`).join(" | ")}
+                              </small>
+                            )}
                           </div>
 
                           {/* Column 4: Visibility Switch */}

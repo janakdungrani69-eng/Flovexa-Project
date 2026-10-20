@@ -164,7 +164,51 @@ export default function Storefront({ products, categories: storeCategories, sett
         <div className="product-grid">
           {filteredProducts.map((product, index) => <article className="product-card" key={product.id}>
             <a href={`/products/${product.slug}`} className="product-art-link" aria-label={`View ${product.name}`}><BottleArt product={product} /><span className="product-number">0{index + 1}</span><span className="quick-view">DISCOVER THIS SCENT <ArrowRight size={14} /></span></a>
-            <div className="product-info"><div className="product-overline"><span>{product.category}</span><span>{product.size}</span></div><a href={`/products/${product.slug}`} className="product-name">{product.name}</a><p className="product-notes">{product.notes.join(" · ")}</p><div className="product-buy"><div className="product-prices">{product.compareAtPaise && <del>{money(product.compareAtPaise)}</del>}<strong>{money(product.pricePaise)}</strong></div><div className="product-buy-actions"><WishlistButton key={`${product.id}-${savedProductIds.includes(product.id)}`} productId={product.id} initialSaved={savedProductIds.includes(product.id)} onSavedChange={(saved) => setSavedProductIds((current) => saved ? [...new Set([...current, product.id])] : current.filter((id) => id !== product.id))} />{product.stock === 0 ? <span className="storefront-soldout-pill">Sold out</span> : <button onClick={() => addProduct(product)} aria-label={`Add ${product.name} to bag`}><Plus size={17} /><span>Add</span></button>}</div></div></div>
+            {(() => {
+              const hasMultiSizes = product.variants && product.variants.length > 1;
+              const minPrice = hasMultiSizes ? Math.min(...product.variants!.map((v) => v.pricePaise)) : product.pricePaise;
+              return (
+                <div className="product-info">
+                  <div className="product-overline">
+                    <span>{product.category}</span>
+                    <span>{hasMultiSizes ? `${product.variants!.length} Sizes (${product.variants!.map((v) => v.size).join(", ")})` : product.size}</span>
+                  </div>
+                  <a href={`/products/${product.slug}`} className="product-name">{product.name}</a>
+                  <p className="product-notes">{product.notes.join(" · ")}</p>
+                  <div className="product-buy">
+                    <div className="product-prices">
+                      {hasMultiSizes ? (
+                        <>
+                          <span style={{ fontSize: "0.72rem", opacity: 0.7, textTransform: "uppercase", letterSpacing: "0.05em", marginRight: 4 }}>From</span>
+                          <strong>{money(minPrice)}</strong>
+                        </>
+                      ) : (
+                        <>
+                          {product.compareAtPaise && <del>{money(product.compareAtPaise)}</del>}
+                          <strong>{money(product.pricePaise)}</strong>
+                        </>
+                      )}
+                    </div>
+                    <div className="product-buy-actions">
+                      <WishlistButton
+                        key={`${product.id}-${savedProductIds.includes(product.id)}`}
+                        productId={product.id}
+                        initialSaved={savedProductIds.includes(product.id)}
+                        onSavedChange={(saved) => setSavedProductIds((current) => saved ? [...new Set([...current, product.id])] : current.filter((id) => id !== product.id))}
+                      />
+                      {product.stock === 0 ? (
+                        <span className="storefront-soldout-pill">Sold out</span>
+                      ) : (
+                        <button onClick={() => addProduct(product)} aria-label={`Add ${product.name} to bag`}>
+                          <Plus size={17} />
+                          <span>Add</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
           </article>)}
           {filteredProducts.length === 0 && <div className="no-results"><h3>{products.length ? "No fragrances found" : "Our first collection is being prepared."}</h3><p>{products.length ? "Try a different note or browse the full collection." : "The Flovexa storefront is ready. Our products will appear here once the catalogue is connected."}</p>{products.length > 0 && <button onClick={() => { setQuery(""); setCategory("All scents"); }}>Clear filters</button>}</div>}
         </div>

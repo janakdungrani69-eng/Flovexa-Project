@@ -5,6 +5,7 @@ import SellerPortalLanding from "@/components/seller-portal-landing";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { getSignedInUser, getStoreRole } from "@/lib/supabase/roles";
 import { canonicalUrl } from "@/lib/seo";
+import { extractProductVariants } from "@/lib/products";
 
 export const metadata: Metadata = {
   title: "Flovexa Seller Central — Merchant & Partner Portal | Sell on Flovexa",
@@ -94,6 +95,15 @@ export default async function SellerPage() {
         images = [trimmed];
       }
     }
+    const { cleanDescription, variants } = extractProductVariants(String(item.description || ""), {
+      size: item.size,
+      pricePaise: item.price_paise,
+      compareAtPaise: item.compare_at_paise ?? undefined,
+      stock: item.stock,
+      imageUrl: primary,
+      images,
+    });
+
     return {
       id: item.id,
       slug: item.slug,
@@ -104,13 +114,14 @@ export default async function SellerPage() {
       size: item.size,
       concentration: item.concentration,
       notes: item.notes,
-      description: item.description,
+      description: cleanDescription,
       imageUrl: primary,
       images,
       accent: item.accent,
       stock: item.stock,
       active: item.active,
       createdAt: item.created_at,
+      variants,
     };
   });
   const categories = (categoryRows ?? []).map((item) => item.name);

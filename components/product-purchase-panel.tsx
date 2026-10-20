@@ -70,29 +70,39 @@ export default function ProductPurchasePanel({ product }: { product: Product }) 
   const router = useRouter();
 
   const isFragranceOil = product.category === "Fragrance" || product.concentration.includes("Oil");
-  const size1 = isFragranceOil ? "30ml" : "50ml";
-  const size2 = isFragranceOil ? "60ml" : "100ml";
+
+  // Dynamic variations list from product
+  const variants = useMemo(() => {
+    if (product.variants && product.variants.length > 0) {
+      return product.variants;
+    }
+    return [{
+      id: "var-default",
+      size: product.size || (isFragranceOil ? "30 ml" : "50 ml"),
+      pricePaise: product.pricePaise,
+      compareAtPaise: product.compareAtPaise,
+      stock: product.stock ?? 10,
+      imageUrl: product.imageUrl || undefined,
+      images: product.images || [],
+    }];
+  }, [product, isFragranceOil]);
 
   // State
-  const [selectedSize, setSelectedSize] = useState<string>(size1);
+  const [selectedVariantId, setSelectedVariantId] = useState<string>(variants[0]?.id || "var-default");
+  const selectedVariant = useMemo(() => {
+    return variants.find((v) => v.id === selectedVariantId) || variants[0];
+  }, [variants, selectedVariantId]);
+
   const [quantity, setQuantity] = useState(1);
   const [addPodChecked, setAddPodChecked] = useState(false);
   const [addedNotice, setAddedNotice] = useState(false);
 
-  // Parse title cleanly to separate brand, fragrance name, and concentration (strips raw 50ml, etc.)
+  // Parse title cleanly to separate brand, fragrance name, and concentration
   const parsed = useMemo(() => {
     return parseProductTitle(product.name, product.concentration);
   }, [product.name, product.concentration]);
 
-  // Prices
-  const basePricePaise = product.pricePaise;
-  // Larger size is 2x volume with attractive bundle pricing (~1.65x base price)
-  const pricePaise = useMemo(() => {
-    if (selectedSize === size2) {
-      return Math.round(basePricePaise * 1.65);
-    }
-    return basePricePaise;
-  }, [basePricePaise, selectedSize, size2]);
+  const pricePaise = selectedVariant.pricePaise;
 
   const formattedPrice = useMemo(() => {
     return new Intl.NumberFormat("en-IN", {
@@ -117,11 +127,12 @@ export default function ProductPurchasePanel({ product }: { product: Product }) 
       const stored = JSON.parse(localStorage.getItem("flovexa-cart") ?? "[]");
       const cart: Array<{ productId: string; quantity: number }> = Array.isArray(stored) ? stored : [];
 
-      // Add main perfume
-      const existing = cart.find((item) => item.productId === product.id);
+      // Add main perfume with exact size & variant
+      const cartKey = `${product.id}-${selectedVariant.size}`;
+      const existing = cart.find((item: any) => (item.variantId ? item.variantId === selectedVariant.id : item.productId === product.id && item.size === selectedVariant.size));
       const nextCart = existing
-        ? cart.map((item) => item.productId === product.id ? { ...item, quantity: item.quantity + quantity } : item)
-        : [...cart, { productId: product.id, quantity }];
+        ? cart.map((item: any) => (item === existing ? { ...item, quantity: item.quantity + quantity } : item))
+        : [...cart, { productId: product.id, variantId: selectedVariant.id, size: selectedVariant.size, quantity }];
 
       // If pod add-on is checked, add demo pod or add-on product
       if (addPodChecked) {
@@ -146,8 +157,8 @@ export default function ProductPurchasePanel({ product }: { product: Product }) 
 
   function handleBuyItNow() {
     try {
-      const checkoutItems = [
-        { productId: product.id, quantity },
+      const checkoutItems: Array<{ productId: string; variantId?: string; size?: string; quantity: number }> = [
+        { productId: product.id, variantId: selectedVariant.id, size: selectedVariant.size, quantity },
       ];
       if (addPodChecked) {
         checkoutItems.push({ productId: "addon-travel-pod", quantity: 1 });
@@ -198,31 +209,75 @@ export default function ProductPurchasePanel({ product }: { product: Product }) 
         </div>
       </div>
 
-      {/* 4. Size Selector */}
+      {/* 4. Dynamic Size Variations */}
       <div className="purchase-size-section">
-        <div className="purchase-size-label">Size:</div>
-        <div className="purchase-size-options">
-          <button
-            type="button"
-            className={`purchase-size-btn ${selectedSize === size1 ? "is-selected" : ""}`}
-            onClick={() => setSelectedSize(size1)}
-          >
-            {size1}
-          </button>
+        <div className="purchase-size-label" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span>Choose Bottle Size:</span>
+          <strong style={{ color: "var(--accent, #aa8050)", fontSize: "14px" }}>{selectedVariant.size}</strong>
+        </div>
+        <div className="purchase-size-options" style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginTop: "10px" }}>
+          {variants.map((v) => {
+            const isSelected = v.id === selectedVariant.id;
+            const isOut = v.stock === 0;
+            const discount = v.compareAtPaise && v.compareAtPaise > v.pricePaise
+              ? Math.round(((v.compareAtPaise - v.pricePaise) / v.compareAtPaise) * 100)
+              : 0;
 
-          <button
-            type="button"
-            className={`purchase-size-btn ${selectedSize === size2 ? "is-selected" : ""}`}
-            onClick={() => setSelectedSize(size2)}
-          >
-            <span className="purchase-size-badge">2x More Values</span>
-            {size2}
-          </button>
+            return (
+              <button
+                key={v.id}
+                type="button"
+                className={`purchase-size-btn ${isSelected ? "is-selected" : ""} ${isOut ? "is-out" : ""}`}
+                onClick={() => {
+                  setSelectedVariantId(v.id);
+                  if (v.imageUrl) {
+                    window.dispatchEvent(new CustomEvent("flovexa-select-image", { detail: { imageUrl: v.imageUrl } }));
+                  }
+                }}
+                style={{
+                  position: "relative",
+                  padding: "10px 18px",
+                  border: isSelected ? "2px solid #aa8050" : "1px solid #e0d7cb",
+                  background: isSelected ? "#fcf9f4" : "#fff",
+                  borderRadius: "6px",
+                  cursor: isOut ? "not-allowed" : "pointer",
+                  opacity: isOut ? 0.5 : 1,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  minWidth: "100px",
+                  transition: "all 0.15s ease",
+                }}
+              >
+                {discount > 0 && (
+                  <span style={{ position: "absolute", top: "-8px", right: "-4px", background: "#3d6435", color: "#fff", fontSize: "9px", fontWeight: 700, padding: "2px 6px", borderRadius: "100px" }}>
+                    {discount}% OFF
+                  </span>
+                )}
+                <strong style={{ fontSize: "14px", color: isSelected ? "#1d1a16" : "#4a4237" }}>{v.size}</strong>
+                <span style={{ fontSize: "12px", color: "#8a663b", fontWeight: 600, marginTop: "2px" }}>
+                  ₹{Math.round(v.pricePaise / 100)}
+                </span>
+                {v.compareAtPaise && v.compareAtPaise > v.pricePaise && (
+                  <del style={{ fontSize: "10px", color: "#a59c90" }}>
+                    ₹{Math.round(v.compareAtPaise / 100)}
+                  </del>
+                )}
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* 5. Main Price */}
-      <div className="purchase-main-price">{formattedPrice}</div>
+      {/* 5. Main Price & Strikethrough MRP */}
+      <div className="purchase-main-price-row" style={{ display: "flex", alignItems: "baseline", gap: "12px", margin: "16px 0 10px" }}>
+        <span className="purchase-main-price">{formattedPrice}</span>
+        {selectedVariant.compareAtPaise && selectedVariant.compareAtPaise > selectedVariant.pricePaise && (
+          <span style={{ fontSize: "17px", textDecoration: "line-through", color: "#92897e" }}>
+            Rs. {(selectedVariant.compareAtPaise / 100).toFixed(2)}
+          </span>
+        )}
+      </div>
 
       {/* 6. EMI / Pay Later Banner */}
       <div className="purchase-emi-banner">
@@ -286,12 +341,12 @@ export default function ProductPurchasePanel({ product }: { product: Product }) 
       </div>
 
       {/* Stock Urgency or Out of Stock Alert */}
-      {product.stock !== undefined && product.stock <= 5 && product.stock > 0 && (
+      {selectedVariant.stock <= 5 && selectedVariant.stock > 0 && (
         <div style={{ color: "#b45309", fontSize: "12px", fontWeight: 600, display: "flex", alignItems: "center", gap: "6px", marginBottom: "12px" }}>
-          <span>⚡ Only {product.stock} bottles left in stock — order soon</span>
+          <span>⚡ Only {selectedVariant.stock} bottles left in this size in stock — order soon</span>
         </div>
       )}
-      {product.stock === 0 && (
+      {selectedVariant.stock === 0 && (
         <div style={{ color: "#dc2626", fontSize: "12px", fontWeight: 600, display: "flex", alignItems: "center", gap: "6px", marginBottom: "12px" }}>
           <span>⚠️ Currently Out of Stock</span>
         </div>
@@ -304,7 +359,7 @@ export default function ProductPurchasePanel({ product }: { product: Product }) 
             type="button"
             className="purchase-qty-btn"
             onClick={() => updateQuantity(-1)}
-            disabled={product.stock === 0}
+            disabled={selectedVariant.stock === 0}
             aria-label="Decrease quantity"
           >
             <ChevronLeft size={18} strokeWidth={2.2} />
@@ -314,7 +369,7 @@ export default function ProductPurchasePanel({ product }: { product: Product }) 
             type="button"
             className="purchase-qty-btn"
             onClick={() => updateQuantity(1)}
-            disabled={product.stock === 0 || (product.stock !== undefined && quantity >= product.stock)}
+            disabled={selectedVariant.stock === 0 || (product.stock !== undefined && quantity >= product.stock)}
             aria-label="Increase quantity"
           >
             <ChevronRight size={18} strokeWidth={2.2} />
@@ -325,9 +380,9 @@ export default function ProductPurchasePanel({ product }: { product: Product }) 
           type="button"
           className="purchase-add-to-cart-btn"
           onClick={handleAddToCart}
-          disabled={product.stock === 0}
+          disabled={selectedVariant.stock === 0}
         >
-          {product.stock === 0 ? (
+          {selectedVariant.stock === 0 ? (
             "Out of stock"
           ) : addedNotice ? (
             <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
@@ -344,9 +399,9 @@ export default function ProductPurchasePanel({ product }: { product: Product }) 
         type="button"
         className="purchase-buy-now-btn"
         onClick={handleBuyItNow}
-        disabled={product.stock === 0}
+        disabled={selectedVariant.stock === 0}
       >
-        <span>{product.stock === 0 ? "Out of Stock" : "Buy it Now"}</span>
+        <span>{selectedVariant.stock === 0 ? "Out of Stock" : "Buy it Now"}</span>
         <div className="purchase-upi-icons" aria-hidden="true">
           {/* Paytm */}
           <span className="upi-icon paytm-icon">
