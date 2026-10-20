@@ -1,6 +1,6 @@
 import "server-only";
 import { createClient } from "@supabase/supabase-js";
-import { sampleProducts, type Product } from "@/lib/products";
+import type { Product } from "@/lib/products";
 
 function parseStoredImages(imageUrl: string | null): { primary: string | null; all: string[] } {
   if (!imageUrl) return { primary: null, all: [] };
@@ -23,7 +23,7 @@ function parseStoredImages(imageUrl: string | null): { primary: string | null; a
 export async function getProducts(): Promise<Product[]> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-  if (!url || !key) return process.env.NODE_ENV === "production" ? [] : sampleProducts;
+  if (!url || !key) return [];
 
   const supabase = createClient(url, key, { auth: { persistSession: false } });
   const { data, error } = await supabase
@@ -35,9 +35,8 @@ export async function getProducts(): Promise<Product[]> {
 
   if (error) {
     console.error("Product catalogue query failed", error.message);
-    return process.env.NODE_ENV === "production" ? [] : sampleProducts;
+    return [];
   }
-  if (!data?.length && process.env.NODE_ENV !== "production") return sampleProducts;
   return (data ?? []).map((product) => {
     const { primary, all } = parseStoredImages(product.image_url);
     return {
