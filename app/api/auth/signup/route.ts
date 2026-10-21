@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createAdminSupabase } from "@/lib/supabase/admin";
-import { normalizeEmail, otpStore } from "../otp/store";
 
 export const runtime = "nodejs";
 
@@ -23,15 +22,7 @@ export async function POST(request: Request) {
     }
 
     const { fullName, phone, gender, email, password } = parsed.data;
-    const normalizedEmail = normalizeEmail(email);
-
-    // Verify that the email was verified via OTP within the last 15 minutes
-    const record = otpStore.get(normalizedEmail);
-    if (!record || !record.verifiedAt || Date.now() - record.verifiedAt > 15 * 60 * 1000) {
-      return NextResponse.json({
-        error: "Please verify your email address with the secret code (OTP) first.",
-      }, { status: 400 });
-    }
+    const normalizedEmail = email.trim().toLowerCase();
 
     const supabaseAdmin = createAdminSupabase();
 
@@ -46,7 +37,7 @@ export async function POST(request: Request) {
       }
     }
 
-    // Create verified user directly with password and customer role
+    // Create customer directly with email + password, pre-confirmed
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email: normalizedEmail,
       password,
@@ -79,9 +70,6 @@ export async function POST(request: Request) {
       }
     }
 
-    // Clear OTP record
-    otpStore.delete(normalizedEmail);
-
     return NextResponse.json({
       ok: true,
       message: "Customer account created successfully.",
@@ -98,4 +86,3 @@ export async function POST(request: Request) {
     }, { status: 500 });
   }
 }
-

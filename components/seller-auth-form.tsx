@@ -1,12 +1,10 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
-import { Store, LogIn, ShieldAlert } from "lucide-react";
+import { Store, LogIn, ShieldAlert, CheckCircle2 } from "lucide-react";
 
 export default function SellerAuthForm() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -14,45 +12,49 @@ export default function SellerAuthForm() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  function getClientSupabase() {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-    if (!url || !key) throw new Error("Supabase is not configured.");
-    return createBrowserClient(url, key);
-  }
-
   async function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBusy(true);
     setError("");
     setSuccess("");
 
+    const trimmedEmail = email.trim().toLowerCase();
+
     try {
-      const supabase = getClientSupabase();
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
+      // 1. Authenticate with server-side API to establish HTTP cookies
+      const res = await fetch("/api/seller/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: trimmedEmail, password }),
       });
 
-      if (signInError || !data.user) {
-        throw new Error("Invalid seller email or password. Please verify your credentials.");
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Invalid seller email or password.");
       }
 
-      const role = data.user.app_metadata?.role;
-      if (role !== "seller" && role !== "admin" && role !== "owner") {
-        await supabase.auth.signOut();
-        setError("Access denied. Public seller registration is closed. Only authorized Flovexa merchants can access this portal.");
-        setBusy(false);
-        return;
+      // 2. Also authenticate client-side Supabase client for immediate local session
+      try {
+        const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+        if (url && key) {
+          const supabase = createBrowserClient(url, key);
+          await supabase.auth.signInWithPassword({
+            email: trimmedEmail,
+            password,
+          });
+        }
+      } catch {
+        // If client-side sync encounters an issue, server cookies will still work
       }
 
-      setSuccess("Credentials verified. Redirecting to your merchant dashboard...");
+      setSuccess("Credentials verified! Redirecting to your merchant console...");
+      // Hard navigation ensures fresh cookies are sent to the server component
       setTimeout(() => {
-        router.push(role === "admin" ? "/admin" : "/seller");
-        router.refresh();
-      }, 500);
+        window.location.href = data.redirect || "/seller";
+      }, 300);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Sign-in failed.");
+      setError(err instanceof Error ? err.message : "Sign-in failed. Please verify your credentials.");
       setBusy(false);
     }
   }
@@ -80,7 +82,7 @@ export default function SellerAuthForm() {
             autoComplete="username"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="Enter your seller email"
+            placeholder="janakdungrani69@gmail.com"
             style={{ width: "100%", padding: "10px 12px", border: "1px solid #dcd3c5", borderRadius: "4px", fontSize: "14px" }}
           />
         </label>
@@ -94,7 +96,7 @@ export default function SellerAuthForm() {
               autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
+              placeholder="Enter your password"
               style={{ width: "100%", padding: "10px 12px", border: "1px solid #dcd3c5", borderRadius: "4px", fontSize: "14px" }}
             />
             <button
@@ -116,8 +118,9 @@ export default function SellerAuthForm() {
         )}
 
         {success && (
-          <div className="seller-form-success" style={{ background: "#edf6ea", border: "1px solid #a8d59d", color: "#3a6f2c", padding: "10px 12px", borderRadius: "4px", fontSize: "12px" }}>
-            {success}
+          <div className="seller-form-success" style={{ background: "#edf6ea", border: "1px solid #a8d59d", color: "#3a6f2c", padding: "10px 12px", borderRadius: "4px", fontSize: "12px", display: "flex", alignItems: "center", gap: "8px" }}>
+            <CheckCircle2 size={16} />
+            <span>{success}</span>
           </div>
         )}
 
@@ -132,7 +135,7 @@ export default function SellerAuthForm() {
         </button>
 
         <p style={{ fontSize: "11px", color: "#8c8273", textAlign: "center", margin: "8px 0 0" }}>
-          Private Portal: Registration is restricted to verified Flovexa partners.
+          Private Portal: Access is restricted strictly to authorized Flovexa merchant accounts.
         </p>
       </form>
     </div>

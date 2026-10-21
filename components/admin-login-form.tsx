@@ -50,13 +50,14 @@ export default function AdminLoginForm() {
     const next = params.get("next");
 
     if (next && next.startsWith("/") && !next.startsWith("//")) {
-      router.replace(next);
+      window.location.href = next;
+    } else if (role === "seller") {
+      window.location.href = "/seller";
     } else if (window.location.pathname.startsWith("/admin") && (role === "admin" || role === "owner")) {
-      router.replace("/admin");
+      window.location.href = "/admin";
     } else {
-      router.replace("/store");
+      window.location.href = "/store";
     }
-    router.refresh();
   }
 
   return (

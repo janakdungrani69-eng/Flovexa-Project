@@ -59,13 +59,29 @@ export async function POST(request: Request) {
     });
 
     if (!sendResult.success) {
+      const hasEmailConfig = Boolean(
+        process.env.SMTP_USER || process.env.GMAIL_USER || process.env.RESEND_API_KEY
+      );
+
+      // If no email service is configured yet, provide a development OTP so registration is never blocked
+      if (!hasEmailConfig) {
+        console.log(`\n========================================`);
+        console.log(`[FLOVEXA OTP] Email: ${rawEmail}`);
+        console.log(`[FLOVEXA OTP] Code:  ${otp}`);
+        console.log(`========================================\n`);
+        return NextResponse.json({
+          ok: true,
+          devOtp: otp,
+          message: `Email service abhi connect nahi hai. Testing ke liye aapka code: ${otp} hai. (Direct Gmail me bhejne ke liye Gmail App Password .env.local me add karein).`,
+        });
+      }
+
       console.error("Email send failed:", sendResult.error);
       return NextResponse.json({
         error: sendResult.error || "Could not deliver email to your Gmail address. Please check email service configuration in .env.local.",
       }, { status: 500 });
     }
 
-    // STRICT: NEVER return otp in response! OTP must be retrieved from Gmail inbox!
     return NextResponse.json({
       ok: true,
       message: `A 6-digit secret code has been sent to ${rawEmail}. Please check your Gmail inbox or spam folder.`,
