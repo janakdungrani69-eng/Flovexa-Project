@@ -1,5 +1,6 @@
 export type ProductVariant = {
   id: string;
+  sku?: string;
   size: string;
   pricePaise: number;
   compareAtPaise?: number;
@@ -10,6 +11,7 @@ export type ProductVariant = {
 
 export type Product = {
   id: string;
+  sku?: string;
   slug: string;
   name: string;
   category: string;
@@ -31,9 +33,23 @@ export type Product = {
 export const VARIANTS_TAG_PREFIX = "<!--FLOVEXA_VARIANTS:";
 export const VARIANTS_TAG_SUFFIX = "-->";
 
+export function generateDefaultSku(productName?: string, size?: string, index = 0): string {
+  const namePart = (productName || "")
+    .replace(/[^a-zA-Z0-9]/g, "")
+    .toUpperCase()
+    .slice(0, 4) || "FLX";
+  const sizePart = (size || "")
+    .replace(/[^a-zA-Z0-9]/g, "")
+    .toUpperCase()
+    .slice(0, 6) || `V${index + 1}`;
+  return `FLX-${namePart}-${sizePart}`;
+}
+
 export function extractProductVariants(
   description: string,
   baseProduct?: {
+    name?: string;
+    sku?: string;
     size: string;
     pricePaise: number;
     compareAtPaise?: number;
@@ -47,6 +63,7 @@ export function extractProductVariants(
       cleanDescription: "",
       variants: baseProduct ? [{
         id: "var-default",
+        sku: baseProduct.sku || generateDefaultSku(baseProduct.name, baseProduct.size, 0),
         size: baseProduct.size || "50 ml",
         pricePaise: baseProduct.pricePaise,
         compareAtPaise: baseProduct.compareAtPaise,
@@ -67,15 +84,20 @@ export function extractProductVariants(
     try {
       const parsed = JSON.parse(rawJson);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        variants = parsed.map((item, idx) => ({
-          id: item.id || `var-${idx + 1}`,
-          size: String(item.size || "").trim(),
-          pricePaise: Number(item.pricePaise) || Math.round(Number(item.price || 0) * 100),
-          compareAtPaise: item.compareAtPaise ? Number(item.compareAtPaise) : item.compareAtPrice ? Math.round(Number(item.compareAtPrice) * 100) : undefined,
-          stock: Number(item.stock ?? 10),
-          imageUrl: item.imageUrl || undefined,
-          images: Array.isArray(item.images) ? item.images : item.imageUrl ? [item.imageUrl] : [],
-        }));
+        variants = parsed.map((item, idx) => {
+          const sizeStr = String(item.size || "").trim();
+          const skuVal = item.sku ? String(item.sku).trim().toUpperCase() : generateDefaultSku(baseProduct?.name, sizeStr, idx);
+          return {
+            id: item.id || `var-${idx + 1}`,
+            sku: skuVal,
+            size: sizeStr,
+            pricePaise: Number(item.pricePaise) || Math.round(Number(item.price || 0) * 100),
+            compareAtPaise: item.compareAtPaise ? Number(item.compareAtPaise) : item.compareAtPrice ? Math.round(Number(item.compareAtPrice) * 100) : undefined,
+            stock: Number(item.stock ?? 10),
+            imageUrl: item.imageUrl || undefined,
+            images: Array.isArray(item.images) ? item.images : item.imageUrl ? [item.imageUrl] : [],
+          };
+        });
       }
       cleanDescription = (description.substring(0, startIndex) + description.substring(endIndex + VARIANTS_TAG_SUFFIX.length)).trim();
     } catch {
@@ -87,6 +109,7 @@ export function extractProductVariants(
   if (variants.length === 0 && baseProduct) {
     variants = [{
       id: "var-default",
+      sku: baseProduct.sku || generateDefaultSku(baseProduct.name, baseProduct.size, 0),
       size: baseProduct.size || "50 ml",
       pricePaise: baseProduct.pricePaise,
       compareAtPaise: baseProduct.compareAtPaise,

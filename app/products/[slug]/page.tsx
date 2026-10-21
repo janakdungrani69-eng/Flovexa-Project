@@ -47,7 +47,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           name: product.name,
           description: product.description,
           ...(product.imageUrl ? { image: [product.imageUrl] } : {}),
-          sku: product.id,
+          sku: product.sku || product.variants?.[0]?.sku || product.id,
           category: product.category,
           size: product.size,
           brand: { "@type": "Brand", name: "Flovexa Perfumes" },

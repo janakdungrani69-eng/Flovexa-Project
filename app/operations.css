@@ -3735,6 +3735,18 @@
   border: 1px solid #bbdefb;
 }
 
+.seller-variant-sku-badge {
+  background: #f5f2eb;
+  color: #634b2f;
+  font-size: 0.68rem;
+  font-weight: 700;
+  font-family: var(--font-mono, monospace);
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border-radius: 5px;
+  border: 1px solid #e0d7cb;
+}
+
 .seller-variant-delete-btn {
   background: none;
   border: none;
@@ -4050,4 +4062,76 @@
   color: #736d66;
   margin-top: 3px;
   font-family: var(--font-mono, monospace);
+}
+
+/* SKU Management */
+.seller-variant-sku-row {
+  margin-top: 2px;
+}
+
+.seller-sku-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.seller-sku-input {
+  flex: 1;
+  font-family: var(--font-mono, monospace) !important;
+  font-size: 0.82rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.seller-auto-sku-btn {
+  background: #f7f2ed;
+  border: 1px solid #d9c8b8;
+  color: #7a4f27;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 9px 13px;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.seller-auto-sku-btn:hover {
+  background: #ad7045;
+  color: #ffffff;
+  border-color: #ad7045;
+}
+
+.seller-sku-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.seller-sku-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #f9f6f0;
+  border: 1px solid #e3d8cb;
+  color: #4a3e35;
+  font-size: 0.68rem;
+  font-family: var(--font-mono, monospace);
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 5px;
+  letter-spacing: 0.03em;
+}
+
+.seller-sku-label {
+  background: #ebd8c5;
+  color: #6d4019;
+  font-size: 0.6rem;
+  font-weight: 800;
+  padding: 1px 4px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }

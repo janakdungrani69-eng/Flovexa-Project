@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getActiveSeller } from "@/lib/supabase/seller-user";
-import { extractProductVariants, attachVariantsToDescription, type ProductVariant } from "@/lib/products";
+import { extractProductVariants, attachVariantsToDescription, generateDefaultSku, type ProductVariant } from "@/lib/products";
 
 const variantItemSchema = z.object({
   id: z.string().optional(),
+  sku: z.string().trim().max(60).optional().nullable(),
   size: z.string().trim().min(1).max(40),
   price: z.coerce.number().finite().min(1).max(1000000),
   compareAtPrice: z.coerce.number().finite().positive().max(1000000).optional().nullable(),
@@ -19,6 +20,7 @@ const fields = z.object({
   category: z.string().trim().min(1, "Please choose a category.").max(60),
   price: z.coerce.number().finite().min(1).max(1000000).optional(),
   compareAtPrice: z.coerce.number().finite().positive().max(1000000).nullable().optional(),
+  sku: z.string().trim().max(60).optional().nullable(),
   size: z.string().trim().min(1).max(40).optional(),
   concentration: z.string().trim().min(1, "Concentration is required.").max(80),
   notes: z.string().trim().min(2, "Fragrance notes are required.").max(500),
@@ -60,6 +62,7 @@ function parseStoredImages(imageUrl: unknown): { primary: string | undefined; im
 function toClientProduct(item: Record<string, unknown>) {
   const { primary, images } = parseStoredImages(item.image_url);
   const { cleanDescription, variants } = extractProductVariants(String(item.description || ""), {
+    name: String(item.name || ""),
     size: String(item.size || "50 ml"),
     pricePaise: Number(item.price_paise || 0),
     compareAtPaise: item.compare_at_paise ? Number(item.compare_at_paise) : undefined,
@@ -68,8 +71,11 @@ function toClientProduct(item: Record<string, unknown>) {
     images,
   });
 
+  const mainSku = variants[0]?.sku || generateDefaultSku(String(item.name || ""), String(item.size || "50 ml"), 0);
+
   return {
     id: item.id,
+    sku: mainSku,
     slug: item.slug,
     name: item.name,
     category: item.category,
@@ -104,15 +110,19 @@ function validationMessage(value: z.infer<typeof fields>) {
   let finalDescription = value.description;
 
   if (value.variants && value.variants.length > 0) {
-    const formattedVariants: ProductVariant[] = value.variants.map((v, i) => ({
-      id: v.id || `var-${Date.now()}-${i + 1}`,
-      size: v.size.trim(),
-      pricePaise: Math.round(v.price * 100),
-      compareAtPaise: v.compareAtPrice ? Math.round(v.compareAtPrice * 100) : undefined,
-      stock: v.stock,
-      imageUrl: v.imageUrl || undefined,
-      images: v.images || (v.imageUrl ? [v.imageUrl] : []),
-    }));
+    const formattedVariants: ProductVariant[] = value.variants.map((v, i) => {
+      const cleanSku = v.sku?.trim().toUpperCase() || generateDefaultSku(value.name, v.size, i);
+      return {
+        id: v.id || `var-${Date.now()}-${i + 1}`,
+        sku: cleanSku,
+        size: v.size.trim(),
+        pricePaise: Math.round(v.price * 100),
+        compareAtPaise: v.compareAtPrice ? Math.round(v.compareAtPrice * 100) : undefined,
+        stock: v.stock,
+        imageUrl: v.imageUrl || undefined,
+        images: v.images || (v.imageUrl ? [v.imageUrl] : []),
+      };
+    });
 
     const primaryVariant = formattedVariants[0];
     basePricePaise = primaryVariant.pricePaise;

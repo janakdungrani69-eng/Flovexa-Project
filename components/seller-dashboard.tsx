@@ -28,9 +28,11 @@ import {
   Sparkles,
 } from "lucide-react";
 import ShippingLabelModal, { type ShippingLabelOrder } from "@/components/shipping-label-modal";
+import { generateDefaultSku } from "@/lib/products";
 
 export type ProductVariantItem = {
   id?: string;
+  sku?: string;
   size: string;
   pricePaise: number;
   compareAtPaise?: number;
@@ -41,6 +43,7 @@ export type ProductVariantItem = {
 
 export type VariantForm = {
   id?: string;
+  sku?: string;
   size: string;
   price: string;
   compareAtPrice: string;
@@ -50,6 +53,7 @@ export type VariantForm = {
 
 type SellerProduct = {
   id: string;
+  sku?: string;
   slug: string;
   name: string;
   category: string;
@@ -143,7 +147,7 @@ const blankForm = (category: string): ProductForm => ({
   stock: "10",
   active: true,
   variants: [
-    { size: "50 ml", price: "", compareAtPrice: "", stock: "10", imageUrl: "" },
+    { size: "50 ml", sku: "", price: "", compareAtPrice: "", stock: "10", imageUrl: "" },
   ],
 });
 
@@ -226,7 +230,9 @@ export default function SellerDashboard({
           p.name.toLowerCase().includes(q) ||
           p.category.toLowerCase().includes(q) ||
           p.notes.some((n) => n.toLowerCase().includes(q)) ||
-          p.slug.toLowerCase().includes(q)
+          p.slug.toLowerCase().includes(q) ||
+          (p.sku && p.sku.toLowerCase().includes(q)) ||
+          (p.variants && p.variants.some((v) => v.sku && v.sku.toLowerCase().includes(q)))
       );
     }
 
@@ -297,6 +303,7 @@ export default function SellerDashboard({
         ...current.variants,
         {
           size: presetSize || "",
+          sku: "",
           price: "",
           compareAtPrice: "",
           stock: "10",
@@ -423,8 +430,9 @@ export default function SellerDashboard({
 
     const initialVariants: VariantForm[] =
       product.variants && product.variants.length > 0
-        ? product.variants.map((v) => ({
+        ? product.variants.map((v, i) => ({
             id: v.id,
+            sku: v.sku || generateDefaultSku(product.name, v.size, i),
             size: v.size,
             price: String(v.pricePaise / 100),
             compareAtPrice: v.compareAtPaise ? String(v.compareAtPaise / 100) : "",
@@ -433,6 +441,7 @@ export default function SellerDashboard({
           }))
         : [
             {
+              sku: product.sku || generateDefaultSku(product.name, product.size || "50 ml", 0),
               size: product.size || "50 ml",
               price: String(product.pricePaise / 100),
               compareAtPrice: product.compareAtPaise ? String(product.compareAtPaise / 100) : "",
@@ -506,8 +515,9 @@ export default function SellerDashboard({
         imageUrl: primaryImage,
         images: finalImages,
         slug: slugify(form.slug || form.name) || `perfume-${Date.now()}`,
-        variants: form.variants.map((v) => ({
+        variants: form.variants.map((v, i) => ({
           id: v.id,
+          sku: v.sku?.trim().toUpperCase() || generateDefaultSku(form.name, v.size, i),
           size: v.size.trim(),
           price: Number(v.price),
           compareAtPrice: v.compareAtPrice ? Number(v.compareAtPrice) : null,
@@ -908,6 +918,7 @@ export default function SellerDashboard({
                               <strong className="seller-variant-heading">{v.size ? v.size : "New Size Variation"}</strong>
                               {idx === 0 && <span className="seller-variant-primary-badge">★ Primary / Default</span>}
                               {v.imageUrl && <span className="seller-variant-custom-photo-badge">📷 Custom Photo</span>}
+                              {v.sku && <span className="seller-variant-sku-badge">SKU: {v.sku}</span>}
                             </div>
                             {form.variants.length > 1 && (
                               <button
@@ -1001,6 +1012,34 @@ export default function SellerDashboard({
                                     }
                                     return <small>Strikethrough discount price</small>;
                                   })()}
+                                </div>
+                              </div>
+
+                              {/* SKU Field Row */}
+                              <div className="seller-variant-sku-row">
+                                <div className="seller-form-group">
+                                  <label>
+                                    SKU (Stock Keeping Unit) <small className="opt">(Optional - Auto-generated if blank)</small>
+                                  </label>
+                                  <div className="seller-sku-input-wrap">
+                                    <input
+                                      type="text"
+                                      maxLength={50}
+                                      value={v.sku || ""}
+                                      onChange={(e) => handleUpdateVariant(idx, { sku: e.target.value.toUpperCase() })}
+                                      placeholder={`e.g. ${generateDefaultSku(form.name, v.size, idx)}`}
+                                      className="seller-sku-input"
+                                    />
+                                    <button
+                                      type="button"
+                                      className="seller-auto-sku-btn"
+                                      title="Auto-generate SKU code"
+                                      onClick={() => handleUpdateVariant(idx, { sku: generateDefaultSku(form.name, v.size, idx) })}
+                                    >
+                                      Auto SKU
+                                    </button>
+                                  </div>
+                                  <small>Inventory tracking barcode / SKU for warehouse & shipping</small>
                                 </div>
                               </div>
                             </div>
@@ -1362,6 +1401,22 @@ export default function SellerDashboard({
                                 <span>·</span>
                                 <span>{product.concentration}</span>
                               </div>
+                              {/* SKU Badges */}
+                              {product.variants && product.variants.length > 0 ? (
+                                <div className="seller-sku-row">
+                                  {product.variants.map((v) => (
+                                    <span key={v.id || v.size} className="seller-sku-pill" title={`SKU for ${product.name} (${v.size})`}>
+                                      <span className="seller-sku-label">SKU</span> {v.sku || generateDefaultSku(product.name, v.size, 0)}
+                                    </span>
+                                  ))}
+                                </div>
+                              ) : (
+                                <div className="seller-sku-row">
+                                  <span className="seller-sku-pill" title={`SKU for ${product.name}`}>
+                                    <span className="seller-sku-label">SKU</span> {product.sku || generateDefaultSku(product.name, product.size, 0)}
+                                  </span>
+                                </div>
+                              )}
                               {product.variants && product.variants.length > 1 && (
                                 <div className="seller-variants-badge">
                                   ✨ {product.variants.length} Sizes: {product.variants.map((v) => v.size).join(" · ")}

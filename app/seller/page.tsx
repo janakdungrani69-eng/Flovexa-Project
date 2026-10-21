@@ -135,6 +135,7 @@ export default async function SellerPage() {
       }
     }
     const { cleanDescription, variants } = extractProductVariants(String(item.description || ""), {
+      name: item.name,
       size: item.size,
       pricePaise: item.price_paise,
       compareAtPaise: item.compare_at_paise ?? undefined,
@@ -145,6 +146,7 @@ export default async function SellerPage() {
 
     return {
       id: item.id,
+      sku: variants[0]?.sku,
       slug: item.slug,
       name: item.name,
       category: item.category,

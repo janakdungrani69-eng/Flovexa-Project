@@ -40,6 +40,7 @@ export async function getProducts(): Promise<Product[]> {
   return (data ?? []).map((product) => {
     const { primary, all } = parseStoredImages(product.image_url);
     const { cleanDescription, variants } = extractProductVariants(product.description, {
+      name: product.name,
       size: product.size,
       pricePaise: product.price_paise,
       compareAtPaise: product.compare_at_paise ?? undefined,
@@ -50,6 +51,7 @@ export async function getProducts(): Promise<Product[]> {
 
     return {
       id: product.id,
+      sku: variants[0]?.sku,
       slug: product.slug,
       name: product.name,
       category: product.category,
