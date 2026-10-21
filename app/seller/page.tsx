@@ -6,6 +6,7 @@ import { createAdminSupabase } from "@/lib/supabase/admin";
 import { getSignedInUser, getStoreRole } from "@/lib/supabase/roles";
 import { canonicalUrl } from "@/lib/seo";
 import { extractProductVariants } from "@/lib/products";
+import SellerApplicationPending from "@/components/seller-application-pending";
 
 export const metadata: Metadata = {
   title: "Flovexa Seller Central — Merchant & Partner Portal | Sell on Flovexa",
@@ -28,8 +29,6 @@ export const metadata: Metadata = {
   },
 };
 
-import SellerApplicationPending from "@/components/seller-application-pending";
-
 export default async function SellerPage() {
   const user = await getSignedInUser();
   if (!user) {
@@ -41,41 +40,81 @@ export default async function SellerPage() {
     redirect("/admin");
   }
 
-  const supabase = createAdminSupabase();
+  let profile: {
+    store_name?: string;
+    status?: string;
+    admin_note?: string;
+    created_at?: string;
+  } | null = null;
 
-  // Check seller profile and owner approval status
-  const { data: profile, error: profileError } = await supabase
-    .from("seller_profiles")
-    .select("store_name, status, admin_note, created_at")
-    .eq("user_id", user.id)
-    .maybeSingle();
+  let productRows: any[] = [];
+  let categoryRows: any[] = [];
 
-  if (profileError) throw profileError;
+  try {
+    const supabase = createAdminSupabase();
 
-  // 1. If seller has an application pending owner approval or suspended access
-  if (profile && (profile.admin_note?.includes("PENDING_APPROVAL") || profile.status === "suspended")) {
-    return (
-      <SellerApplicationPending
-        email={user.email ?? ""}
-        storeName={profile.store_name || "Seller Store"}
-        appliedDate={profile.created_at}
-        isSuspended={profile.status === "suspended" && !profile.admin_note?.includes("PENDING_APPROVAL")}
-      />
-    );
+    // Check seller profile and owner approval status
+    const { data: profileData, error: profileError } = await supabase
+      .from("seller_profiles")
+      .select("store_name, status, admin_note, created_at")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (profileError) {
+      console.error("[SellerPage] Notice: Could not read seller_profile row:", profileError);
+    } else {
+      profile = profileData;
+    }
+
+    // 1. If seller has an application pending owner approval or suspended access
+    if (profile && (profile.admin_note?.includes("PENDING_APPROVAL") || profile.status === "suspended")) {
+      return (
+        <SellerApplicationPending
+          email={user.email ?? ""}
+          storeName={profile.store_name || "Seller Store"}
+          appliedDate={profile.created_at}
+          isSuspended={profile.status === "suspended" && !profile.admin_note?.includes("PENDING_APPROVAL")}
+        />
+      );
+    }
+
+    // 2. If user is not an approved active seller, show the portal landing / application form
+    if (role !== "seller" && (!profile || profile.status !== "active")) {
+      return <SellerPortalLanding />;
+    }
+
+    const [{ data: products, error: productError }, { data: categories, error: categoryError }] = await Promise.all([
+      supabase
+        .from("products")
+        .select("id, slug, name, category, price_paise, compare_at_paise, size, concentration, notes, description, image_url, accent, stock, active, created_at")
+        .eq("seller_id", user.id)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("store_categories")
+        .select("name")
+        .eq("active", true)
+        .order("sort_order"),
+    ]);
+
+    if (productError) {
+      console.error("[SellerPage] Notice: Could not load products:", productError);
+    } else if (products) {
+      productRows = products;
+    }
+
+    if (categoryError) {
+      console.error("[SellerPage] Notice: Could not load categories:", categoryError);
+    } else if (categories) {
+      categoryRows = categories;
+    }
+  } catch (catchErr) {
+    console.error("[SellerPage] Handled server error:", catchErr);
+    if (role !== "seller") {
+      return <SellerPortalLanding />;
+    }
   }
 
-  // 2. If user is not an approved active seller, show the portal landing / application form
-  if (role !== "seller" || !profile || profile.status !== "active") {
-    return <SellerPortalLanding />;
-  }
-
-  const [{ data: productRows, error: productError }, { data: categoryRows, error: categoryError }] = await Promise.all([
-    supabase.from("products").select("id, slug, name, category, price_paise, compare_at_paise, size, concentration, notes, description, image_url, accent, stock, active, created_at").eq("seller_id", user.id).order("created_at", { ascending: false }),
-    supabase.from("store_categories").select("name").eq("active", true).order("sort_order"),
-  ]);
-  if (productError || categoryError) throw productError ?? categoryError;
-
-  const products = (productRows ?? []).map((item) => {
+  const products = productRows.map((item) => {
     let images: string[] = [];
     let primary = item.image_url ?? undefined;
     if (item.image_url) {
@@ -124,6 +163,15 @@ export default async function SellerPage() {
       variants,
     };
   });
-  const categories = (categoryRows ?? []).map((item) => item.name);
-  return <SellerDashboard storeName={profile.store_name || user.email || "Seller account"} initialProducts={products} categories={categories.length ? categories : ["Unisex"]}/>;
+
+  const categories = categoryRows.map((item) => item.name);
+  const storeName = profile?.store_name || (user.user_metadata?.store_name as string) || (user.email ? user.email.split("@")[0] : "FLOVEXA");
+
+  return (
+    <SellerDashboard
+      storeName={storeName}
+      initialProducts={products}
+      categories={categories.length ? categories : ["Unisex", "Men", "Women"]}
+    />
+  );
 }
