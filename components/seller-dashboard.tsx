@@ -728,19 +728,36 @@ export default function SellerDashboard({
       </header>
 
       <section className="seller-shell">
-        {/* Sidebar Navigation */}
+        {/* Sticky Luxury Sidebar Navigation */}
         <aside className="seller-sidebar">
-          <span className="seller-sidebar-label">MERCHANT DASHBOARD</span>
-          {tabs.map(({ id, label, icon: Icon, count }) => (
-            <button key={id} className={tab === id ? "active" : ""} onClick={() => setTab(id)}>
-              <Icon size={15} />
-              {label}
-              {count !== undefined && <small>{count}</small>}
-            </button>
-          ))}
+          <div className="seller-sidebar-content">
+            <div className="seller-sidebar-header">
+              <span className="seller-sidebar-label">MERCHANT DASHBOARD</span>
+            </div>
+            <nav className="seller-sidebar-nav">
+              {tabs.map(({ id, label, icon: Icon, count }) => (
+                <button
+                  key={id}
+                  type="button"
+                  className={`seller-nav-item ${tab === id ? "active" : ""}`}
+                  onClick={() => setTab(id)}
+                >
+                  <Icon size={17} className="seller-nav-icon" />
+                  <span className="seller-nav-text">{label}</span>
+                  {count !== undefined && <small className="seller-nav-badge">{count}</small>}
+                </button>
+              ))}
+            </nav>
+          </div>
+
           <div className="seller-sidebar-brand">
-            <Store size={17} />
-            <span>FLOVEXA MARKETPLACE</span>
+            <div className="seller-brand-icon-box">
+              <Store size={16} />
+            </div>
+            <div className="seller-brand-text-wrap">
+              <strong>FLOVEXA MARKETPLACE</strong>
+              <small>Authorized Merchant Portal</small>
+            </div>
           </div>
         </aside>
 
