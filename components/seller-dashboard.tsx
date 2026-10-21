@@ -202,6 +202,8 @@ export default function SellerDashboard({
   const [formOpen, setFormOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [uploadingVariantIndex, setUploadingVariantIndex] = useState<number | null>(null);
+  const [variantUploadErrors, setVariantUploadErrors] = useState<Record<number, string>>({});
+  const [variantUrlInputs, setVariantUrlInputs] = useState<Record<number, boolean>>({});
   const [deletingProductId, setDeletingProductId] = useState<string | null>(null);
   const [savingFulfillment, setSavingFulfillment] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, { status: string; trackingCarrier: string; trackingNumber: string; trackingUrl: string }>>({});
@@ -322,6 +324,53 @@ export default function SellerDashboard({
         ...current,
         variants: next,
       };
+    });
+  }
+
+  async function compressImage(file: File, maxDimension = 1600, quality = 0.85): Promise<File> {
+    if (typeof window === "undefined") return file;
+    if (file.size <= 500 * 1024) return file;
+    return new Promise((resolve) => {
+      try {
+        const img = new window.Image();
+        const objectUrl = URL.createObjectURL(file);
+        img.onload = () => {
+          URL.revokeObjectURL(objectUrl);
+          let width = img.width;
+          let height = img.height;
+          if (width > maxDimension || height > maxDimension) {
+            if (width > height) {
+              height = Math.round((height * maxDimension) / width);
+              width = maxDimension;
+            } else {
+              width = Math.round((width * maxDimension) / height);
+              height = maxDimension;
+            }
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) return resolve(file);
+          ctx.drawImage(img, 0, 0, width, height);
+          canvas.toBlob(
+            (blob) => {
+              if (!blob || blob.size >= file.size) return resolve(file);
+              const compressedFile = new File([blob], file.name.replace(/\.[^.]+$/, ".jpg"), {
+                type: "image/jpeg",
+                lastModified: Date.now(),
+              });
+              resolve(compressedFile);
+            },
+            "image/jpeg",
+            quality
+          );
+        };
+        img.onerror = () => resolve(file);
+        img.src = objectUrl;
+      } catch {
+        resolve(file);
+      }
     });
   }
 
