@@ -9,6 +9,7 @@ export async function getActiveSeller() {
   try {
     const supabase = createAdminSupabase();
     const { data: profile, error } = await supabase
+      .schema("public")
       .from("seller_profiles")
       .select("user_id, store_name, status")
       .eq("user_id", user.id)

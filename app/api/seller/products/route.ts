@@ -165,7 +165,7 @@ export async function GET() {
   try {
     const seller = await getActiveSeller();
     if (!seller) return NextResponse.json({ error: "Active seller access is required." }, { status: 403 });
-    const { data, error } = await seller.supabase.from("products").select("*").eq("seller_id", seller.user.id).order("created_at", { ascending: false });
+    const { data, error } = await seller.supabase.schema("public").from("products").select("*").eq("seller_id", seller.user.id).order("created_at", { ascending: false });
     if (error) throw error;
     return NextResponse.json({ products: (data ?? []).map((item) => toClientProduct(item)) });
   } catch (error) {
@@ -191,12 +191,12 @@ export async function POST(request: Request) {
       featured: false,
     };
 
-    let { data, error } = await seller.supabase.from("products").insert(insertPayload).select("*").single();
+    let { data, error } = await seller.supabase.schema("public").from("products").insert(insertPayload).select("*").single();
 
     if (error && (error.message?.includes("products_slug_key") || error.code === "23505")) {
       const suffix = Math.random().toString(36).substring(2, 6);
       insertPayload.slug = `${parsed.data.slug}-${suffix}`;
-      const retry = await seller.supabase.from("products").insert(insertPayload).select("*").single();
+      const retry = await seller.supabase.schema("public").from("products").insert(insertPayload).select("*").single();
       data = retry.data;
       error = retry.error;
     }
@@ -229,7 +229,7 @@ export async function PATCH(request: Request) {
     // 1. Quick stock update
     const quickStock = quickStockSchema.safeParse(raw);
     if (quickStock.success) {
-      const { data, error } = await seller.supabase.from("products").update({
+      const { data, error } = await seller.supabase.schema("public").from("products").update({
         stock: quickStock.data.stock,
         updated_at: new Date().toISOString(),
       }).eq("id", quickStock.data.id).eq("seller_id", seller.user.id).select("*").maybeSingle();
@@ -241,7 +241,7 @@ export async function PATCH(request: Request) {
     // 2. Quick visibility toggle
     const quickActive = quickActiveSchema.safeParse(raw);
     if (quickActive.success) {
-      const { data, error } = await seller.supabase.from("products").update({
+      const { data, error } = await seller.supabase.schema("public").from("products").update({
         active: quickActive.data.active,
         updated_at: new Date().toISOString(),
       }).eq("id", quickActive.data.id).eq("seller_id", seller.user.id).select("*").maybeSingle();
@@ -258,7 +258,7 @@ export async function PATCH(request: Request) {
     }
     const { id, ...value } = parsed.data;
 
-    const { data, error } = await seller.supabase.from("products").update({
+    const { data, error } = await seller.supabase.schema("public").from("products").update({
       ...validationMessage(value),
       updated_at: new Date().toISOString(),
     }).eq("id", id).eq("seller_id", seller.user.id).select("*").maybeSingle();
@@ -285,7 +285,7 @@ export async function DELETE(request: Request) {
     const id = typeof raw?.id === "string" ? raw.id : null;
     if (!id) return NextResponse.json({ error: "Product ID is required." }, { status: 400 });
 
-    const { error } = await seller.supabase.from("products").delete().eq("id", id).eq("seller_id", seller.user.id);
+    const { error } = await seller.supabase.schema("public").from("products").delete().eq("id", id).eq("seller_id", seller.user.id);
     if (error) throw error;
 
     return NextResponse.json({ success: true });
