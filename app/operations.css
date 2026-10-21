@@ -398,6 +398,58 @@
   padding-left: 28px !important;
 }
 
+/* Bottle Size Cluster & Unit Suffix */
+.seller-size-input-cluster {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.seller-input-suffix {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.seller-input-suffix input {
+  padding-right: 44px !important;
+}
+
+.seller-unit-badge {
+  position: absolute;
+  right: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #7a6042;
+  background: #f4ecdf;
+  border: 1px solid #dfd1c0;
+  padding: 2px 7px;
+  border-radius: 4px;
+  pointer-events: none;
+  z-index: 1;
+  text-transform: lowercase;
+}
+
+.seller-unit-select {
+  background: #faf6f0;
+  border: 1px solid #dfd1c0;
+  color: #4a3e35;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.15s ease;
+  height: 38px;
+}
+
+.seller-unit-select:focus {
+  border-color: #ad7045;
+  background: #ffffff;
+}
+
 /* Gallery Live Preview Grid */
 .seller-gallery-preview-grid {
   display: grid;

@@ -161,6 +161,19 @@ const slugify = (value: string) =>
     .replace(/^-|-$/g, "")
     .slice(0, 140);
 
+function parseBottleSize(sizeStr: string): { amount: string; unit: string } {
+  if (!sizeStr) return { amount: "", unit: "ml" };
+  const trimmed = sizeStr.trim();
+  const match = trimmed.match(/^(\d+(?:\.\d+)?)\s*(ml|g|oz)?$/i);
+  if (match) {
+    return {
+      amount: match[1],
+      unit: (match[2] || "ml").toLowerCase(),
+    };
+  }
+  return { amount: trimmed, unit: "custom" };
+}
+
 const transitions: Record<string, string[]> = {
   paid: ["processing"],
   processing: ["shipped"],
@@ -302,7 +315,7 @@ export default function SellerDashboard({
       variants: [
         ...current.variants,
         {
-          size: presetSize || "",
+          size: presetSize || "50 ml",
           sku: "",
           price: "",
           compareAtPrice: "",
@@ -895,7 +908,7 @@ export default function SellerDashboard({
                     <div className="seller-variant-presets-row">
                       <span className="seller-variant-presets-label">⚡ Quick Add Common Sizes:</span>
                       <div className="seller-variant-presets-btns">
-                        {["10 ml", "20 ml", "30 ml", "50 ml", "100 ml"].map((preset) => (
+                        {["10 ml", "20 ml", "30 ml", "50 ml", "100 ml", "200 ml", "500 ml", "1000 ml"].map((preset) => (
                           <button
                             key={preset}
                             type="button"
@@ -941,14 +954,53 @@ export default function SellerDashboard({
                                   <label>
                                     Bottle Size / Volume <span className="req">*</span>
                                   </label>
-                                  <input
-                                    required
-                                    maxLength={40}
-                                    value={v.size}
-                                    onChange={(e) => handleUpdateVariant(idx, { size: e.target.value })}
-                                    placeholder="e.g. 50 ml, 20 ml, 10 ml"
-                                  />
-                                  <small>Volume shown on size selection pill</small>
+                                  {(() => {
+                                    const { amount, unit } = parseBottleSize(v.size);
+                                    return (
+                                      <div className="seller-size-input-cluster">
+                                        <div className="seller-input-suffix">
+                                          <input
+                                            required
+                                            type={unit === "custom" ? "text" : "number"}
+                                            min={unit === "custom" ? undefined : "1"}
+                                            step="any"
+                                            value={amount}
+                                            onChange={(e) => {
+                                              const raw = e.target.value;
+                                              if (unit === "custom") {
+                                                handleUpdateVariant(idx, { size: raw });
+                                              } else {
+                                                const cleaned = raw.replace(/[^\d.]/g, "");
+                                                handleUpdateVariant(idx, { size: cleaned ? `${cleaned} ${unit}` : "" });
+                                              }
+                                            }}
+                                            placeholder={unit === "custom" ? "e.g. Travel Spray" : "50"}
+                                          />
+                                          {unit !== "custom" && <span className="seller-unit-badge">{unit}</span>}
+                                        </div>
+                                        <select
+                                          className="seller-unit-select"
+                                          value={unit}
+                                          onChange={(e) => {
+                                            const nextUnit = e.target.value;
+                                            if (nextUnit === "custom") {
+                                              handleUpdateVariant(idx, { size: amount });
+                                            } else {
+                                              const cleaned = amount.replace(/[^\d.]/g, "");
+                                              handleUpdateVariant(idx, { size: cleaned ? `${cleaned} ${nextUnit}` : "" });
+                                            }
+                                          }}
+                                          title="Measurement unit"
+                                        >
+                                          <option value="ml">ml (Default)</option>
+                                          <option value="g">g</option>
+                                          <option value="oz">oz</option>
+                                          <option value="custom">Custom</option>
+                                        </select>
+                                      </div>
+                                    );
+                                  })()}
+                                  <small>By default "ml" laga rahega — sirf number likhiye (jaise 50, 500, 1000)</small>
                                 </div>
 
                                 <div className="seller-form-group">
