@@ -173,7 +173,7 @@ export default function Storefront({ products, categories: storeCategories, sett
                     <span>{product.category}</span>
                     <span>{hasMultiSizes ? `${product.variants!.length} Sizes (${product.variants!.map((v) => v.size).join(", ")})` : product.size}</span>
                   </div>
-                  <a href={`/products/${product.slug}`} className="product-name">{product.name}</a>
+                  <a href={`/products/${product.slug}`} className="product-name">{product.name.replace(/(?:[\s–—\-|,-]+)?\s*\d+\s*(?:ml|g|oz)\b/gi, "").trim() || product.name}</a>
                   <p className="product-notes">{product.notes.join(" · ")}</p>
                   <div className="product-buy">
                     <div className="product-prices">
