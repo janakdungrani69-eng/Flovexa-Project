@@ -923,274 +923,318 @@ export default function SellerDashboard({
 
                     {/* Variant Cards List */}
                     <div className="seller-variants-list">
-                      {form.variants.map((v, idx) => (
-                        <div key={idx} className="seller-variant-card">
-                          <div className="seller-variant-card-header">
-                            <div className="seller-variant-card-title">
-                              <span className="seller-variant-num-badge">Size #{idx + 1}</span>
-                              <strong className="seller-variant-heading">{v.size ? v.size : "New Size Variation"}</strong>
-                              {idx === 0 && <span className="seller-variant-primary-badge">★ Primary / Default</span>}
-                              {v.imageUrl && <span className="seller-variant-custom-photo-badge">📷 Custom Photo</span>}
-                              {v.sku && <span className="seller-variant-sku-badge">SKU: {v.sku}</span>}
-                            </div>
-                            {form.variants.length > 1 && (
-                              <button
-                                type="button"
-                                className="seller-variant-delete-btn"
-                                onClick={() => handleRemoveVariant(idx)}
-                                title="Remove this size variation"
-                              >
-                                <Trash2 size={13} /> Remove Size
-                              </button>
-                            )}
-                          </div>
+                      {form.variants.map((v, idx) => {
+                        const { amount, unit } = parseBottleSize(v.size);
+                        const autoSku = generateDefaultSku(form.name, v.size, idx);
+                        const currentSku = v.sku || autoSku;
+                        const stockNum = Number(v.stock) || 0;
 
-                          {/* 2-Column Responsive Body */}
-                          <div className="seller-variant-card-body">
-                            {/* Column 1: Pricing & Inventory Details */}
-                            <div className="seller-variant-col-details">
-                              <div className="seller-variant-field-row">
-                                <div className="seller-form-group">
-                                  <label>
-                                    Bottle Size / Volume <span className="req">*</span>
-                                  </label>
-                                  {(() => {
-                                    const { amount, unit } = parseBottleSize(v.size);
-                                    return (
-                                      <div className="seller-size-input-cluster">
-                                        <div className="seller-input-suffix">
-                                          <input
-                                            required
-                                            type={unit === "custom" ? "text" : "number"}
-                                            min={unit === "custom" ? undefined : "1"}
-                                            step="any"
-                                            value={amount}
-                                            onChange={(e) => {
-                                              const raw = e.target.value;
-                                              if (unit === "custom") {
-                                                handleUpdateVariant(idx, { size: raw });
-                                              } else {
-                                                const cleaned = raw.replace(/[^\d.]/g, "");
-                                                handleUpdateVariant(idx, { size: cleaned ? `${cleaned} ${unit}` : "" });
-                                              }
-                                            }}
-                                            placeholder={unit === "custom" ? "e.g. Travel Spray" : "50"}
-                                          />
-                                          {unit !== "custom" && <span className="seller-unit-badge">{unit}</span>}
-                                        </div>
-                                        <select
-                                          className="seller-unit-select"
-                                          value={unit}
-                                          onChange={(e) => {
-                                            const nextUnit = e.target.value;
-                                            if (nextUnit === "custom") {
-                                              handleUpdateVariant(idx, { size: amount });
-                                            } else {
-                                              const cleaned = amount.replace(/[^\d.]/g, "");
-                                              handleUpdateVariant(idx, { size: cleaned ? `${cleaned} ${nextUnit}` : "" });
-                                            }
-                                          }}
-                                          title="Measurement unit"
-                                        >
-                                          <option value="ml">ml (Default)</option>
-                                          <option value="g">g</option>
-                                          <option value="oz">oz</option>
-                                          <option value="custom">Custom</option>
-                                        </select>
-                                      </div>
-                                    );
-                                  })()}
-                                  <small>By default "ml" laga rahega — sirf number likhiye (jaise 50, 500, 1000)</small>
-                                </div>
-
-                                <div className="seller-form-group">
-                                  <label>
-                                    Available Stock (Bottles) <span className="req">*</span>
-                                  </label>
-                                  <input
-                                    required
-                                    type="number"
-                                    min="0"
-                                    step="1"
-                                    value={v.stock}
-                                    onChange={(e) => handleUpdateVariant(idx, { stock: e.target.value })}
-                                    placeholder="10"
-                                  />
-                                  <small>Units ready to ship</small>
-                                </div>
+                        return (
+                          <div key={idx} className="seller-variant-card">
+                            {/* Card Header: Classy Luxury Toolbar */}
+                            <div className="seller-variant-card-header">
+                              <div className="seller-variant-card-title">
+                                <span className="seller-variant-num-badge">Size {idx + 1 < 10 ? `0${idx + 1}` : idx + 1}</span>
+                                <strong className="seller-variant-heading">{v.size || "New Size"}</strong>
+                                {idx === 0 && <span className="seller-variant-primary-badge">★ Primary / Default</span>}
+                                {v.imageUrl && <span className="seller-variant-custom-photo-badge">📷 Custom Photo</span>}
                               </div>
 
-                              <div className="seller-variant-field-row">
-                                <div className="seller-form-group">
-                                  <label>
-                                    Selling Price (₹) <span className="req">*</span>
-                                  </label>
-                                  <div className="seller-input-prefix">
-                                    <span>₹</span>
-                                    <input
-                                      required
-                                      type="number"
-                                      min="1"
-                                      step="0.01"
-                                      value={v.price}
-                                      onChange={(e) => handleUpdateVariant(idx, { price: e.target.value })}
-                                      placeholder="499"
-                                    />
-                                  </div>
-                                  <small>Customer purchase price</small>
-                                </div>
-
-                                <div className="seller-form-group">
-                                  <label>
-                                    MRP / Regular Price (₹) <small className="opt">(Optional)</small>
-                                  </label>
-                                  <div className="seller-input-prefix">
-                                    <span>₹</span>
-                                    <input
-                                      type="number"
-                                      min="1"
-                                      step="0.01"
-                                      value={v.compareAtPrice}
-                                      onChange={(e) => handleUpdateVariant(idx, { compareAtPrice: e.target.value })}
-                                      placeholder="999"
-                                    />
-                                  </div>
-                                  {(() => {
-                                    const p = Number(v.price) || 0;
-                                    const mrp = Number(v.compareAtPrice) || 0;
-                                    if (mrp > p && p > 0) {
-                                      const disc = Math.round(((mrp - p) / mrp) * 100);
-                                      return <small className="seller-variant-discount-calc">✓ {disc}% discount shown to customer</small>;
-                                    }
-                                    return <small>Strikethrough discount price</small>;
-                                  })()}
-                                </div>
-                              </div>
-
-                              {/* SKU Field Row */}
-                              <div className="seller-variant-sku-row">
-                                <div className="seller-form-group">
-                                  <label>
-                                    SKU (Stock Keeping Unit) <small className="opt">(Optional - Auto-generated if blank)</small>
-                                  </label>
-                                  <div className="seller-sku-input-wrap">
-                                    <input
-                                      type="text"
-                                      maxLength={50}
-                                      value={v.sku || ""}
-                                      onChange={(e) => handleUpdateVariant(idx, { sku: e.target.value.toUpperCase() })}
-                                      placeholder={`e.g. ${generateDefaultSku(form.name, v.size, idx)}`}
-                                      className="seller-sku-input"
-                                    />
-                                    <button
-                                      type="button"
-                                      className="seller-auto-sku-btn"
-                                      title="Auto-generate SKU code"
-                                      onClick={() => handleUpdateVariant(idx, { sku: generateDefaultSku(form.name, v.size, idx) })}
-                                    >
-                                      Auto SKU
-                                    </button>
-                                  </div>
-                                  <small>Inventory tracking barcode / SKU for warehouse & shipping</small>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Column 2: Bottle Photo Upload (Direct Device Browse) */}
-                            <div className="seller-variant-col-photo">
-                              <div className="seller-variant-photo-card">
-                                <div className="seller-variant-photo-card-header">
-                                  <strong>Bottle Photo for {v.size || `Size #${idx + 1}`}</strong>
-                                  <small className="opt">(Optional)</small>
-                                </div>
-
-                                <div className="seller-variant-photo-interactive">
-                                  {/* Preview Box */}
-                                  <div className={`seller-variant-photo-preview-box ${v.imageUrl ? "has-image" : "empty"}`}>
-                                    {v.imageUrl ? (
-                                      <Image
-                                        src={v.imageUrl}
-                                        alt={`Photo for ${v.size}`}
-                                        width={76}
-                                        height={76}
-                                        unoptimized
-                                      />
-                                    ) : (
-                                      <div className="seller-variant-photo-placeholder">
-                                        <ImagePlus size={22} />
-                                        <span>No photo</span>
-                                      </div>
-                                    )}
-                                  </div>
-
-                                  {/* Upload Controls */}
-                                  <div className="seller-variant-photo-controls">
-                                    <label className={`seller-variant-file-btn ${uploadingVariantIndex === idx ? "uploading" : ""}`}>
-                                      <input
-                                        type="file"
-                                        accept="image/jpeg,image/png,image/webp"
-                                        disabled={uploadingVariantIndex === idx || busy}
-                                        onChange={(e) => {
-                                          void uploadVariantPhoto(idx, e.currentTarget.files);
-                                          e.currentTarget.value = "";
-                                        }}
-                                      />
-                                      <UploadCloud size={14} />
-                                      <span>
-                                        {uploadingVariantIndex === idx
-                                          ? "Uploading photo…"
-                                          : v.imageUrl
-                                          ? "Change Photo (Browse)"
-                                          : "📁 Browse & Upload Photo"}
-                                      </span>
-                                    </label>
-
-                                    {v.imageUrl && (
-                                      <button
-                                        type="button"
-                                        className="seller-variant-photo-reset-btn"
-                                        onClick={() => handleUpdateVariant(idx, { imageUrl: "" })}
-                                      >
-                                        <Trash2 size={12} /> Remove (Use Default Cover)
-                                      </button>
-                                    )}
-
-                                    <span className="seller-variant-photo-hint">
-                                      {v.imageUrl
-                                        ? "✓ This photo displays when customer selects this size."
-                                        : "Upload a specific photo for this size, or Flovexa will use the main perfume cover."}
-                                    </span>
-                                  </div>
-                                </div>
-
-                                {/* Gallery Thumbs Quick Pick */}
-                                {form.images.length > 0 && (
-                                  <div className="seller-variant-gallery-picker-wrap">
-                                    <span className="seller-variant-gallery-picker-label">Or choose from uploaded photos:</span>
-                                    <div className="seller-variant-gallery-picker-grid">
-                                      {form.images.map((imgUrl, thumbIdx) => {
-                                        const isSelected = v.imageUrl === imgUrl;
-                                        return (
-                                          <button
-                                            key={`${imgUrl}-${thumbIdx}`}
-                                            type="button"
-                                            className={`seller-variant-gallery-pick-btn ${isSelected ? "selected" : ""}`}
-                                            onClick={() => handleUpdateVariant(idx, { imageUrl: imgUrl })}
-                                            title={`Assign photo #${thumbIdx + 1} to this size`}
-                                          >
-                                            <Image src={imgUrl} alt="" width={38} height={38} unoptimized />
-                                            {isSelected && <span className="seller-variant-pick-tick">✓</span>}
-                                          </button>
-                                        );
-                                      })}
-                                    </div>
-                                  </div>
+                              <div className="seller-variant-card-actions">
+                                <span className="seller-variant-sku-pill" title="SKU for this size">
+                                  <span className="seller-variant-sku-tag">SKU</span>
+                                  <code>{currentSku}</code>
+                                </span>
+                                {form.variants.length > 1 && (
+                                  <button
+                                    type="button"
+                                    className="seller-variant-delete-btn"
+                                    onClick={() => handleRemoveVariant(idx)}
+                                    title="Remove this size variation"
+                                  >
+                                    <Trash2 size={13} />
+                                    <span>Remove</span>
+                                  </button>
                                 )}
                               </div>
                             </div>
+
+                            {/* 2-Column Responsive Body */}
+                            <div className="seller-variant-card-body">
+                              {/* Column 1: Pricing & Inventory Details (Balanced 3-Row Grid) */}
+                              <div className="seller-variant-col-details">
+                                {/* ROW 1: Bottle Volume (ml) + SKU Barcode */}
+                                <div className="seller-variant-field-row">
+                                  {/* Field 1: Bottle Size */}
+                                  <div className="seller-form-group">
+                                    <label>
+                                      Bottle Size / Volume <span className="req">*</span>
+                                    </label>
+                                    <div className="seller-size-input-cluster">
+                                      <div className="seller-input-suffix">
+                                        <input
+                                          required
+                                          type={unit === "custom" ? "text" : "number"}
+                                          min={unit === "custom" ? undefined : "1"}
+                                          step="any"
+                                          value={amount}
+                                          onChange={(e) => {
+                                            const raw = e.target.value;
+                                            if (unit === "custom") {
+                                              handleUpdateVariant(idx, { size: raw });
+                                            } else {
+                                              const cleaned = raw.replace(/[^\d.]/g, "");
+                                              handleUpdateVariant(idx, { size: cleaned ? `${cleaned} ${unit}` : "" });
+                                            }
+                                          }}
+                                          placeholder={unit === "custom" ? "e.g. Travel Spray" : "50"}
+                                        />
+                                        {unit !== "custom" && <span className="seller-unit-badge">{unit}</span>}
+                                      </div>
+                                      <select
+                                        className="seller-unit-select"
+                                        value={unit}
+                                        onChange={(e) => {
+                                          const nextUnit = e.target.value;
+                                          if (nextUnit === "custom") {
+                                            handleUpdateVariant(idx, { size: amount });
+                                          } else {
+                                            const cleaned = amount.replace(/[^\d.]/g, "");
+                                            handleUpdateVariant(idx, { size: cleaned ? `${cleaned} ${nextUnit}` : "" });
+                                          }
+                                        }}
+                                        title="Unit of measurement"
+                                      >
+                                        <option value="ml">ml (Default)</option>
+                                        <option value="g">g</option>
+                                        <option value="oz">oz</option>
+                                        <option value="custom">Custom</option>
+                                      </select>
+                                    </div>
+                                    <small>Default unit: ml (e.g. 50, 100, 500, 1000)</small>
+                                  </div>
+
+                                  {/* Field 2: SKU / Barcode */}
+                                  <div className="seller-form-group">
+                                    <div className="seller-label-inline-action">
+                                      <label>SKU / Barcode ID</label>
+                                      <button
+                                        type="button"
+                                        className="seller-sku-auto-link"
+                                        onClick={() => handleUpdateVariant(idx, { sku: autoSku })}
+                                        title="Click to generate standard SKU code"
+                                      >
+                                        <Sparkles size={11} /> Auto
+                                      </button>
+                                    </div>
+                                    <div className="seller-sku-field-box">
+                                      <input
+                                        type="text"
+                                        maxLength={50}
+                                        value={v.sku || ""}
+                                        onChange={(e) => handleUpdateVariant(idx, { sku: e.target.value.toUpperCase() })}
+                                        placeholder={autoSku}
+                                        className="seller-sku-input"
+                                      />
+                                    </div>
+                                    <small>Warehouse barcode & dispatch ID</small>
+                                  </div>
+                                </div>
+
+                                {/* ROW 2: Pricing (Selling Price & MRP Regular Price) */}
+                                <div className="seller-variant-field-row">
+                                  {/* Field 3: Selling Price */}
+                                  <div className="seller-form-group">
+                                    <label>
+                                      Selling Price (₹) <span className="req">*</span>
+                                    </label>
+                                    <div className="seller-input-prefix">
+                                      <span>₹</span>
+                                      <input
+                                        required
+                                        type="number"
+                                        min="1"
+                                        step="0.01"
+                                        value={v.price}
+                                        onChange={(e) => handleUpdateVariant(idx, { price: e.target.value })}
+                                        placeholder="499"
+                                      />
+                                    </div>
+                                    <small>Customer purchase price</small>
+                                  </div>
+
+                                  {/* Field 4: MRP / Regular Price */}
+                                  <div className="seller-form-group">
+                                    <div className="seller-label-inline-action">
+                                      <label>
+                                        MRP / Regular Price (₹) <small className="opt">(Optional)</small>
+                                      </label>
+                                      {(() => {
+                                        const p = Number(v.price) || 0;
+                                        const mrp = Number(v.compareAtPrice) || 0;
+                                        if (mrp > p && p > 0) {
+                                          const disc = Math.round(((mrp - p) / mrp) * 100);
+                                          return <span className="seller-variant-discount-badge">{disc}% OFF</span>;
+                                        }
+                                        return null;
+                                      })()}
+                                    </div>
+                                    <div className="seller-input-prefix">
+                                      <span>₹</span>
+                                      <input
+                                        type="number"
+                                        min="1"
+                                        step="0.01"
+                                        value={v.compareAtPrice}
+                                        onChange={(e) => handleUpdateVariant(idx, { compareAtPrice: e.target.value })}
+                                        placeholder="999"
+                                      />
+                                    </div>
+                                    <small>Strikethrough discount price</small>
+                                  </div>
+                                </div>
+
+                                {/* ROW 3: Available Stock (Bottles) + Real-time Inventory Status */}
+                                <div className="seller-variant-field-row">
+                                  {/* Field 5: Stock */}
+                                  <div className="seller-form-group">
+                                    <label>
+                                      Available Stock (Bottles) <span className="req">*</span>
+                                    </label>
+                                    <input
+                                      required
+                                      type="number"
+                                      min="0"
+                                      step="1"
+                                      value={v.stock}
+                                      onChange={(e) => handleUpdateVariant(idx, { stock: e.target.value })}
+                                      placeholder="10"
+                                    />
+                                    <small>Units packed and ready to ship</small>
+                                  </div>
+
+                                  {/* Field 6: Fulfillment Status Pill */}
+                                  <div className="seller-form-group">
+                                    <label>Inventory Status</label>
+                                    <div className="seller-stock-status-box">
+                                      {stockNum === 0 ? (
+                                        <span className="seller-status-chip out">
+                                          <AlertTriangle size={12} /> Out of stock
+                                        </span>
+                                      ) : stockNum <= 5 ? (
+                                        <span className="seller-status-chip low">
+                                          <AlertTriangle size={12} /> Low Stock ({stockNum} left)
+                                        </span>
+                                      ) : (
+                                        <span className="seller-status-chip ok">
+                                          <Check size={12} /> In Stock ({stockNum} ready)
+                                        </span>
+                                      )}
+                                    </div>
+                                    <small>Live status shown on Flovexa</small>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Column 2: Bottle Photo Upload (Direct Device Browse) */}
+                              <div className="seller-variant-col-photo">
+                                <div className="seller-variant-photo-card">
+                                  <div className="seller-variant-photo-card-header">
+                                    <div className="seller-photo-card-title">
+                                      <ImagePlus size={14} />
+                                      <strong>Bottle Photo for {v.size || `Size #${idx + 1}`}</strong>
+                                    </div>
+                                    <small className="opt">(Optional)</small>
+                                  </div>
+
+                                  <div className="seller-variant-photo-interactive">
+                                    {/* Preview Box */}
+                                    <div className={`seller-variant-photo-preview-box ${v.imageUrl ? "has-image" : "empty"}`}>
+                                      {v.imageUrl ? (
+                                        <Image
+                                          src={v.imageUrl}
+                                          alt={`Photo for ${v.size}`}
+                                          width={82}
+                                          height={82}
+                                          unoptimized
+                                        />
+                                      ) : (
+                                        <div className="seller-variant-photo-placeholder">
+                                          <ImagePlus size={24} />
+                                          <span>No photo</span>
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {/* Upload Controls */}
+                                    <div className="seller-variant-photo-controls">
+                                      <label className={`seller-variant-file-btn ${uploadingVariantIndex === idx ? "uploading" : ""}`}>
+                                        <input
+                                          type="file"
+                                          accept="image/jpeg,image/png,image/webp"
+                                          disabled={uploadingVariantIndex === idx || busy}
+                                          onChange={(e) => {
+                                            void uploadVariantPhoto(idx, e.currentTarget.files);
+                                            e.currentTarget.value = "";
+                                          }}
+                                        />
+                                        <UploadCloud size={14} />
+                                        <span>
+                                          {uploadingVariantIndex === idx
+                                            ? "Uploading photo…"
+                                            : v.imageUrl
+                                            ? "Change Photo"
+                                            : "Upload Bottle Photo"}
+                                        </span>
+                                      </label>
+
+                                      {v.imageUrl && (
+                                        <button
+                                          type="button"
+                                          className="seller-variant-photo-reset-btn"
+                                          onClick={() => handleUpdateVariant(idx, { imageUrl: "" })}
+                                        >
+                                          <Trash2 size={12} /> Remove (Use Default Cover)
+                                        </button>
+                                      )}
+
+                                      <span className="seller-variant-photo-hint">
+                                        {v.imageUrl
+                                          ? "✓ Displays when customer chooses this size."
+                                          : "Flovexa will use main cover if left empty."}
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  {/* Gallery Thumbs Quick Pick */}
+                                  {form.images.length > 0 && (
+                                    <div className="seller-variant-gallery-picker-wrap">
+                                      <span className="seller-variant-gallery-picker-label">Or choose from perfume gallery:</span>
+                                      <div className="seller-variant-gallery-picker-grid">
+                                        {form.images.map((imgUrl, thumbIdx) => {
+                                          const isSelected = v.imageUrl === imgUrl;
+                                          return (
+                                            <button
+                                              key={`${imgUrl}-${thumbIdx}`}
+                                              type="button"
+                                              className={`seller-variant-gallery-pick-btn ${isSelected ? "selected" : ""}`}
+                                              onClick={() => handleUpdateVariant(idx, { imageUrl: imgUrl })}
+                                              title={`Use photo #${thumbIdx + 1} for this size`}
+                                            >
+                                              <Image src={imgUrl} alt="" width={38} height={38} unoptimized />
+                                              {isSelected && <span className="seller-variant-pick-tick">✓</span>}
+                                            </button>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
 
                     <button
@@ -1198,7 +1242,7 @@ export default function SellerDashboard({
                       className="seller-add-variant-btn"
                       onClick={() => handleAddVariant()}
                     >
-                      <Plus size={16} /> + Add Another Bottle Size Variation
+                      <Plus size={16} /> Add Another Bottle Size Variation
                     </button>
                   </div>
 
