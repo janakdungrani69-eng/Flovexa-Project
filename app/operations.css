@@ -568,56 +568,6 @@
   transform: translateY(-1px);
 }
 
-/* Accent Palette */
-.seller-accent-palette {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 4px;
-}
-
-.seller-accent-swatch-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 6px 12px;
-  border-radius: 20px;
-  border: 1.5px solid #ded4c5;
-  background: #faf7f2;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.seller-accent-swatch-btn:hover {
-  background: #ffffff;
-  border-color: #ad7045;
-}
-
-.seller-accent-swatch-btn.selected {
-  border-color: #ad7045;
-  background: #ffffff;
-  box-shadow: 0 2px 8px rgba(173, 112, 69, 0.2);
-}
-
-.seller-accent-circle {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  border: 1px solid rgba(0, 0, 0, 0.15);
-}
-
-.seller-accent-name {
-  font-size: 11.5px;
-  font-weight: 700;
-  color: #3b3226;
-}
-
-.seller-accent-check {
-  font-size: 11px;
-  font-weight: 800;
-  color: #ad7045;
-}
-
 /* Step 2: Tabbed Bottle Sizes */
 .seller-variant-tabs-row {
   display: flex;

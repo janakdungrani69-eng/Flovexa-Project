@@ -29,7 +29,6 @@ import {
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
-  Palette,
 } from "lucide-react";
 import ShippingLabelModal, { type ShippingLabelOrder } from "@/components/shipping-label-modal";
 import { generateDefaultSku } from "@/lib/products";
@@ -200,17 +199,6 @@ const SUGGESTED_NOTES = [
   "Atlas Cedarwood",
   "Indonesian Patchouli",
   "Rich Leather",
-];
-
-const ACCENT_PRESETS = [
-  { name: "Florentine Amber", hex: "#ad7045" },
-  { name: "Royal Gold", hex: "#d4af37" },
-  { name: "Imperial Bronze", hex: "#b45309" },
-  { name: "Velvet Rose", hex: "#831843" },
-  { name: "Midnight Noir", hex: "#1c1917" },
-  { name: "Emerald Sage", hex: "#065f46" },
-  { name: "Sapphire Night", hex: "#1e3a8a" },
-  { name: "Saffron Crimson", hex: "#991b1b" },
 ];
 
 export default function SellerDashboard({
@@ -1254,31 +1242,6 @@ export default function SellerDashboard({
                               }
                             />
                             <small>Romantic brand story and evocative fragrance experience for prospective buyers</small>
-                          </div>
-
-                          <div className="seller-form-group span-2">
-                            <label className="seller-label-with-icon">
-                              <Palette size={14} /> Bottle Mood & Accent Tint
-                            </label>
-                            <div className="seller-accent-palette">
-                              {ACCENT_PRESETS.map((p) => {
-                                const isSelected = form.accent?.toLowerCase() === p.hex.toLowerCase();
-                                return (
-                                  <button
-                                    key={p.hex}
-                                    type="button"
-                                    className={`seller-accent-swatch-btn ${isSelected ? "selected" : ""}`}
-                                    onClick={() => setForm((cur) => ({ ...cur, accent: p.hex }))}
-                                    title={p.name}
-                                  >
-                                    <span className="seller-accent-circle" style={{ backgroundColor: p.hex }} />
-                                    <span className="seller-accent-name">{p.name}</span>
-                                    {isSelected && <span className="seller-accent-check">✓</span>}
-                                  </button>
-                                );
-                              })}
-                            </div>
-                            <small>Adds a bespoke luxury aura & matching highlight tone to your customer product card</small>
                           </div>
                         </div>
                       </div>
