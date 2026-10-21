@@ -46,8 +46,35 @@ export async function POST(request: Request) {
       );
     }
 
-    const role = data.user.app_metadata?.role;
-    if (role !== "seller" && role !== "admin" && role !== "owner") {
+    const isOwnerEmail =
+      email === "janakdungrani69@gmail.com" ||
+      email === "businessflovax@gmail.com";
+
+    let role = data.user.app_metadata?.role;
+
+    // Check seller profile in database
+    let profile: { status?: string; store_name?: string } | null = null;
+    let admin: ReturnType<typeof createAdminSupabase> | null = null;
+    try {
+      admin = createAdminSupabase();
+      const { data: p } = await admin
+        .from("seller_profiles")
+        .select("status, store_name")
+        .eq("user_id", data.user.id)
+        .maybeSingle();
+      profile = p;
+    } catch (adminErr) {
+      console.error("[seller/login] Could not check seller_profiles:", adminErr);
+    }
+
+    const isAuthorizedSeller =
+      role === "seller" ||
+      role === "admin" ||
+      role === "owner" ||
+      isOwnerEmail ||
+      (profile && profile.status === "active");
+
+    if (!isAuthorizedSeller) {
       await supabase.auth.signOut();
       return NextResponse.json(
         { error: "Access denied. Only authorized Flovexa sellers can access this portal." },
@@ -55,19 +82,33 @@ export async function POST(request: Request) {
       );
     }
 
-    // Verify active seller profile
-    const admin = createAdminSupabase();
-    const { data: profile } = await admin
-      .from("seller_profiles")
-      .select("status")
-      .eq("user_id", data.user.id)
-      .maybeSingle();
+    // Auto-grant seller role in auth.users if missing
+    if (admin && role !== "seller" && role !== "admin" && role !== "owner") {
+      try {
+        await admin.auth.admin.updateUserById(data.user.id, {
+          app_metadata: { role: "seller" },
+        });
+        role = "seller";
+      } catch (err) {
+        console.error("[seller/login] Auto-assign role error:", err);
+      }
+    }
 
-    if (!profile || profile.status !== "active") {
-      return NextResponse.json(
-        { error: "Your seller account is not active. Please contact support." },
-        { status: 403 }
-      );
+    // Auto-create seller profile if missing for owner
+    if (admin && !profile && isOwnerEmail) {
+      try {
+        await admin.from("seller_profiles").upsert(
+          {
+            user_id: data.user.id,
+            store_name: "FLOVEXA",
+            status: "active",
+            admin_note: "Primary authorized owner & seller: Janak Dungrani",
+          },
+          { onConflict: "user_id" }
+        );
+      } catch (err) {
+        console.error("[seller/login] Auto-create profile error:", err);
+      }
     }
 
     const targetUrl = role === "admin" ? "/admin" : "/seller";
@@ -80,4 +121,3 @@ export async function POST(request: Request) {
     );
   }
 }
-
