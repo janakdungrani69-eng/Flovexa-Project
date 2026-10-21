@@ -14,18 +14,18 @@ const variantItemSchema = z.object({
 });
 
 const fields = z.object({
-  name: z.string().trim().min(2).max(120),
-  slug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).max(140),
-  category: z.string().trim().min(2).max(60),
+  name: z.string().trim().min(2, "Perfume name must be at least 2 characters.").max(120),
+  slug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "URL slug must be lowercase alphanumeric and hyphens only.").max(140),
+  category: z.string().trim().min(1, "Please choose a category.").max(60),
   price: z.coerce.number().finite().min(1).max(1000000).optional(),
   compareAtPrice: z.coerce.number().finite().positive().max(1000000).nullable().optional(),
   size: z.string().trim().min(1).max(40).optional(),
-  concentration: z.string().trim().min(1).max(80),
-  notes: z.string().trim().min(2).max(500),
-  description: z.string().trim().min(10).max(32000),
+  concentration: z.string().trim().min(1, "Concentration is required.").max(80),
+  notes: z.string().trim().min(2, "Fragrance notes are required.").max(500),
+  description: z.string().trim().min(5, "Description must be at least 5 characters.").max(32000),
   imageUrl: z.string().max(32000).optional(),
   images: z.array(z.string()).optional(),
-  accent: z.string().regex(/^#[0-9a-f]{6}$/i),
+  accent: z.string().regex(/^#[0-9a-f]{6}$/i, "Invalid accent color code."),
   stock: z.coerce.number().int().min(0).max(100000).optional(),
   active: z.boolean(),
   variants: z.array(variantItemSchema).optional(),
@@ -168,14 +168,11 @@ export async function POST(request: Request) {
   try {
     const seller = await getActiveSeller();
     if (!seller) return NextResponse.json({ error: "Active seller access is required." }, { status: 403 });
+
     const parsed = fields.safeParse(await request.json().catch(() => null));
     if (!parsed.success) {
       const issue = parsed.error.issues[0]?.message || "Please check all perfume details.";
       return NextResponse.json({ error: issue }, { status: 400 });
-    }
-    const { data: category } = await seller.supabase.from("store_categories").select("name").eq("name", parsed.data.category).eq("active", true).maybeSingle();
-    if (!category && !["Perfume", "Fragrance", "Unisex"].includes(parsed.data.category)) {
-      return NextResponse.json({ error: "Choose an active store category." }, { status: 400 });
     }
 
     const insertPayload = {
@@ -183,9 +180,10 @@ export async function POST(request: Request) {
       seller_id: seller.user.id,
       featured: false,
     };
+
     let { data, error } = await seller.supabase.from("products").insert(insertPayload).select("*").single();
 
-    if (error && error.message.includes("products_slug_key")) {
+    if (error && (error.message?.includes("products_slug_key") || error.code === "23505")) {
       const suffix = Math.random().toString(36).substring(2, 6);
       insertPayload.slug = `${parsed.data.slug}-${suffix}`;
       const retry = await seller.supabase.from("products").insert(insertPayload).select("*").single();
@@ -193,12 +191,19 @@ export async function POST(request: Request) {
       error = retry.error;
     }
 
-    if (error) throw error;
+    if (error) {
+      console.error("[products/POST] Database insert error:", error);
+      throw new Error(error.message || "Database insert failed.");
+    }
+
     return NextResponse.json({ product: toClientProduct(data) }, { status: 201 });
   } catch (error) {
-    const message = error instanceof Error && error.message.includes("products_slug_key") ? "That product URL is already in use." : "Could not add this perfume.";
-    console.error("Seller product creation failed", error instanceof Error ? error.message : "Unknown error");
-    return NextResponse.json({ error: message }, { status: 409 });
+    const rawMessage = error instanceof Error ? error.message : "Could not add this perfume.";
+    const message = rawMessage.includes("products_slug_key")
+      ? "That perfume URL slug is already in use. Please choose a different name or slug."
+      : rawMessage;
+    console.error("Seller product creation failed:", error);
+    return NextResponse.json({ error: message }, { status: 400 });
   }
 }
 
@@ -242,21 +247,40 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: issue }, { status: 400 });
     }
     const { id, ...value } = parsed.data;
-    const { data: category } = await seller.supabase.from("store_categories").select("name").eq("name", value.category).eq("active", true).maybeSingle();
-    if (!category && !["Perfume", "Fragrance", "Unisex"].includes(value.category)) {
-      return NextResponse.json({ error: "Choose an active store category." }, { status: 400 });
-    }
 
     const { data, error } = await seller.supabase.from("products").update({
       ...validationMessage(value),
       updated_at: new Date().toISOString(),
     }).eq("id", id).eq("seller_id", seller.user.id).select("*").maybeSingle();
+
     if (error) throw error;
     if (!data) return NextResponse.json({ error: "That perfume is not in your catalogue." }, { status: 404 });
     return NextResponse.json({ product: toClientProduct(data) });
   } catch (error) {
-    const message = error instanceof Error && error.message.includes("products_slug_key") ? "That product URL is already in use." : "Could not update this perfume.";
-    console.error("Seller product update failed", error instanceof Error ? error.message : "Unknown error");
-    return NextResponse.json({ error: message }, { status: 409 });
+    const rawMessage = error instanceof Error ? error.message : "Could not update this perfume.";
+    const message = rawMessage.includes("products_slug_key")
+      ? "That perfume URL slug is already in use."
+      : rawMessage;
+    console.error("Seller product update failed:", error);
+    return NextResponse.json({ error: message }, { status: 400 });
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const seller = await getActiveSeller();
+    if (!seller) return NextResponse.json({ error: "Active seller access is required." }, { status: 403 });
+
+    const raw = await request.json().catch(() => null);
+    const id = typeof raw?.id === "string" ? raw.id : null;
+    if (!id) return NextResponse.json({ error: "Product ID is required." }, { status: 400 });
+
+    const { error } = await seller.supabase.from("products").delete().eq("id", id).eq("seller_id", seller.user.id);
+    if (error) throw error;
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Seller product delete failed:", error);
+    return NextResponse.json({ error: "Could not delete this perfume." }, { status: 400 });
   }
 }
