@@ -191,6 +191,99 @@
 
 /* --- MODERN, FRIENDLY SELLER PRODUCT LISTING FORM (V2) & STUDIO --- */
 /* ========================================================
+   DEDICATED NEW PAGE VIEW (FULL-PAGE STUDIO WORKSPACE)
+   ======================================================== */
+.seller-dedicated-page-view {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  animation: sellerFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes sellerFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.seller-dedicated-page-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 20px;
+  margin-bottom: 20px;
+  background: #ffffff;
+  border: 1px solid #e4dacb;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(35, 27, 18, 0.04);
+}
+
+.seller-back-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: #f7efe4;
+  border: 1px solid #dfd2c0;
+  color: #3b2f21;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.seller-back-link-btn:hover {
+  background: #231f19;
+  color: #ffffff;
+  border-color: #231f19;
+  transform: translateX(-2px);
+}
+
+.seller-dedicated-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: #877a6a;
+}
+
+.seller-dedicated-breadcrumbs .crumb-root {
+  color: #877a6a;
+}
+
+.seller-dedicated-breadcrumbs .crumb-link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #877a6a;
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: 12.5px;
+  font-family: inherit;
+  transition: color 0.15s ease;
+}
+
+.seller-dedicated-breadcrumbs .crumb-link:hover {
+  color: #231f19;
+}
+
+.seller-dedicated-breadcrumbs .crumb-sep {
+  color: #c9bea9;
+}
+
+.seller-dedicated-breadcrumbs .crumb-current {
+  font-weight: 700;
+  color: #231f19;
+}
+
+/* ========================================================
    LUXURY FRAGRANCE STUDIO (MULTI-STEP WORKSPACE)
    ======================================================== */
 .seller-studio-form {

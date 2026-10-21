@@ -336,6 +336,56 @@ export default function SellerDashboard({
     };
   }, []);
 
+  // Sync with URL query (?action=new-product / ?action=edit-product&id=...)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const syncWithUrl = () => {
+      const params = new URLSearchParams(window.location.search);
+      const action = params.get("action");
+      if (action === "new-product") {
+        setEditingId(null);
+        setForm(blankForm(categories[0] ?? "Perfume"));
+        setActiveFormStep(1);
+        setActiveVariantTab(0);
+        setPreviewVariantIndex(0);
+        setFormOpen(true);
+      } else if (action === "edit-product") {
+        const id = params.get("id");
+        if (id) {
+          const found = products.find((p) => p.id === id);
+          if (found) {
+            setEditingId(found.id);
+            setActiveFormStep(1);
+            setActiveVariantTab(0);
+            setPreviewVariantIndex(0);
+            setFormOpen(true);
+          }
+        }
+      } else if (!action) {
+        setFormOpen(false);
+        setEditingId(null);
+      }
+    };
+
+    window.addEventListener("popstate", syncWithUrl);
+    return () => window.removeEventListener("popstate", syncWithUrl);
+  }, [products, categories]);
+
+  function closeStudio() {
+    setFormOpen(false);
+    setEditingId(null);
+    setMessage("");
+    setErrorMessage("");
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("action");
+      url.searchParams.delete("id");
+      window.history.pushState(null, "", url.pathname + (url.search ? url.search : ""));
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }
+
   function beginAdd() {
     setEditingId(null);
     setForm(blankForm(categories[0] ?? "Perfume"));
@@ -346,7 +396,11 @@ export default function SellerDashboard({
     setMessage("");
     setErrorMessage("");
     if (typeof window !== "undefined") {
-      window.scrollTo({ top: 120, behavior: "smooth" });
+      const url = new URL(window.location.href);
+      url.searchParams.set("action", "new-product");
+      url.searchParams.delete("id");
+      window.history.pushState({ formOpen: true }, "", url.pathname + "?" + url.searchParams.toString());
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   }
 
@@ -635,7 +689,11 @@ export default function SellerDashboard({
     setMessage("");
     setErrorMessage("");
     if (typeof window !== "undefined") {
-      window.scrollTo({ top: 120, behavior: "smooth" });
+      const url = new URL(window.location.href);
+      url.searchParams.set("action", "edit-product");
+      url.searchParams.set("id", product.id);
+      window.history.pushState({ formOpen: true, id: product.id }, "", url.pathname + "?" + url.searchParams.toString());
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   }
 
@@ -703,8 +761,7 @@ export default function SellerDashboard({
       setProducts((current) =>
         editingId ? current.map((item) => (item.id === product.id ? product : item)) : [product, ...current]
       );
-      setFormOpen(false);
-      setEditingId(null);
+      closeStudio();
       setMessage(editingId ? `Changes saved for "${product.name}".` : `"${product.name}" added to your catalogue!`);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Could not save this perfume.");
@@ -917,75 +974,39 @@ export default function SellerDashboard({
 
         {/* Content Area */}
         <div className="seller-content">
-          <div className="seller-heading">
-            <div>
-              <span className="eyebrow">FLOVEXA SELLER CENTRAL · MERCHANT HUB</span>
-              <h1>
-                {tab === "products"
-                  ? "Product Catalogue & Inventory"
-                  : tab === "orders"
-                  ? "Merchant Orders & Dispatch"
-                  : tab === "returns"
-                  ? "Customer Return Requests"
-                  : tab === "earnings"
-                  ? "Sales Revenue & Settlements"
-                  : "Store Profile & Settings"}
-              </h1>
-              <p>
-                {tab === "products"
-                  ? "Add, edit, manage stock, and toggle visibility for your luxury perfumes on Flovexa."
-                  : tab === "orders"
-                  ? "Track paid orders containing your fragrances, and provide courier tracking numbers."
-                  : tab === "returns"
-                  ? "Review any return inquiries filed by fragrance customers."
-                  : tab === "earnings"
-                  ? "Overview of your gross product sales and settlement information."
-                  : "Update your perfume brand name and merchant details."}
-              </p>
-            </div>
-            {tab === "products" && (
-              <button className="admin-primary seller-add-btn" onClick={beginAdd}>
-                <Plus size={16} /> Add New Perfume
-              </button>
-            )}
-          </div>
+          {tab === "products" && formOpen ? (
+            /* DEDICATED NEW PAGE: ADD/EDIT PERFUME STUDIO */
+            <div className="seller-dedicated-page-view">
+              <div className="seller-dedicated-page-topbar">
+                <button
+                  type="button"
+                  className="seller-back-link-btn"
+                  onClick={closeStudio}
+                >
+                  <ArrowLeft size={16} />
+                  <span>Back to Products Catalogue</span>
+                </button>
 
-          {(message || errorMessage) && (
-            <div className={`seller-message ${errorMessage ? "seller-message-error" : ""}`}>
-              {errorMessage || message}
-            </div>
-          )}
+                <div className="seller-dedicated-breadcrumbs">
+                  <span className="crumb-root">Flovexa Seller Central</span>
+                  <span className="crumb-sep">/</span>
+                  <button type="button" onClick={closeStudio} className="crumb-link">
+                    Catalogue
+                  </button>
+                  <span className="crumb-sep">/</span>
+                  <span className="crumb-current">
+                    {editingId ? `Edit "${form.name || "Perfume"}"` : "Add New Perfume"}
+                  </span>
+                </div>
+              </div>
 
-          {/* Metric Stats Cards */}
-          <div className="seller-stats">
-            <div>
-              <span>TOTAL LISTINGS</span>
-              <b>{products.length}</b>
-              <small>{activeProducts} live in customer store</small>
-            </div>
-            <div>
-              <span>LOW / OUT OF STOCK</span>
-              <b style={{ color: lowStockProducts > 0 ? "#b45309" : "inherit" }}>{lowStockProducts}</b>
-              <small>{lowStockProducts > 0 ? "Requires restock" : "Inventory healthy"}</small>
-            </div>
-            <div>
-              <span>OPEN ORDERS</span>
-              <b>{orders.filter((order) => order.fulfillment.status !== "delivered").length}</b>
-              <small>{orders.length} total customer orders</small>
-            </div>
-            <div>
-              <span>GROSS SALES</span>
-              <b>{money(grossSales)}</b>
-              <small>Captured revenue</small>
-            </div>
-          </div>
+              {(message || errorMessage) && (
+                <div className={`seller-message ${errorMessage ? "seller-message-error" : ""}`}>
+                  {errorMessage || message}
+                </div>
+              )}
 
-          {/* 1. PRODUCT MANAGEMENT TAB */}
-          {tab === "products" && (
-            <section className="seller-panel">
-              {/* Add / Edit Drawer Form */}
-              {formOpen && (
-                <form className="seller-studio-form" onSubmit={handleFormSubmit}>
+              <form className="seller-studio-form" onSubmit={handleFormSubmit}>
                   {/* Studio Header: Sleek, Focused Luxury Portal Banner */}
                   <div className="seller-studio-header">
                     <div className="seller-studio-title-wrap">
@@ -1015,7 +1036,7 @@ export default function SellerDashboard({
                     <button
                       type="button"
                       className="seller-studio-close-btn"
-                      onClick={() => setFormOpen(false)}
+                      onClick={closeStudio}
                       title="Close studio and return to catalogue"
                     >
                       ✕ Exit Studio
@@ -2032,7 +2053,7 @@ export default function SellerDashboard({
                         <button
                           type="button"
                           className="seller-studio-nav-cancel-btn"
-                          onClick={() => setFormOpen(false)}
+                          onClick={closeStudio}
                         >
                           ✕ Cancel & Close
                         </button>
@@ -2084,10 +2105,77 @@ export default function SellerDashboard({
                     </div>
                   </div>
                 </form>
-              )}
+              </div>
+            ) : (
+              <>
+                <div className="seller-heading">
+                  <div>
+                    <span className="eyebrow">FLOVEXA SELLER CENTRAL · MERCHANT HUB</span>
+                    <h1>
+                      {tab === "products"
+                        ? "Product Catalogue & Inventory"
+                        : tab === "orders"
+                        ? "Merchant Orders & Dispatch"
+                        : tab === "returns"
+                        ? "Customer Return Requests"
+                        : tab === "earnings"
+                        ? "Sales Revenue & Settlements"
+                        : "Store Profile & Settings"}
+                    </h1>
+                    <p>
+                      {tab === "products"
+                        ? "Add, edit, manage stock, and toggle visibility for your luxury perfumes on Flovexa."
+                        : tab === "orders"
+                        ? "Track paid orders containing your fragrances, and provide courier tracking numbers."
+                        : tab === "returns"
+                        ? "Review any return inquiries filed by fragrance customers."
+                        : tab === "earnings"
+                        ? "Overview of your gross product sales and settlement information."
+                        : "Update your perfume brand name and merchant details."}
+                    </p>
+                  </div>
+                  {tab === "products" && (
+                    <button className="admin-primary seller-add-btn" onClick={beginAdd}>
+                      <Plus size={16} /> Add New Perfume
+                    </button>
+                  )}
+                </div>
 
-              {/* Catalog Controls: Search, Filters & Sorting (Meesho/Flipkart Style) */}
-              <div className="seller-catalog-controls">
+                {(message || errorMessage) && (
+                  <div className={`seller-message ${errorMessage ? "seller-message-error" : ""}`}>
+                    {errorMessage || message}
+                  </div>
+                )}
+
+                {/* Metric Stats Cards */}
+                <div className="seller-stats">
+                  <div>
+                    <span>TOTAL LISTINGS</span>
+                    <b>{products.length}</b>
+                    <small>{activeProducts} live in customer store</small>
+                  </div>
+                  <div>
+                    <span>LOW / OUT OF STOCK</span>
+                    <b style={{ color: lowStockProducts > 0 ? "#b45309" : "inherit" }}>{lowStockProducts}</b>
+                    <small>{lowStockProducts > 0 ? "Requires restock" : "Inventory healthy"}</small>
+                  </div>
+                  <div>
+                    <span>OPEN ORDERS</span>
+                    <b>{orders.filter((order) => order.fulfillment.status !== "delivered").length}</b>
+                    <small>{orders.length} total customer orders</small>
+                  </div>
+                  <div>
+                    <span>GROSS SALES</span>
+                    <b>{money(grossSales)}</b>
+                    <small>Captured revenue</small>
+                  </div>
+                </div>
+
+                {/* 1. PRODUCT MANAGEMENT TAB */}
+                {tab === "products" && (
+                  <section className="seller-panel">
+                    {/* Catalog Controls: Search, Filters & Sorting (Meesho/Flipkart Style) */}
+                    <div className="seller-catalog-controls">
                 <div className="seller-search-box">
                   <Search size={15} />
                   <input
@@ -2729,7 +2817,9 @@ export default function SellerDashboard({
               </div>
             </section>
           )}
-        </div>
+        </>
+      )}
+    </div>
       </section>
       {/* Printable Consolidated Shipping Label Modal */}
       {selectedLabelOrder && (
