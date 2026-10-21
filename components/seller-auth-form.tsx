@@ -82,7 +82,7 @@ export default function SellerAuthForm() {
             autoComplete="username"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="janakdungrani69@gmail.com"
+            placeholder="seller@example.com"
             style={{ width: "100%", padding: "10px 12px", border: "1px solid #dcd3c5", borderRadius: "4px", fontSize: "14px" }}
           />
         </label>

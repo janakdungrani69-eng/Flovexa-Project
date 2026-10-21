@@ -109,7 +109,7 @@ export default function SignupForm() {
           autoComplete="name"
           value={name}
           onChange={(event) => setName(event.target.value)}
-          placeholder="e.g. Dungrani Janak"
+          placeholder="Enter your full name"
         />
       </label>
 
@@ -121,7 +121,7 @@ export default function SignupForm() {
           autoComplete="tel"
           value={phone}
           onChange={(event) => setPhone(event.target.value)}
-          placeholder="+91 96627 65757"
+          placeholder="+91 98765 43210"
         />
       </label>
 
