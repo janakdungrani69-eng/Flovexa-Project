@@ -165,7 +165,7 @@ export async function GET() {
   try {
     const seller = await getActiveSeller();
     if (!seller) return NextResponse.json({ error: "Active seller access is required." }, { status: 403 });
-    const { data, error } = await seller.supabase.schema("public").from("products").select("*").eq("seller_id", seller.user.id).order("created_at", { ascending: false });
+    const { data, error } = await seller.supabase.from("products").select("*").eq("seller_id", seller.user.id).order("created_at", { ascending: false });
     if (error) throw error;
     return NextResponse.json({ products: (data ?? []).map((item) => toClientProduct(item)) });
   } catch (error) {
@@ -191,14 +191,24 @@ export async function POST(request: Request) {
       featured: false,
     };
 
-    let { data, error } = await seller.supabase.schema("public").from("products").insert(insertPayload).select("*").single();
+    let { data, error } = await seller.supabase.from("products").insert(insertPayload).select("*").single();
 
     if (error && (error.message?.includes("products_slug_key") || error.code === "23505")) {
       const suffix = Math.random().toString(36).substring(2, 6);
       insertPayload.slug = `${parsed.data.slug}-${suffix}`;
-      const retry = await seller.supabase.schema("public").from("products").insert(insertPayload).select("*").single();
+      const retry = await seller.supabase.from("products").insert(insertPayload).select("*").single();
       data = retry.data;
       error = retry.error;
+    }
+
+    if (error && (error.code === "PGRST205" || error.message?.includes("schema cache"))) {
+      // Graceful retry after a brief pause in case of temporary schema cache reload
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      const retry = await seller.supabase.from("products").insert(insertPayload).select("*").single();
+      if (!retry.error) {
+        data = retry.data;
+        error = null;
+      }
     }
 
     if (error) {
@@ -209,9 +219,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ product: toClientProduct(data) }, { status: 201 });
   } catch (error) {
     const rawMessage = error instanceof Error ? error.message : "Could not add this perfume.";
-    const message = rawMessage.includes("products_slug_key")
-      ? "That perfume URL slug is already in use. Please choose a different name or slug."
-      : rawMessage;
+    let message = rawMessage;
+    if (rawMessage.includes("products_slug_key")) {
+      message = "That perfume URL slug is already in use. Please choose a different name or slug.";
+    } else if (rawMessage.includes("schema cache") || rawMessage.includes("PGRST205")) {
+      message = "Supabase database schema cache is currently refreshing. Please try again in a few seconds.";
+    }
     console.error("Seller product creation failed:", error);
     return NextResponse.json({ error: message }, { status: 400 });
   }
@@ -229,10 +242,21 @@ export async function PATCH(request: Request) {
     // 1. Quick stock update
     const quickStock = quickStockSchema.safeParse(raw);
     if (quickStock.success) {
-      const { data, error } = await seller.supabase.schema("public").from("products").update({
+      let { data, error } = await seller.supabase.from("products").update({
         stock: quickStock.data.stock,
         updated_at: new Date().toISOString(),
       }).eq("id", quickStock.data.id).eq("seller_id", seller.user.id).select("*").maybeSingle();
+
+      if (error && (error.code === "PGRST205" || error.message?.includes("schema cache"))) {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        const retry = await seller.supabase.from("products").update({
+          stock: quickStock.data.stock,
+          updated_at: new Date().toISOString(),
+        }).eq("id", quickStock.data.id).eq("seller_id", seller.user.id).select("*").maybeSingle();
+        data = retry.data;
+        error = retry.error;
+      }
+
       if (error) throw error;
       if (!data) return NextResponse.json({ error: "Product not found." }, { status: 404 });
       return NextResponse.json({ product: toClientProduct(data) });
@@ -241,10 +265,21 @@ export async function PATCH(request: Request) {
     // 2. Quick visibility toggle
     const quickActive = quickActiveSchema.safeParse(raw);
     if (quickActive.success) {
-      const { data, error } = await seller.supabase.schema("public").from("products").update({
+      let { data, error } = await seller.supabase.from("products").update({
         active: quickActive.data.active,
         updated_at: new Date().toISOString(),
       }).eq("id", quickActive.data.id).eq("seller_id", seller.user.id).select("*").maybeSingle();
+
+      if (error && (error.code === "PGRST205" || error.message?.includes("schema cache"))) {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        const retry = await seller.supabase.from("products").update({
+          active: quickActive.data.active,
+          updated_at: new Date().toISOString(),
+        }).eq("id", quickActive.data.id).eq("seller_id", seller.user.id).select("*").maybeSingle();
+        data = retry.data;
+        error = retry.error;
+      }
+
       if (error) throw error;
       if (!data) return NextResponse.json({ error: "Product not found." }, { status: 404 });
       return NextResponse.json({ product: toClientProduct(data) });
@@ -258,19 +293,32 @@ export async function PATCH(request: Request) {
     }
     const { id, ...value } = parsed.data;
 
-    const { data, error } = await seller.supabase.schema("public").from("products").update({
+    let { data, error } = await seller.supabase.from("products").update({
       ...validationMessage(value),
       updated_at: new Date().toISOString(),
     }).eq("id", id).eq("seller_id", seller.user.id).select("*").maybeSingle();
+
+    if (error && (error.code === "PGRST205" || error.message?.includes("schema cache"))) {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      const retry = await seller.supabase.from("products").update({
+        ...validationMessage(value),
+        updated_at: new Date().toISOString(),
+      }).eq("id", id).eq("seller_id", seller.user.id).select("*").maybeSingle();
+      data = retry.data;
+      error = retry.error;
+    }
 
     if (error) throw error;
     if (!data) return NextResponse.json({ error: "That perfume is not in your catalogue." }, { status: 404 });
     return NextResponse.json({ product: toClientProduct(data) });
   } catch (error) {
     const rawMessage = error instanceof Error ? error.message : "Could not update this perfume.";
-    const message = rawMessage.includes("products_slug_key")
-      ? "That perfume URL slug is already in use."
-      : rawMessage;
+    let message = rawMessage;
+    if (rawMessage.includes("products_slug_key")) {
+      message = "That perfume URL slug is already in use.";
+    } else if (rawMessage.includes("schema cache") || rawMessage.includes("PGRST205")) {
+      message = "Supabase database schema cache is currently refreshing. Please try again in a few seconds.";
+    }
     console.error("Seller product update failed:", error);
     return NextResponse.json({ error: message }, { status: 400 });
   }
@@ -285,7 +333,7 @@ export async function DELETE(request: Request) {
     const id = typeof raw?.id === "string" ? raw.id : null;
     if (!id) return NextResponse.json({ error: "Product ID is required." }, { status: 400 });
 
-    const { error } = await seller.supabase.schema("public").from("products").delete().eq("id", id).eq("seller_id", seller.user.id);
+    const { error } = await seller.supabase.from("products").delete().eq("id", id).eq("seller_id", seller.user.id);
     if (error) throw error;
 
     return NextResponse.json({ success: true });

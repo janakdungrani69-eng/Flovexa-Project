@@ -6,7 +6,6 @@ export function createAdminSupabase() {
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !serviceKey) throw new Error("Supabase server credentials are not configured.");
   return createClient(url, serviceKey, {
-    db: { schema: "public" },
     auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
   });
 }

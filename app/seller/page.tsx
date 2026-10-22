@@ -85,13 +85,11 @@ export default async function SellerPage() {
 
     const [{ data: products, error: productError }, { data: categories, error: categoryError }] = await Promise.all([
       supabase
-        .schema("public")
         .from("products")
         .select("id, slug, name, category, price_paise, compare_at_paise, size, concentration, notes, description, image_url, accent, stock, active, created_at")
         .eq("seller_id", user.id)
         .order("created_at", { ascending: false }),
       supabase
-        .schema("public")
         .from("store_categories")
         .select("name")
         .eq("active", true)
