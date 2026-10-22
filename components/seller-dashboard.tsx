@@ -256,6 +256,10 @@ export default function SellerDashboard({
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<"newest" | "price_asc" | "price_desc" | "stock_asc">("newest");
 
+  // Order Search & Filter State
+  const [orderSearchQuery, setOrderSearchQuery] = useState("");
+  const [orderStatusFilter, setOrderStatusFilter] = useState<"all" | "pending" | "shipped" | "delivered">("all");
+
   // Inline Quick Stock Edits
   const [stockDrafts, setStockDrafts] = useState<Record<string, number>>({});
   const [savingStockId, setSavingStockId] = useState<string | null>(null);
@@ -280,6 +284,62 @@ export default function SellerDashboard({
   // Metrics
   const activeProducts = useMemo(() => products.filter((p) => p.active).length, [products]);
   const lowStockProducts = useMemo(() => products.filter((p) => p.stock <= 5).length, [products]);
+  const totalStockUnits = useMemo(() => {
+    return products.reduce((acc, p) => {
+      if (p.variants && p.variants.length > 0) {
+        return acc + p.variants.reduce((vAcc, v) => vAcc + (Number(v.stock) || 0), 0);
+      }
+      return acc + (Number(p.stock) || 0);
+    }, 0);
+  }, [products]);
+
+  // Order Metrics
+  const pendingOrdersCount = useMemo(
+    () => orders.filter((o) => o.fulfillment.status === "paid" || o.fulfillment.status === "processing").length,
+    [orders]
+  );
+  const shippedOrdersCount = useMemo(
+    () => orders.filter((o) => o.fulfillment.status === "shipped").length,
+    [orders]
+  );
+  const deliveredOrdersCount = useMemo(
+    () => orders.filter((o) => o.fulfillment.status === "delivered").length,
+    [orders]
+  );
+
+  // Return Metrics
+  const pendingReturnsCount = useMemo(
+    () => returns.filter((r) => r.status === "pending" || r.status === "processing").length,
+    [returns]
+  );
+  const resolvedReturnsCount = useMemo(
+    () => returns.filter((r) => r.status === "approved" || r.status === "completed" || r.status === "rejected").length,
+    [returns]
+  );
+
+  // Filtered Orders for Merchant Orders Tab
+  const filteredOrders = useMemo(() => {
+    return orders.filter((order) => {
+      if (orderStatusFilter === "pending") {
+        if (order.fulfillment.status !== "paid" && order.fulfillment.status !== "processing") return false;
+      } else if (orderStatusFilter === "shipped") {
+        if (order.fulfillment.status !== "shipped") return false;
+      } else if (orderStatusFilter === "delivered") {
+        if (order.fulfillment.status !== "delivered") return false;
+      }
+
+      if (orderSearchQuery.trim()) {
+        const q = orderSearchQuery.toLowerCase().trim();
+        const matchNum = order.order_number?.toLowerCase().includes(q);
+        const matchName = order.customer_name?.toLowerCase().includes(q);
+        const matchPhone = order.phone?.includes(q);
+        const matchItem = order.order_items?.some((it) => it.product_name.toLowerCase().includes(q));
+        if (!matchNum && !matchName && !matchPhone && !matchItem) return false;
+      }
+
+      return true;
+    });
+  }, [orders, orderStatusFilter, orderSearchQuery]);
 
   // Filtered & Sorted Products
   const filteredProducts = useMemo(() => {
@@ -1598,7 +1658,7 @@ export default function SellerDashboard({
                       {tab === "products"
                         ? "Add, edit, manage stock, and toggle visibility for your luxury perfumes on Flovexa."
                         : tab === "orders"
-                        ? "Track paid orders containing your fragrances, and provide courier tracking numbers."
+                        ? "Track paid customer shipments, generate consolidated dispatch labels, and assign courier AWB tracking."
                         : tab === "returns"
                         ? "Review any return inquiries filed by fragrance customers."
                         : tab === "earnings"
@@ -1611,6 +1671,12 @@ export default function SellerDashboard({
                       <Plus size={16} /> Add New Perfume
                     </button>
                   )}
+                  {tab === "orders" && pendingOrdersCount > 0 && (
+                    <div className="seller-header-badge-alert">
+                      <Sparkles size={13} />
+                      <span>{pendingOrdersCount} Order{pendingOrdersCount > 1 ? "s" : ""} Awaiting Dispatch</span>
+                    </div>
+                  )}
                 </div>
 
                 {(message || errorMessage) && (
@@ -1619,29 +1685,109 @@ export default function SellerDashboard({
                   </div>
                 )}
 
-                {/* Metric Stats Cards */}
-                <div className="seller-stats">
-                  <div>
-                    <span>TOTAL LISTINGS</span>
-                    <b>{products.length}</b>
-                    <small>{activeProducts} live in customer store</small>
+                {/* 1. PRODUCT METRIC STATS (Only on Catalogue Tab) */}
+                {tab === "products" && (
+                  <div className="seller-stats">
+                    <div>
+                      <span className="seller-stat-label">TOTAL PERFUMES</span>
+                      <b>{products.length}</b>
+                      <small>{activeProducts} live in customer store</small>
+                    </div>
+                    <div>
+                      <span className="seller-stat-label">LIVE ON STORE</span>
+                      <b style={{ color: activeProducts > 0 ? "#15803d" : "inherit" }}>{activeProducts}</b>
+                      <small>{products.length - activeProducts} hidden drafts</small>
+                    </div>
+                    <div>
+                      <span className="seller-stat-label">LOW / OUT OF STOCK</span>
+                      <b style={{ color: lowStockProducts > 0 ? "#b45309" : "inherit" }}>{lowStockProducts}</b>
+                      <small>{lowStockProducts > 0 ? "Requires restock" : "All stock healthy"}</small>
+                    </div>
+                    <div>
+                      <span className="seller-stat-label">INVENTORY BOTTLES</span>
+                      <b>{totalStockUnits}</b>
+                      <small>Total units ready to sell</small>
+                    </div>
                   </div>
-                  <div>
-                    <span>LOW / OUT OF STOCK</span>
-                    <b style={{ color: lowStockProducts > 0 ? "#b45309" : "inherit" }}>{lowStockProducts}</b>
-                    <small>{lowStockProducts > 0 ? "Requires restock" : "Inventory healthy"}</small>
+                )}
+
+                {/* 2. ORDER METRIC STATS (Only on Orders & Dispatch Tab) */}
+                {tab === "orders" && (
+                  <div className="seller-stats seller-stats-orders">
+                    <div>
+                      <span className="seller-stat-label">TOTAL ORDERS</span>
+                      <b>{orders.length}</b>
+                      <small>All-time captured orders</small>
+                    </div>
+                    <div className={pendingOrdersCount > 0 ? "seller-stat-highlight-pending" : ""}>
+                      <span className="seller-stat-label">PENDING DISPATCH</span>
+                      <b style={{ color: pendingOrdersCount > 0 ? "#b45309" : "inherit" }}>{pendingOrdersCount}</b>
+                      <small>{pendingOrdersCount > 0 ? "Ready to pack & dispatch" : "All orders dispatched"}</small>
+                    </div>
+                    <div>
+                      <span className="seller-stat-label">IN TRANSIT</span>
+                      <b style={{ color: shippedOrdersCount > 0 ? "#1d4ed8" : "inherit" }}>{shippedOrdersCount}</b>
+                      <small>{shippedOrdersCount} shipped with courier</small>
+                    </div>
+                    <div>
+                      <span className="seller-stat-label">DELIVERED</span>
+                      <b style={{ color: deliveredOrdersCount > 0 ? "#15803d" : "inherit" }}>{deliveredOrdersCount}</b>
+                      <small>{deliveredOrdersCount} completed deliveries</small>
+                    </div>
                   </div>
-                  <div>
-                    <span>OPEN ORDERS</span>
-                    <b>{orders.filter((order) => order.fulfillment.status !== "delivered").length}</b>
-                    <small>{orders.length} total customer orders</small>
+                )}
+
+                {/* 3. RETURNS METRIC STATS (Only on Returns Tab) */}
+                {tab === "returns" && (
+                  <div className="seller-stats">
+                    <div>
+                      <span className="seller-stat-label">TOTAL RETURNS</span>
+                      <b>{returns.length}</b>
+                      <small>Customer return inquiries</small>
+                    </div>
+                    <div>
+                      <span className="seller-stat-label">PENDING REVIEW</span>
+                      <b style={{ color: pendingReturnsCount > 0 ? "#b45309" : "inherit" }}>{pendingReturnsCount}</b>
+                      <small>Awaiting resolution</small>
+                    </div>
+                    <div>
+                      <span className="seller-stat-label">RESOLVED</span>
+                      <b>{resolvedReturnsCount}</b>
+                      <small>Completed returns</small>
+                    </div>
+                    <div>
+                      <span className="seller-stat-label">RETURN RATE</span>
+                      <b>{orders.length > 0 ? `${((returns.length / orders.length) * 100).toFixed(1)}%` : "0%"}</b>
+                      <small>Against total orders</small>
+                    </div>
                   </div>
-                  <div>
-                    <span>GROSS SALES</span>
-                    <b>{money(grossSales)}</b>
-                    <small>Captured revenue</small>
+                )}
+
+                {/* 4. EARNINGS METRIC STATS (Only on Earnings Tab) */}
+                {tab === "earnings" && (
+                  <div className="seller-stats">
+                    <div>
+                      <span className="seller-stat-label">GROSS PRODUCT SALES</span>
+                      <b>{money(grossSales)}</b>
+                      <small>Captured revenue</small>
+                    </div>
+                    <div>
+                      <span className="seller-stat-label">TOTAL ORDERS</span>
+                      <b>{orders.length}</b>
+                      <small>Customer purchases</small>
+                    </div>
+                    <div>
+                      <span className="seller-stat-label">AVG ORDER VALUE</span>
+                      <b>{orders.length > 0 ? money(Math.round(grossSales / orders.length)) : money(0)}</b>
+                      <small>Average order basket</small>
+                    </div>
+                    <div>
+                      <span className="seller-stat-label">SETTLEMENT</span>
+                      <b>Weekly</b>
+                      <small>Direct bank transfer</small>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* 1. PRODUCT MANAGEMENT TAB */}
                 {tab === "products" && (
@@ -1997,8 +2143,62 @@ export default function SellerDashboard({
             <section className="seller-panel">
               <div className="seller-panel-head">
                 <h2>Paid Orders for Your Perfumes</h2>
-                <span>{orders.length} orders captured</span>
+                <span>{filteredOrders.length} of {orders.length} orders shown</span>
               </div>
+
+              {/* Order Controls: Search & Status Filters */}
+              {orders.length > 0 && (
+                <div className="seller-catalog-controls">
+                  <div className="seller-search-box">
+                    <Search size={15} />
+                    <input
+                      type="search"
+                      placeholder="Search by Order #, Customer Name, or Phone..."
+                      value={orderSearchQuery}
+                      onChange={(e) => setOrderSearchQuery(e.target.value)}
+                    />
+                    {orderSearchQuery && (
+                      <button type="button" onClick={() => setOrderSearchQuery("")} className="seller-search-clear">
+                        ✕
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="seller-filter-group">
+                    <div className="seller-filter-pills">
+                      <button
+                        type="button"
+                        className={orderStatusFilter === "all" ? "active" : ""}
+                        onClick={() => setOrderStatusFilter("all")}
+                      >
+                        All Orders ({orders.length})
+                      </button>
+                      <button
+                        type="button"
+                        className={`${orderStatusFilter === "pending" ? "active" : ""} ${pendingOrdersCount > 0 ? "has-badge" : ""}`}
+                        onClick={() => setOrderStatusFilter("pending")}
+                      >
+                        Pending Dispatch ({pendingOrdersCount})
+                      </button>
+                      <button
+                        type="button"
+                        className={orderStatusFilter === "shipped" ? "active" : ""}
+                        onClick={() => setOrderStatusFilter("shipped")}
+                      >
+                        In Transit ({shippedOrdersCount})
+                      </button>
+                      <button
+                        type="button"
+                        className={orderStatusFilter === "delivered" ? "active" : ""}
+                        onClick={() => setOrderStatusFilter("delivered")}
+                      >
+                        Delivered ({deliveredOrdersCount})
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {!ordersLoaded ? (
                 <div className="seller-loading">Loading your merchant orders…</div>
               ) : ordersError ? (
@@ -2009,9 +2209,23 @@ export default function SellerDashboard({
                   <b>No customer orders yet</b>
                   <span>Orders containing your perfumes will appear here immediately after payment.</span>
                 </div>
+              ) : !filteredOrders.length ? (
+                <div className="admin-empty">
+                  <Search size={24} />
+                  <b>No orders matched your filter</b>
+                  <span>Try changing your search keywords or switching status tabs.</span>
+                  <button
+                    onClick={() => {
+                      setOrderSearchQuery("");
+                      setOrderStatusFilter("all");
+                    }}
+                  >
+                    Clear Filter
+                  </button>
+                </div>
               ) : (
                 <div className="seller-order-list">
-                  {orders.map((order) => {
+                  {filteredOrders.map((order) => {
                     const draft = draftFor(order);
                     const next = transitions[order.fulfillment.status] ?? [];
                     const totalBottles = order.order_items.reduce((sum, item) => sum + (item.quantity || 1), 0);
