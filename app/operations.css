@@ -5910,6 +5910,7 @@
 .seller-sidebar-brand {
   position: static !important;
   margin-top: auto !important;
+  margin-bottom: 14px !important;
   padding: 12px 14px !important;
   background: rgba(0, 0, 0, 0.35) !important;
   border: 1px solid rgba(212, 169, 106, 0.16) !important;
