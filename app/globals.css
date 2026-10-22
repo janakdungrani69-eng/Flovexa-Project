@@ -17,7 +17,15 @@
 .product-prices{display:grid;gap:2px}.product-prices del{color:#898174;font-size:9px}.product-prices strong{font-size:12px;font-weight:500}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
 .product-real-image{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center;padding:12px;z-index:1;filter:drop-shadow(0 10px 20px rgba(35,27,18,.08))}
-.bottle-art:has(.product-real-image),.bottle-art--hero:has(.product-real-image){background:transparent!important}.bottle-art:has(.product-real-image):after{display:none!important}.bottle-art:has(.product-real-image) .bottle-glow,.bottle-art:has(.product-real-image) .bottle-shape,.bottle-art:has(.product-real-image) .art-floor{display:none}
+.bottle-art:has(.product-real-image),.bottle-art--hero:has(.product-real-image){background:transparent!important}.bottle-art:has(.product-real-image):after{display:none!important}.bottle-art:has(.product-real-image) .bottle-glow,.bottle-art:has(.product-real-image) .bottle-shape,.bottle-art:has(.product-real-image) .art-floor,.bottle-art:has(.product-real-image) .art-index{display:none!important}
+.hero-visual--has-image{background:transparent!important;background-image:none!important;display:flex!important;align-items:center!important;justify-content:center!important;min-height:500px}
+.hero-visual--has-image:before{display:none!important}
+.hero-visual--has-image .bottle-art{position:relative!important;inset:auto!important;background:transparent!important;width:100%!important;height:100%!important;min-height:500px;display:flex!important;align-items:center!important;justify-content:center!important;aspect-ratio:auto!important}
+.hero-visual--has-image .product-real-image{position:relative!important;inset:auto!important;width:auto!important;max-width:100%!important;height:auto!important;max-height:480px!important;object-fit:contain!important;object-position:center!important;padding:0!important;mix-blend-mode:multiply;filter:drop-shadow(0 22px 35px rgba(35,27,18,.14));transition:transform .4s cubic-bezier(.2,.7,.2,1)}
+.hero-visual--has-image:hover .product-real-image{transform:scale(1.025)}
+.product-card .product-art-link:has(.product-real-image){background:transparent!important}
+.product-card .bottle-art:has(.product-real-image){background:transparent!important}
+.product-card .bottle-art:has(.product-real-image) .product-real-image{mix-blend-mode:multiply}
 .mobile-nav{position:fixed;z-index:29;top:96px;left:0;right:0;display:grid;padding:10px 19px 17px;background:var(--paper);border-bottom:1px solid var(--line);box-shadow:0 15px 25px rgba(29,26,22,.08)}.mobile-nav a{padding:12px 0;border-bottom:1px solid var(--line);font:18px var(--serif)}.mobile-nav a:last-child{border:0;color:#8a6b47;font:10px var(--sans);letter-spacing:.1em;text-transform:uppercase}
 .home-reviews-section{max-width:var(--page,1280px);margin:0 auto 72px;padding:0 44px}
 .home-reviews-header{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:36px;flex-wrap:wrap}

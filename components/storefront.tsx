@@ -14,12 +14,17 @@ const money = (paise: number) => new Intl.NumberFormat("en-IN", { style: "curren
 
 export function BottleArt({ product, hero = false }: { product: Product; hero?: boolean }) {
   return (
-    <div className={`bottle-art${hero ? " bottle-art--hero" : ""}`} style={{ "--juice": product.accent } as React.CSSProperties} aria-label={`${product.name} perfume bottle`}>
-      {product.imageUrl && <Image className="product-real-image" src={product.imageUrl} alt={product.name} width={800} height={800} unoptimized />}
+    <div className={`bottle-art${hero ? " bottle-art--hero" : ""}${product.imageUrl ? " bottle-art--has-image" : ""}`} style={{ "--juice": product.accent } as React.CSSProperties} aria-label={`${product.name} perfume bottle`}>
+      {product.imageUrl ? (
+        <Image className="product-real-image" src={product.imageUrl} alt={product.name} width={800} height={800} priority={hero} unoptimized />
+      ) : (
+        <>
       <span className="art-index" style={hero ? undefined : { left: "auto", right: 14, top: 14 }}>{hero ? "F · 01" : product.concentration}</span>
       <span className="bottle-glow" />
       <span className="bottle-shape"><span className="bottle-neck" /><span className="bottle-cap" /><span className="bottle-label"><b>FLOVEXA</b><small>{product.name}</small><i>{product.size}</i></span></span>
       <span className="art-floor" />
+        </>
+      )}
     </div>
   );
 }
@@ -129,10 +134,10 @@ export default function Storefront({ products, categories: storeCategories, sett
           <a className="primary-button" href="#collection">{settings.cta_label} <ArrowRight size={17} /></a>
           <div className="hero-caption"><span>{settings.caption_one}</span><span>{settings.caption_two}</span></div>
         </div>
-        <div className="hero-visual" style={settings.hero_image_url ? { backgroundImage: `linear-gradient(125deg,rgba(71,50,31,.22),rgba(20,15,10,.12)),url("${settings.hero_image_url}")`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}>
+        <div className={`hero-visual${heroProduct?.imageUrl ? " hero-visual--has-image" : ""}`} style={settings.hero_image_url ? { backgroundImage: `linear-gradient(125deg,rgba(71,50,31,.22),rgba(20,15,10,.12)),url("${settings.hero_image_url}")`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}>
           {heroProduct && <BottleArt product={heroProduct} hero />}
-          <div className="hero-visual-note"><span>EAU DE PARFUM</span><i>Notes that stay with you.</i></div>
-          <span className="hero-roman">01</span>
+          {!heroProduct?.imageUrl && <div className="hero-visual-note"><span>EAU DE PARFUM</span><i>Notes that stay with you.</i></div>}
+          {!heroProduct?.imageUrl && <span className="hero-roman">01</span>}
         </div>
         <a href="#collection" className="scroll-cue"><span>SCROLL TO EXPLORE</span><ArrowDownRight size={17} /></a>
       </section>

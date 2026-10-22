@@ -325,3 +325,4 @@ grant all on all routines in schema public to anon, authenticated, service_role;
 
 -- 18. FORCE POSTGREST SCHEMA CACHE RELOAD
 notify pgrst, 'reload schema';
+
