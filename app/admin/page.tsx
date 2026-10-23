@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ExternalLink, ShieldCheck, Store, UserCheck } from "lucide-react";
 import AdminDashboard, { type AdminOrder, type AdminProduct, type AdminReturnRequest } from "@/components/admin-dashboard";
-import type { AdminCustomer } from "@/components/admin-customers";
+import type { AdminCustomer, CustomerProductPurchase, CustomerOrderRecord, CustomerAddressRecord } from "@/components/admin-customers";
 import type { AdminReportOrder } from "@/components/admin-reports";
 import AdminReports from "@/components/admin-reports";
 import AdminSellers, { type AdminSeller, type SellerProduct } from "@/components/admin-sellers";
@@ -219,49 +219,195 @@ export default async function AdminPage() {
       ];
     });
 
-    // 7. Customers
+    // 7. Customers & Purchase Frequency Intelligence
     const profileMap = new Map((sellerProfiles ?? []).map((p) => [p.user_id, p]));
     const customerUsers = authUsers.filter((item) => getStoreRole(item) === "customer" && !profileMap.has(item.id));
-    if (customerUsers.length) {
-      const userIds = customerUsers.map((item) => item.id);
-      const emails = customerUsers.map((item) => item.email?.toLowerCase()).filter((email): email is string => Boolean(email));
+    const customerUserIds = customerUsers.map((item) => item.id);
+    const registeredEmailsSet = new Set(customerUsers.map((item) => item.email?.toLowerCase()).filter(Boolean));
 
-      const [{ data: profiles }, { data: customerOrders }] = await Promise.all([
-        supabase.from("customer_profiles").select("user_id, full_name, phone, admin_note").in("user_id", userIds),
-        emails.length
-          ? supabase.from("orders").select("email, total_paise, created_at").in("email", emails).limit(1000)
-          : Promise.resolve({ data: [] }),
-      ]);
+    const [{ data: customerProfiles }, { data: allStoreOrders }] = await Promise.all([
+      customerUserIds.length
+        ? supabase.from("customer_profiles").select("user_id, full_name, phone, gender, admin_note").in("user_id", customerUserIds)
+        : Promise.resolve({ data: [] }),
+      supabase
+        .from("orders")
+        .select("id, order_number, customer_name, email, phone, shipping_address, total_paise, status, payment_status, created_at, order_items(id, product_id, product_name, size, quantity, unit_price_paise, line_total_paise)")
+        .order("created_at", { ascending: false })
+        .limit(2000),
+    ]);
 
-      const custProfileMap = new Map((profiles ?? []).map((profile) => [profile.user_id, profile]));
-      const ordersByEmail = new Map<string, { count: number; spent: number }>();
+    const custProfileMap = new Map((customerProfiles ?? []).map((cp) => [cp.user_id, cp]));
 
-      for (const order of customerOrders ?? []) {
-        const email = order.email.toLowerCase();
-        const current = ordersByEmail.get(email) ?? { count: 0, spent: 0 };
-        current.count += 1;
-        current.spent += order.total_paise;
-        ordersByEmail.set(email, current);
+    // Group all store orders by email
+    type RawOrderWithItems = NonNullable<typeof allStoreOrders>[number];
+    const ordersByEmail = new Map<string, RawOrderWithItems[]>();
+    for (const ord of allStoreOrders ?? []) {
+      if (!ord.email) continue;
+      const em = ord.email.toLowerCase().trim();
+      const list = ordersByEmail.get(em) ?? [];
+      list.push(ord);
+      ordersByEmail.set(em, list);
+    }
+
+    // Builder function for buyer purchase stats
+    function buildBuyerStats(buyerOrders: RawOrderWithItems[]) {
+      let spent = 0;
+      const prodMap = new Map<string, CustomerProductPurchase>();
+      const addressMap = new Map<string, CustomerAddressRecord>();
+
+      for (const ord of buyerOrders ?? []) {
+        spent += ord.total_paise ?? 0;
+
+        // Extract and deduplicate delivery address
+        const addr = ord.shipping_address as unknown as { line1?: string; line2?: string; city?: string; state?: string; pincode?: string } | null;
+        if (addr && addr.line1 && addr.pincode) {
+          const aKey = `${addr.line1}_${addr.pincode}`.toLowerCase();
+          if (!addressMap.has(aKey)) {
+            addressMap.set(aKey, {
+              line1: addr.line1,
+              line2: addr.line2 ?? "",
+              city: addr.city ?? "",
+              state: addr.state ?? "",
+              pincode: addr.pincode ?? "",
+            });
+          }
+        }
+
+        // Aggregate individual perfumes bought and count how many times each was purchased
+        for (const item of ord.order_items ?? []) {
+          const key = `${item.product_name}___${item.size}`;
+          const qty = item.quantity || 1;
+          const lineSpent = item.line_total_paise || (item.unit_price_paise ? item.unit_price_paise * qty : 0);
+          const existing = prodMap.get(key);
+          if (existing) {
+            existing.total_quantity += qty;
+            existing.total_spent_paise += lineSpent;
+            if (new Date(ord.created_at) > new Date(existing.last_purchased_at)) {
+              existing.last_purchased_at = ord.created_at;
+            }
+          } else {
+            prodMap.set(key, {
+              product_id: item.product_id,
+              product_name: item.product_name,
+              size: item.size,
+              total_quantity: qty,
+              total_spent_paise: lineSpent,
+              last_purchased_at: ord.created_at,
+            });
+          }
+        }
       }
 
-      customers = customerUsers.flatMap((item) =>
-        item.email
-          ? [
-              {
-                id: item.id,
-                email: item.email,
-                full_name: custProfileMap.get(item.id)?.full_name || item.user_metadata?.full_name || "",
-                phone: custProfileMap.get(item.id)?.phone ?? "",
-                created_at: item.created_at,
-                last_sign_in_at: item.last_sign_in_at ?? null,
-                order_count: ordersByEmail.get(item.email.toLowerCase())?.count ?? 0,
-                spent_paise: ordersByEmail.get(item.email.toLowerCase())?.spent ?? 0,
-                admin_note: custProfileMap.get(item.id)?.admin_note ?? "",
-              },
-            ]
-          : []
-      );
+      const products_bought = Array.from(prodMap.values()).sort((a, b) => b.total_quantity - a.total_quantity);
+      const addresses = Array.from(addressMap.values());
+      const recent_orders: CustomerOrderRecord[] = (buyerOrders ?? []).slice(0, 10).map((o) => ({
+        id: o.id,
+        order_number: o.order_number,
+        total_paise: o.total_paise,
+        status: o.status,
+        payment_status: o.payment_status,
+        created_at: o.created_at,
+        items: (o.order_items ?? []).map((i) => ({ product_name: i.product_name, size: i.size, quantity: i.quantity })),
+      }));
+
+      const latestOrder = buyerOrders?.[0];
+      const last_order_at = latestOrder ? latestOrder.created_at : null;
+      const days_since_last_order = last_order_at
+        ? Math.max(0, Math.floor((Date.now() - new Date(last_order_at).getTime()) / (1000 * 60 * 60 * 24)))
+        : null;
+
+      const order_count = (buyerOrders ?? []).length;
+      const aov_paise = order_count > 0 ? Math.round(spent / order_count) : 0;
+
+      const tier: AdminCustomer["tier"] =
+        order_count >= 3 || spent >= 500000
+          ? "vip"
+          : order_count >= 2
+          ? "repeat"
+          : order_count === 1
+          ? "active"
+          : "lead";
+
+      return {
+        spent_paise: spent,
+        order_count,
+        aov_paise,
+        last_order_at,
+        days_since_last_order,
+        tier,
+        products_bought,
+        recent_orders,
+        addresses,
+      };
     }
+
+    // 1. Process all registered member accounts
+    const registeredCustomers: AdminCustomer[] = customerUsers.flatMap((u) => {
+      if (!u.email) return [];
+      const em = u.email.toLowerCase().trim();
+      const profile = custProfileMap.get(u.id);
+      const userOrders = ordersByEmail.get(em) ?? [];
+      const stats = buildBuyerStats(userOrders);
+
+      const fullName = profile?.full_name || u.user_metadata?.full_name || userOrders[0]?.customer_name || "";
+      const phone = profile?.phone || u.user_metadata?.phone || userOrders[0]?.phone || "";
+      const gender = profile?.gender || u.user_metadata?.gender || "prefer_not_to_say";
+
+      const cleanPhone = phone.replace(/[^0-9]/g, "").replace(/^0/, "");
+      const fullPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+      const whatsapp_url = cleanPhone
+        ? `https://wa.me/${fullPhone}?text=Hello%20${encodeURIComponent(fullName || "Valued Customer")},%20greetings%20from%20Flovexa%20Perfumes!`
+        : undefined;
+
+      return [
+        {
+          id: u.id,
+          email: u.email,
+          full_name: fullName,
+          phone,
+          gender,
+          created_at: u.created_at,
+          last_sign_in_at: u.last_sign_in_at ?? null,
+          admin_note: profile?.admin_note ?? "",
+          whatsapp_url,
+          ...stats,
+        },
+      ];
+    });
+
+    // 2. Include guest buyers who placed orders with emails not in auth.users
+    const guestCustomers: AdminCustomer[] = [];
+    for (const [em, buyerOrders] of ordersByEmail.entries()) {
+      if (registeredEmailsSet.has(em)) continue;
+      const latest = buyerOrders[0];
+      if (!latest) continue;
+
+      const stats = buildBuyerStats(buyerOrders);
+      const fullName = latest.customer_name || "";
+      const phone = latest.phone || "";
+
+      const cleanPhone = phone.replace(/[^0-9]/g, "").replace(/^0/, "");
+      const fullPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+      const whatsapp_url = cleanPhone
+        ? `https://wa.me/${fullPhone}?text=Hello%20${encodeURIComponent(fullName || "Valued Customer")},%20greetings%20from%20Flovexa%20Perfumes!`
+        : undefined;
+
+      guestCustomers.push({
+        id: latest.id,
+        email: em,
+        full_name: fullName,
+        phone,
+        created_at: latest.created_at,
+        last_sign_in_at: null,
+        admin_note: "",
+        is_guest: true,
+        whatsapp_url,
+        ...stats,
+        tier: stats.tier === "lead" ? "guest" : stats.tier,
+      });
+    }
+
+    customers = [...registeredCustomers, ...guestCustomers];
 
     // 8. Returns
     if (returnResult.data?.length) {

@@ -204,9 +204,18 @@ create table if not exists public.customer_profiles (
   full_name text not null default '',
   phone text not null default '',
   gender text not null default 'prefer_not_to_say' check (gender in ('male', 'female', 'other', 'prefer_not_to_say')),
+  admin_note text not null default '',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+-- Ensure admin_note exists if table was created previously
+do $$
+begin
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='customer_profiles' and column_name='admin_note') then
+    alter table public.customer_profiles add column admin_note text not null default '';
+  end if;
+end $$;
 
 -- 11. CUSTOMER ADDRESSES TABLE
 create table if not exists public.customer_addresses (

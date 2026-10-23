@@ -13,6 +13,7 @@ import {
   ChevronRight,
   CircleDollarSign,
   Clock,
+  Crown,
   ExternalLink,
   Eye,
   ImagePlus,
@@ -208,6 +209,13 @@ export default function AdminDashboard({
     () => returnRequests.filter((item) => item.status === "requested" || item.status === "under_review"),
     [returnRequests]
   );
+  const leadCustomers = useMemo(() => customers.filter((c) => c.tier === "lead"), [customers]);
+  const topCustomers = useMemo(() => {
+    return [...customers]
+      .filter((c) => c.order_count > 0)
+      .sort((a, b) => b.spent_paise - a.spent_paise)
+      .slice(0, 4);
+  }, [customers]);
 
   // Filtered Products
   const filteredProducts = useMemo(() => {
@@ -696,7 +704,7 @@ export default function AdminDashboard({
             </div>
 
             {/* ACTION ALERTS BANNER (IF ANY REQUIRE ATTENTION) */}
-            {(pendingSellers.length > 0 || unfulfilledOrders.length > 0 || lowStockProducts.length > 0 || openReturns.length > 0) && (
+            {(pendingSellers.length > 0 || unfulfilledOrders.length > 0 || lowStockProducts.length > 0 || openReturns.length > 0 || leadCustomers.length > 0) && (
               <div className="admin-action-alerts-card">
                 <div className="admin-alerts-header">
                   <AlertCircle size={18} style={{ color: "#aa8050" }} />
@@ -757,6 +765,18 @@ export default function AdminDashboard({
                       </div>
                       <button type="button" onClick={() => setTab("returns")}>
                         Inspect Returns <ArrowRight size={13} />
+                      </button>
+                    </div>
+                  )}
+
+                  {leadCustomers.length > 0 && (
+                    <div className="alert-item" style={{ background: "#eef2ff", border: "1px solid #c7d2fe", color: "#3730a3" }}>
+                      <div>
+                        <strong>{leadCustomers.length} Registered Members Haven&apos;t Ordered Yet</strong>
+                        <p>These buyers created accounts on Flovexa. Reach out with a welcome discount voucher to convert them!</p>
+                      </div>
+                      <button type="button" onClick={() => setTab("customers")} style={{ color: "#3730a3", borderColor: "#a5b4fc" }}>
+                        View Leads <ArrowRight size={13} />
                       </button>
                     </div>
                   )}
@@ -942,6 +962,71 @@ export default function AdminDashboard({
                           </div>
                         </div>
                       ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Top Loyal VIP Buyers Leaderboard */}
+                <div className="admin-panel">
+                  <div className="admin-panel-tools">
+                    <h2>Top Loyal VIP Buyers</h2>
+                    <button
+                      type="button"
+                      className="portal-switch-link"
+                      onClick={() => setTab("customers")}
+                      style={{ background: "none", border: 0, cursor: "pointer" }}
+                    >
+                      Directory ({customers.length}) →
+                    </button>
+                  </div>
+
+                  {topCustomers.length === 0 ? (
+                    <div className="admin-empty" style={{ padding: "26px 10px" }}>
+                      <Users size={22} />
+                      <b>Buyer leaderboard will track here</b>
+                      <span>Top spenders will display here as checkouts occur.</span>
+                    </div>
+                  ) : (
+                    <div className="overview-sellers-list">
+                      {topCustomers.map((cust) => {
+                        const topPerfume = cust.products_bought[0];
+                        return (
+                          <div key={cust.id} className="overview-seller-item">
+                            <div
+                              className="osi-icon"
+                              style={{
+                                background: cust.tier === "vip" ? "#fef3c7" : "#faede0",
+                                color: cust.tier === "vip" ? "#92400e" : "#854d0e",
+                              }}
+                            >
+                              <Crown size={15} />
+                            </div>
+                            <div className="osi-info">
+                              <b>{cust.full_name || "Valued Buyer"}</b>
+                              <span>
+                                {cust.email}
+                                {topPerfume ? ` · Loves ${topPerfume.product_name}` : ""}
+                              </span>
+                            </div>
+                            <div className="osi-metrics">
+                              <strong style={{ color: "#9e7740" }}>{money(cust.spent_paise)}</strong>
+                              <small>{cust.order_count} orders</small>
+                            </div>
+                            {cust.whatsapp_url && (
+                              <a
+                                href={cust.whatsapp_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="btn-customer-whatsapp"
+                                style={{ padding: "4px 8px", fontSize: 9 }}
+                                title="WhatsApp VIP buyer"
+                              >
+                                Chat
+                              </a>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
