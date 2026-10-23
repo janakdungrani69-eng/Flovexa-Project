@@ -46,11 +46,15 @@ export default function AdminLoginForm() {
     }
 
     const role = data.user.app_metadata?.role;
+    const userEmail = data.user.email?.toLowerCase();
+    const isOwnerOrAdmin = role === "admin" || role === "owner" || userEmail === "janakdungrani69@gmail.com";
     const params = new URLSearchParams(window.location.search);
     const next = params.get("next");
 
     if (next && next.startsWith("/") && !next.startsWith("//")) {
       window.location.href = next;
+    } else if (isOwnerOrAdmin) {
+      window.location.href = "/admin";
     } else if (role === "seller") {
       window.location.href = "/seller";
     } else if (window.location.pathname.startsWith("/admin") && (role === "admin" || role === "owner")) {

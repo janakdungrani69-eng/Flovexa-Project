@@ -20,14 +20,15 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     ]);
     if (profileError || authError) throw profileError ?? authError;
     const target = authResult.user;
-    if (!profile || !target || !["seller", "customer"].includes(String(target.app_metadata?.role ?? ""))) {
+    if (!profile || !target) {
       return NextResponse.json({ error: "This account is not a managed seller." }, { status: 404 });
     }
     if (parsed.data.status === "suspended") {
       const { error: productError } = await supabase.from("products").update({ active: false, updated_at: new Date().toISOString() }).eq("seller_id", id).eq("active", true);
       if (productError) throw productError;
     }
-    const nextRole = parsed.data.status === "active" ? "seller" : "customer";
+    const currentRole = String(target.app_metadata?.role ?? "");
+    const nextRole = currentRole === "admin" ? "admin" : (parsed.data.status === "active" ? "seller" : "customer");
     const { error: roleError } = await supabase.auth.admin.updateUserById(id, {
       app_metadata: { ...target.app_metadata, role: nextRole, seller_status: parsed.data.status },
     });

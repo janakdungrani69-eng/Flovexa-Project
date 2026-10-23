@@ -4,7 +4,9 @@ import { getSignedInUser, getStoreRole } from "@/lib/supabase/roles";
 
 export async function getActiveSeller() {
   const user = await getSignedInUser();
-  if (!user || getStoreRole(user) !== "seller") return null;
+  if (!user) return null;
+  const role = getStoreRole(user);
+  if (role !== "seller" && role !== "admin") return null;
 
   try {
     const supabase = createAdminSupabase();

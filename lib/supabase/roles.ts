@@ -7,12 +7,13 @@ export type StoreRole = "admin" | "seller" | "customer";
 export function getStoreRole(user: User): StoreRole {
   const role = user.app_metadata?.role;
   if (role === "owner" || role === "admin") return "admin";
-  if (role === "seller") return "seller";
 
   const email = user.email?.trim().toLowerCase();
-  if (email === "janakdungrani69@gmail.com" || email === "businessflovax@gmail.com") {
-    return "seller";
+  if (email === "janakdungrani69@gmail.com") {
+    return "admin";
   }
+
+  if (role === "seller" || email === "businessflovax@gmail.com") return "seller";
 
   return "customer";
 }
