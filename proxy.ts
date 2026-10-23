@@ -9,7 +9,9 @@ export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
   const supabase = createServerClient(url, key, {
     cookies: {
-      getAll() { return request.cookies.getAll(); },
+      getAll() {
+        return request.cookies.getAll();
+      },
       setAll(values) {
         values.forEach(({ name, value }) => request.cookies.set(name, value));
         response = NextResponse.next({ request });
@@ -18,17 +20,14 @@ export async function proxy(request: NextRequest) {
     },
   });
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   const { pathname } = request.nextUrl;
-
-  const isAuthPage = pathname === "/signup" || pathname === "/login" || pathname === "/admin/login";
-  const isSellerPortal = pathname === "/seller" || pathname.startsWith("/seller/");
-  const isApiRoute = pathname.startsWith("/api/");
-  const isAuthRoute = pathname.startsWith("/auth/");
 
   // 1. Authenticated users (Customer, Seller, Admin)
   if (user) {
-    // If already registered and logged in, redirect away from signup/login pages to storefront or target
+    // If already logged in, redirect away from signup/login pages to storefront or intended destination
     if (pathname === "/signup" || pathname === "/login") {
       const next = request.nextUrl.searchParams.get("next");
       const target = next && next.startsWith("/") && !next.startsWith("//") ? next : "/store";
@@ -38,17 +37,37 @@ export async function proxy(request: NextRequest) {
   }
 
   // 2. Unauthenticated visitors
-  // Allow access to public auth pages, seller portal, APIs, and auth callbacks
-  if (isAuthPage || isSellerPortal || isApiRoute || isAuthRoute) {
-    return response;
+  // Strict checkout auth protection: Must login or signup when proceeding to purchase
+  if (pathname === "/checkout" || pathname.startsWith("/checkout/")) {
+    const nextDestination = `${pathname}${request.nextUrl.search}`;
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("next", nextDestination);
+    return NextResponse.redirect(loginUrl);
   }
 
-  // Any other storefront page requires registration first
-  const signupUrl = new URL("/signup", request.url);
-  if (pathname !== "/" && pathname !== "/store") {
-    signupUrl.searchParams.set("next", `${pathname}${request.nextUrl.search}`);
+  // Protected customer account
+  if (pathname === "/account" || pathname.startsWith("/account/")) {
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("next", "/account");
+    return NextResponse.redirect(loginUrl);
   }
-  return NextResponse.redirect(signupUrl);
+
+  // Protected executive admin portal
+  if (pathname === "/admin" || pathname.startsWith("/admin/")) {
+    if (pathname !== "/admin/login") {
+      return NextResponse.redirect(new URL("/admin/login", request.url));
+    }
+  }
+
+  // ALL other pages are completely public for browsing:
+  // - Root (/)
+  // - Storefront (/store)
+  // - Product detail pages (/products/[slug])
+  // - Informational pages (/shipping, /returns, /contact, /about, /terms, /privacy, /orders)
+  // - Seller portal (/seller)
+  // - APIs (/api/...)
+  // - Auth endpoints (/auth/...)
+  return response;
 }
 
 export const config = {
