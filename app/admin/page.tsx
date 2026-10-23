@@ -7,6 +7,7 @@ import type { AdminReportOrder } from "@/components/admin-reports";
 import AdminReports from "@/components/admin-reports";
 import AdminSellers, { type AdminSeller, type SellerProduct } from "@/components/admin-sellers";
 import AdminCoupons, { type AdminCoupon } from "@/components/admin-coupons";
+import type { AdminReview } from "@/components/admin-reviews";
 import { getStoreRole } from "@/lib/supabase/roles";
 import { getStorefrontContent } from "@/lib/storefront-content-server";
 import { getAdminUser } from "@/lib/supabase/admin-user";
@@ -27,11 +28,12 @@ export default async function AdminPage() {
   let reportOrders: AdminReportOrder[] = [];
   let coupons: AdminCoupon[] = [];
   let sellers: AdminSeller[] = [];
+  let reviews: AdminReview[] = [];
 
   try {
     const supabase = createAdminSupabase();
 
-    const [productResult, orderResult, returnResult, reportResult, usersResult, couponResult, orderItemsResult] =
+    const [productResult, orderResult, returnResult, reportResult, usersResult, couponResult, orderItemsResult, reviewsResult] =
       await Promise.all([
         supabase
           .from("products")
@@ -61,7 +63,15 @@ export default async function AdminPage() {
         supabase
           .from("order_items")
           .select("id, product_id, quantity, line_total_paise, seller_id"),
+        supabase
+          .from("product_reviews")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .limit(200)
+          .then((res) => res, () => ({ data: [], error: null })),
       ]);
+
+    reviews = (reviewsResult.data ?? []) as AdminReview[];
 
     // 1. Seller Profiles & Map
     const { data: sellerProfiles } = await supabase
@@ -465,6 +475,7 @@ export default async function AdminPage() {
         customers={customers}
         sellers={sellers}
         coupons={coupons}
+        reviews={reviews}
         couponPanel={<AdminCoupons initialCoupons={coupons} />}
         sellerPanel={
           <AdminSellers

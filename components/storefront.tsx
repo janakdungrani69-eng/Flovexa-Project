@@ -9,6 +9,17 @@ import WishlistButton from "@/components/wishlist-button";
 import type { StorefrontSettings } from "@/lib/storefront-content";
 import StoryExperienceCard from "@/components/story-experience-card";
 
+export type FeaturedStoreReview = {
+  id?: string;
+  author: string;
+  city: string;
+  product: string;
+  productSlug?: string;
+  quote: string;
+  rating: number;
+  date?: string;
+};
+
 type CartItem = { productId: string; quantity: number };
 const money = (paise: number) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(paise / 100);
 
@@ -29,7 +40,17 @@ export function BottleArt({ product, hero = false }: { product: Product; hero?: 
   );
 }
 
-export default function Storefront({ products, categories: storeCategories, settings }: { products: Product[]; categories: string[]; settings: StorefrontSettings }) {
+export default function Storefront({
+  products,
+  categories: storeCategories,
+  settings,
+  featuredReviews = [],
+}: {
+  products: Product[];
+  categories: string[];
+  settings: StorefrontSettings;
+  featuredReviews?: FeaturedStoreReview[];
+}) {
   const categories = ["All scents", ...storeCategories];
   const [cart, setCart] = useState<CartItem[]>([]);
   const [category, setCategory] = useState<(typeof categories)[number]>("All scents");
@@ -92,6 +113,48 @@ export default function Storefront({ products, categories: storeCategories, sett
     updateQuantity(product.id, 1);
     setNotice(`${product.name} added to your bag`);
   }
+
+  const curatedFallbackReviews: FeaturedStoreReview[] = [
+    {
+      author: "Ananya Deshmukh",
+      city: "Pune",
+      product: "Rose Royale",
+      productSlug: "rose-royale",
+      quote: "Smells like walking through a private palace garden at dawn. The pink pepper and cashmere drydown lasts easily 12 hours on my scarf. Absolute masterpiece.",
+      rating: 5,
+    },
+    {
+      author: "Aarav Mehta",
+      city: "Mumbai",
+      product: "Chocolate Desire",
+      productSlug: "chocolate-desire",
+      quote: "Pure edible luxury. The roasted cocoa and cinnamon opening is intoxicating, and the drydown is rich bourbon vanilla. Lasted a solid 13 hours on my jacket.",
+      rating: 5,
+    },
+    {
+      author: "Vikramaditya Rao",
+      city: "Jaipur",
+      product: "Imperial Santal",
+      productSlug: "imperial-santal",
+      quote: "Captures the true essence of vintage Mysore sandalwood without smelling medicinal. Creamy cedarwood and amber drydown is pure old-money luxury.",
+      rating: 5,
+    },
+    {
+      author: "Meera Nair",
+      city: "Bengaluru",
+      product: "Amber Alchemy",
+      productSlug: "amber-alchemy",
+      quote: "Just 2 drops of this concentrated oil on my wrist lasted through an entire 14-hour workday. The sillage is warm, intimate, and feels like second skin.",
+      rating: 5,
+    },
+  ];
+
+  const displayedReviews = useMemo(() => {
+    if (featuredReviews && featuredReviews.length > 0) {
+      return [...featuredReviews, ...curatedFallbackReviews].slice(0, 6);
+    }
+    return curatedFallbackReviews;
+  }, [featuredReviews]);
 
   const heroProduct = products.find((product) => product.featured) ?? products[0];
   return (
@@ -246,48 +309,25 @@ export default function Storefront({ products, categories: storeCategories, sett
         </div>
 
         <div className="home-reviews-grid">
-          {[
-            {
-              author: "Ananya Deshmukh",
-              city: "Pune",
-              product: "Rose Royale",
-              quote: "Smells like walking through a private palace garden at dawn. The pink pepper and cashmere drydown lasts easily 12 hours on my scarf. Absolute masterpiece.",
-              rating: 5,
-            },
-            {
-              author: "Aarav Mehta",
-              city: "Mumbai",
-              product: "Chocolate Desire",
-              quote: "Pure edible luxury. The roasted cocoa and cinnamon opening is intoxicating, and the drydown is rich bourbon vanilla. Lasted a solid 13 hours on my jacket.",
-              rating: 5,
-            },
-            {
-              author: "Vikramaditya Rao",
-              city: "Jaipur",
-              product: "Imperial Santal",
-              quote: "Captures the true essence of vintage Mysore sandalwood without smelling medicinal. Creamy cedarwood and amber drydown is pure old-money luxury.",
-              rating: 5,
-            },
-            {
-              author: "Meera Nair",
-              city: "Bengaluru",
-              product: "Amber Alchemy",
-              quote: "Just 2 drops of this concentrated oil on my wrist lasted through an entire 14-hour workday. The sillage is warm, intimate, and feels like second skin.",
-              rating: 5,
-            },
-          ].map((item, idx) => (
-            <div key={idx} className="home-review-card">
+          {displayedReviews.map((item, idx) => (
+            <div key={item.id ?? idx} className="home-review-card">
               <div className="home-review-card-top">
                 <div className="home-card-stars">
                   {[...Array(item.rating)].map((_, i) => (
                     <Star key={i} size={14} fill="#e5b23d" color="#e5b23d" />
                   ))}
                 </div>
-                <span className="home-review-product-pill">{item.product}</span>
+                {item.productSlug ? (
+                  <Link href={`/products/${item.productSlug}`} className="home-review-product-pill" title={`View ${item.product}`}>
+                    {item.product}
+                  </Link>
+                ) : (
+                  <span className="home-review-product-pill">{item.product}</span>
+                )}
               </div>
               <p className="home-review-quote">“{item.quote}”</p>
               <div className="home-review-footer">
-                <div className="home-author-avatar">{item.author.charAt(0)}</div>
+                <div className="home-author-avatar">{item.author.charAt(0).toUpperCase()}</div>
                 <div className="home-author-info">
                   <strong>{item.author}</strong>
                   <span><Check size={11} className="home-check-icon" /> Verified Buyer · {item.city}</span>

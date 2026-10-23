@@ -31,7 +31,8 @@ function parseCart(value?: string): CartLine[] {
 export default async function CheckoutPage({ searchParams }: { searchParams: Promise<{ items?: string }> }) {
   const [{ items }, products, user] = await Promise.all([searchParams, getProducts(), getSignedInUser()]);
   if (!user) {
-    redirect("/signup?next=/checkout");
+    const checkoutNext = items ? `/checkout?items=${encodeURIComponent(items)}` : "/checkout";
+    redirect(`/login?next=${encodeURIComponent(checkoutNext)}`);
   }
 
   const requested = parseCart(items);

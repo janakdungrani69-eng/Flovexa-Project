@@ -27,6 +27,15 @@ import type { Product } from "@/lib/products";
 type LuxuryDetailsProps = {
   product: Product;
   relatedProducts: Product[];
+  verifiedReviews?: Array<{
+    id?: string;
+    author: string;
+    rating: number;
+    date: string;
+    title: string;
+    body: string;
+    location: string;
+  }>;
 };
 
 function getProductPyramid(product: Product) {
@@ -105,7 +114,7 @@ function getProductReviews(product: Product) {
   ];
 }
 
-export default function ProductLuxuryDetails({ product, relatedProducts }: LuxuryDetailsProps) {
+export default function ProductLuxuryDetails({ product, relatedProducts, verifiedReviews }: LuxuryDetailsProps) {
   const [activeFaq, setActiveFaq] = useState<number | null>(0);
 
   const isFragrance = product.category === "Fragrance" || product.concentration.includes("Oil");
@@ -120,7 +129,12 @@ export default function ProductLuxuryDetails({ product, relatedProducts }: Luxur
     body: string;
     location: string;
   }>>([]);
-  const reviews = useMemo(() => [...userReviews, ...defaultReviews], [userReviews, defaultReviews]);
+  const reviews = useMemo(() => {
+    if (verifiedReviews && verifiedReviews.length > 0) {
+      return [...userReviews, ...verifiedReviews];
+    }
+    return [...userReviews, ...defaultReviews];
+  }, [userReviews, verifiedReviews, defaultReviews]);
 
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [rating, setRating] = useState(5);

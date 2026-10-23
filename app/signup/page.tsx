@@ -4,7 +4,10 @@ import { noIndexMetadata } from "@/lib/seo";
 
 export const metadata = noIndexMetadata("Customer Registration — Flovexa Perfumes");
 
-export default function SignupPage() {
+export default async function SignupPage({ searchParams }: { searchParams?: Promise<{ next?: string }> }) {
+  const { next } = (await searchParams) ?? {};
+  const loginHref = next ? `/login?next=${encodeURIComponent(next)}` : "/login";
+
   return (
     <main className="admin-login-page">
       <div className="wordmark">
@@ -18,7 +21,7 @@ export default function SignupPage() {
       </section>
       <div style={{ marginTop: "24px", textAlign: "center" }}>
         <span style={{ fontSize: "12px", color: "var(--muted, #777066)" }}>Already registered? </span>
-        <Link href="/login" style={{ fontSize: "12px", color: "#aa8050", fontWeight: 600, textDecoration: "underline" }}>
+        <Link href={loginHref} style={{ fontSize: "12px", color: "#aa8050", fontWeight: 600, textDecoration: "underline" }}>
           Sign in here →
         </Link>
       </div>

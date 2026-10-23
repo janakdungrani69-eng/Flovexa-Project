@@ -28,6 +28,7 @@ import {
   ShieldCheck,
   ShoppingBag,
   Sparkles,
+  Star,
   Store,
   Tag,
   Trash2,
@@ -39,6 +40,7 @@ import {
 import type { Product } from "@/lib/products";
 import AdminCustomers, { type AdminCustomer } from "@/components/admin-customers";
 import AdminStorefront from "@/components/admin-storefront";
+import AdminReviews, { type AdminReview } from "@/components/admin-reviews";
 import type { AdminCoupon } from "@/components/admin-coupons";
 import type { AdminSeller } from "@/components/admin-sellers";
 import type { StorefrontSettings } from "@/lib/storefront-content";
@@ -144,6 +146,8 @@ export default function AdminDashboard({
   couponPanel,
   sellerPanel,
   reportPanel,
+  reviews = [],
+  reviewPanel,
   categories,
   storefrontSettings,
 }: {
@@ -156,11 +160,13 @@ export default function AdminDashboard({
   couponPanel: ReactNode;
   sellerPanel: ReactNode;
   reportPanel: ReactNode;
+  reviews?: AdminReview[];
+  reviewPanel?: ReactNode;
   categories: string[];
   storefrontSettings: StorefrontSettings;
 }) {
   const [tab, setTab] = useState<
-    "overview" | "orders" | "products" | "sellers" | "customers" | "returns" | "reports" | "storefront" | "promotions"
+    "overview" | "orders" | "products" | "sellers" | "customers" | "returns" | "reports" | "storefront" | "promotions" | "reviews"
   >("overview");
   const [products, setProducts] = useState(initialProducts);
   const [orders, setOrders] = useState(initialOrders);
@@ -560,6 +566,16 @@ export default function AdminDashboard({
         </button>
 
         <button
+          className={tab === "reviews" ? "active" : ""}
+          onClick={() => {
+            setTab("reviews");
+            setMessage("");
+          }}
+        >
+          <Star size={16} /> Reviews <span>{reviews.length}</span>
+        </button>
+
+        <button
           className={tab === "storefront" ? "active" : ""}
           onClick={() => {
             setTab("storefront");
@@ -598,6 +614,8 @@ export default function AdminDashboard({
                 ? "Sales & Financials"
                 : tab === "promotions"
                 ? "Promotions & Coupons"
+                : tab === "reviews"
+                ? "Customer Reviews & Social Proof"
                 : "Storefront Settings"}
             </h1>
             <p>
@@ -617,6 +635,8 @@ export default function AdminDashboard({
                 ? "Executive revenue breakdown, daily run-rates, and order analytics."
                 : tab === "promotions"
                 ? "Configure promotional discount vouchers and coupon redemption rules."
+                : tab === "reviews"
+                ? "Moderate buyer fragrance ratings from delivered orders and feature top reviews on the main storefront."
                 : "Customize homepage branding, luxury category navigation, and messaging."}
             </p>
           </div>
@@ -1710,6 +1730,11 @@ export default function AdminDashboard({
             initialCategories={categories.map((name, index) => ({ name, sort_order: index * 10, active: true }))}
           />
         )}
+
+        {/* =========================================================================
+            TAB 10: CUSTOMER REVIEWS & RATINGS
+           ========================================================================= */}
+        {tab === "reviews" && (reviewPanel || <AdminReviews initialReviews={reviews} />)}
       </section>
 
       {/* SINGLE SHIPPING LABEL MODAL (SUPPORTS CONSOLIDATED COMBOS) */}

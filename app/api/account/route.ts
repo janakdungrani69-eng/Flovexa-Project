@@ -15,12 +15,13 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: "Sign in to view your account." }, { status: 401 });
   try {
     const supabase = createAdminSupabase();
-    const [profileResult, addressResult, wishlistResult, orderResult, returnsResult] = await Promise.all([
+    const [profileResult, addressResult, wishlistResult, orderResult, returnsResult, reviewsResult] = await Promise.all([
       supabase.from("customer_profiles").upsert({ user_id: user.id, full_name: user.user_metadata?.full_name ?? "", phone: user.user_metadata?.phone ?? "" }, { onConflict: "user_id" }).select("user_id"),
       supabase.from("customer_addresses").select("id, label, full_name, phone, line1, line2, city, state, pincode, is_default").eq("user_id", user.id).order("is_default", { ascending: false }).order("created_at", { ascending: false }),
       supabase.from("customer_wishlist").select("product_id, products(id, slug, name, category, price_paise, size, image_url, accent)").eq("user_id", user.id).order("created_at", { ascending: false }),
-      supabase.from("orders").select("id, order_number, customer_name, phone, shipping_address, status, payment_status, total_paise, created_at, tracking_carrier, tracking_number, tracking_url, order_items(product_name, size, quantity)").eq("email", (user.email ?? "").toLowerCase()).order("created_at", { ascending: false }).limit(50),
+      supabase.from("orders").select("id, order_number, customer_name, phone, shipping_address, status, payment_status, total_paise, created_at, tracking_carrier, tracking_number, tracking_url, order_items(id, product_id, product_name, product_slug, size, quantity)").eq("email", (user.email ?? "").toLowerCase()).order("created_at", { ascending: false }).limit(50),
       supabase.from("return_requests").select("id, order_id, reason, details, status, created_at").eq("user_id", user.id).order("created_at", { ascending: false }),
+      supabase.from("product_reviews").select("id, order_id, product_id, product_name, product_slug, rating, title, comment, created_at").or(`user_id.eq.${user.id},customer_email.eq.${(user.email ?? "").toLowerCase()}`).order("created_at", { ascending: false }).then((res) => res, () => ({ data: [], error: null })),
     ]);
     const orderIds = (orderResult.data ?? []).map((order) => order.id);
     const shipmentResult = orderIds.length
@@ -71,6 +72,7 @@ export async function GET() {
       wishlist,
       orders: (orderResult.data ?? []).map((order) => ({ ...order, seller_fulfillments: shipmentsByOrder.get(order.id) ?? [] })),
       returns: returnsResult.data ?? [],
+      reviews: reviewsResult.data ?? [],
     }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     console.error("Customer account could not be loaded:", error);

@@ -7347,3 +7347,272 @@
   font-size: 9px;
   cursor: pointer;
 }
+
+/* Customer Delivered Order Review & Rating */
+.order-item-review-wrap {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+}
+
+.order-item-rate-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #fdfaf3;
+  color: #aa8050;
+  border: 1px solid #e5cda8;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.order-item-rate-btn:hover {
+  background: #aa8050;
+  color: #ffffff;
+  border-color: #aa8050;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(170, 128, 80, 0.25);
+}
+
+.order-item-rate-btn:hover svg {
+  fill: #ffffff !important;
+  color: #ffffff !important;
+}
+
+.order-item-reviewed-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f6f3ed;
+  color: #5a5247;
+  border: 1px solid #ded6c9;
+  padding: 5px 11px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.order-item-reviewed-pill:hover {
+  border-color: #aa8050;
+  color: #aa8050;
+  background: #fff;
+}
+
+.order-item-reviewed-pill .reviewed-stars {
+  color: #e5b23d;
+  letter-spacing: 1px;
+  font-size: 11px;
+}
+
+/* Review Modal */
+.review-modal-scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(14, 12, 10, 0.72);
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+}
+
+.review-modal-box {
+  width: 100%;
+  max-width: 540px;
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #ebd9c0;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.22);
+  overflow: hidden;
+  animation: modalFadeIn 0.22s ease-out;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.review-modal-header {
+  padding: 22px 24px;
+  background: #fcfbf9;
+  border-bottom: 1px solid #f0e9df;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.review-modal-eyebrow {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: #aa8050;
+  margin-bottom: 4px;
+}
+
+.review-modal-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #1f1b16;
+  margin: 0 0 4px 0;
+  line-height: 1.3;
+}
+
+.review-modal-sub {
+  font-size: 12px;
+  color: #7a7063;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.review-modal-close {
+  background: none;
+  border: none;
+  color: #8c8273;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.review-modal-close:hover {
+  background: #f0ebe1;
+  color: #1f1b16;
+}
+
+.review-modal-form {
+  padding: 22px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.review-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.review-field-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #383127;
+  letter-spacing: 0.01em;
+}
+
+.review-stars-interactive {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.star-choice-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 3px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease;
+}
+
+.star-choice-btn:hover {
+  transform: scale(1.18);
+}
+
+.review-star-hint {
+  font-size: 12px;
+  font-weight: 600;
+  color: #aa8050;
+  margin-left: 8px;
+}
+
+.review-text-input,
+.review-textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #dcd3c4;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #1f1b16;
+  background: #fdfcf9;
+  font-family: inherit;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.review-text-input:focus,
+.review-textarea:focus {
+  outline: none;
+  border-color: #aa8050;
+  box-shadow: 0 0 0 3px rgba(170, 128, 80, 0.15);
+  background: #ffffff;
+}
+
+.review-modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 8px;
+  padding-top: 14px;
+  border-top: 1px solid #f0e9df;
+}
+
+.review-cancel-btn {
+  padding: 9px 18px;
+  background: #f6f3ee;
+  color: #5a5144;
+  border: 1px solid #dfd8cc;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.review-cancel-btn:hover {
+  background: #eae3d7;
+  color: #1f1b16;
+}
+
+.review-submit-gold-btn {
+  padding: 10px 22px;
+  background: linear-gradient(135deg, #be955f, #9b723e);
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(170, 128, 80, 0.28);
+  transition: all 0.2s ease;
+}
+
+.review-submit-gold-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #c79e67, #a87c47);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(170, 128, 80, 0.35);
+}
+
+.review-submit-gold-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}

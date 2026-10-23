@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
 import JsonLd from "@/components/json-ld";
-import Storefront from "@/components/storefront";
+import Storefront, { type FeaturedStoreReview } from "@/components/storefront";
 import { getProducts } from "@/lib/catalog";
 import { canonicalUrl } from "@/lib/seo";
 import { getStorefrontContent } from "@/lib/storefront-content-server";
-import { getSignedInUser } from "@/lib/supabase/roles";
+import { createAdminSupabase } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -35,12 +34,36 @@ export const metadata: Metadata = {
 };
 
 export default async function StorePage() {
-  const user = await getSignedInUser();
-  if (!user) {
-    redirect("/signup");
+  // Browsing is public - buyers can view all products without login
+  const [products, content] = await Promise.all([getProducts(), getStorefrontContent()]);
+
+  // Fetch verified customer reviews featured for the main storefront
+  let featuredReviews: FeaturedStoreReview[] = [];
+  try {
+    const supabase = createAdminSupabase();
+    const { data: dbReviews } = await supabase
+      .from("product_reviews")
+      .select("id, customer_name, location, rating, title, comment, created_at, product_name, product_slug, products(name, slug)")
+      .eq("featured", true)
+      .order("created_at", { ascending: false })
+      .limit(8);
+
+    if (dbReviews && dbReviews.length > 0) {
+      featuredReviews = dbReviews.map((r: any) => ({
+        id: r.id,
+        author: r.customer_name || "Verified Buyer",
+        city: r.location || "India",
+        product: r.product_name || r.products?.name || "Flovexa Fragrance",
+        productSlug: r.product_slug || r.products?.slug,
+        quote: r.comment || r.title || "Exceptional fragrance with stunning sillage.",
+        rating: r.rating || 5,
+        date: r.created_at,
+      }));
+    }
+  } catch {
+    // Fallback handled inside Storefront
   }
 
-  const [products, content] = await Promise.all([getProducts(), getStorefrontContent()]);
   return (
     <>
       <JsonLd
@@ -63,7 +86,12 @@ export default async function StorePage() {
           ],
         }}
       />
-      <Storefront products={products} categories={content.categories} settings={content.settings} />
+      <Storefront
+        products={products}
+        categories={content.categories}
+        settings={content.settings}
+        featuredReviews={featuredReviews}
+      />
     </>
   );
 }

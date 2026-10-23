@@ -326,12 +326,60 @@ create policy "Product images are publicly viewable"
   to anon, authenticated
   using (bucket_id = 'product-images');
 
--- 17. COMPLETE ROLES & POSTGREST PERMISSIONS
+-- 17. PRODUCT REVIEWS & RATINGS TABLE
+create table if not exists public.product_reviews (
+  id uuid primary key default gen_random_uuid(),
+  order_id uuid references public.orders(id) on delete set null,
+  order_number text,
+  product_id uuid references public.products(id) on delete set null,
+  product_slug text,
+  product_name text not null,
+  user_id uuid references auth.users(id) on delete set null,
+  customer_name text not null,
+  customer_email text not null,
+  location text default 'India',
+  rating integer not null check (rating >= 1 and rating <= 5),
+  title text not null,
+  comment text not null,
+  verified_purchase boolean not null default true,
+  featured boolean not null default true,
+  status text not null default 'approved' check (status in ('pending', 'approved', 'rejected')),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists product_reviews_product_id_idx on public.product_reviews (product_id);
+create index if not exists product_reviews_product_slug_idx on public.product_reviews (product_slug);
+create index if not exists product_reviews_order_id_idx on public.product_reviews (order_id);
+create index if not exists product_reviews_user_id_idx on public.product_reviews (user_id);
+create index if not exists product_reviews_featured_idx on public.product_reviews (featured, status);
+
+alter table public.product_reviews enable row level security;
+
+drop policy if exists "Anyone can read approved product reviews" on public.product_reviews;
+create policy "Anyone can read approved product reviews"
+  on public.product_reviews for select
+  to anon, authenticated
+  using (status = 'approved');
+
+drop policy if exists "Users can insert own reviews" on public.product_reviews;
+create policy "Users can insert own reviews"
+  on public.product_reviews for insert
+  to authenticated
+  with check (auth.uid() = user_id or auth.uid() is not null);
+
+drop policy if exists "Users can update own reviews" on public.product_reviews;
+create policy "Users can update own reviews"
+  on public.product_reviews for update
+  to authenticated
+  using (auth.uid() = user_id);
+
+-- 18. COMPLETE ROLES & POSTGREST PERMISSIONS
 grant usage on schema public to anon, authenticated, service_role;
 grant all on all tables in schema public to anon, authenticated, service_role;
 grant all on all sequences in schema public to anon, authenticated, service_role;
 grant all on all routines in schema public to anon, authenticated, service_role;
 
--- 18. FORCE POSTGREST SCHEMA CACHE RELOAD
+-- 19. FORCE POSTGREST SCHEMA CACHE RELOAD
 notify pgrst, 'reload schema';
 

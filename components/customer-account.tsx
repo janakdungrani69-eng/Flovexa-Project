@@ -21,10 +21,12 @@ import {
   ShieldCheck,
   ShoppingBag,
   Sparkles,
+  Star,
   Tag,
   Trash2,
   Truck,
   UserRound,
+  X,
 } from "lucide-react";
 import ShippingLabelModal from "@/components/shipping-label-modal";
 
@@ -39,9 +41,24 @@ type SellerShipment = {
 };
 
 type OrderItem = {
+  id?: string;
+  product_id?: string;
+  product_slug?: string;
   product_name: string;
   size: string;
   quantity: number;
+};
+
+type CustomerReview = {
+  id: string;
+  order_id: string;
+  product_id?: string | null;
+  product_slug?: string | null;
+  product_name: string;
+  rating: number;
+  title: string;
+  comment: string;
+  created_at: string;
 };
 
 type Order = {
@@ -109,6 +126,7 @@ type AccountData = {
   wishlist: WishlistProduct[];
   orders: Order[];
   returns: ReturnRequest[];
+  reviews?: CustomerReview[];
 };
 
 const emptyAddress: Address = {
@@ -166,6 +184,15 @@ export default function CustomerAccount({ email }: { email: string }) {
   const [orderFilter, setOrderFilter] = useState<"all" | "in_transit" | "delivered">("all");
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [selectedLabelOrder, setSelectedLabelOrder] = useState<Order | null>(null);
+  const [reviewingItem, setReviewingItem] = useState<{
+    order: Order;
+    item: OrderItem;
+    existingReview?: CustomerReview;
+  } | null>(null);
+  const [reviewRating, setReviewRating] = useState<number>(5);
+  const [reviewTitle, setReviewTitle] = useState<string>("");
+  const [reviewComment, setReviewComment] = useState<string>("");
+  const [reviewSubmitting, setReviewSubmitting] = useState<boolean>(false);
 
   useEffect(() => {
     let active = true;
@@ -294,6 +321,58 @@ export default function CustomerAccount({ email }: { email: string }) {
       setNotice("Delivery address removed.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not remove this address.");
+    }
+  }
+
+  async function submitReview(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!reviewingItem) return;
+    setReviewSubmitting(true);
+    setError("");
+    setNotice("");
+
+    try {
+      const response = await fetch("/api/reviews", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId: reviewingItem.order.id,
+          productId: reviewingItem.item.product_id,
+          productSlug: reviewingItem.item.product_slug,
+          productName: reviewingItem.item.product_name,
+          rating: reviewRating,
+          title: reviewTitle.trim(),
+          comment: reviewComment.trim(),
+          location: reviewingItem.order.shipping_address?.city,
+        }),
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || "Could not publish your review.");
+      }
+
+      setNotice("Thank you! Your verified fragrance review has been published.");
+      if (result.review && data) {
+        setData({
+          ...data,
+          reviews: [
+            result.review,
+            ...(data.reviews ?? []).filter(
+              (r) =>
+                !(
+                  r.order_id === reviewingItem.order.id &&
+                  r.product_name.toLowerCase() === reviewingItem.item.product_name.toLowerCase()
+                )
+            ),
+          ],
+        });
+      }
+      setReviewingItem(null);
+    } catch (err: any) {
+      setError(err instanceof Error ? err.message : "Could not publish review.");
+    } finally {
+      setReviewSubmitting(false);
     }
   }
 
@@ -760,19 +839,65 @@ export default function CustomerAccount({ email }: { email: string }) {
 
                           {/* Order Products List */}
                           <div className="order-items-grid">
-                            {order.order_items.map((item, idx) => (
-                              <div key={`${order.order_number}-${idx}`} className="order-item-chip">
-                                <div className="order-item-bullet-icon">
-                                  <Package size={14} />
+                            {order.order_items.map((item, idx) => {
+                              const itemReview = (data.reviews ?? []).find(
+                                (r) =>
+                                  r.order_id === order.id &&
+                                  (r.product_name.toLowerCase() === item.product_name.toLowerCase() ||
+                                    (item.product_id && r.product_id === item.product_id))
+                              );
+
+                              return (
+                                <div key={`${order.order_number}-${idx}`} className="order-item-chip">
+                                  <div className="order-item-bullet-icon">
+                                    <Package size={14} />
+                                  </div>
+                                  <div className="order-item-desc">
+                                    <strong className="item-name">{item.product_name}</strong>
+                                    <span className="item-meta">
+                                      Size: {item.size} · Quantity: {item.quantity}
+                                    </span>
+                                  </div>
+
+                                  {/* Verified Review Action for Delivered Orders */}
+                                  {isDelivered && (
+                                    <div className="order-item-review-wrap">
+                                      {itemReview ? (
+                                        <button
+                                          type="button"
+                                          className="order-item-reviewed-pill"
+                                          onClick={() => {
+                                            setReviewingItem({ order, item, existingReview: itemReview });
+                                            setReviewRating(itemReview.rating);
+                                            setReviewTitle(itemReview.title);
+                                            setReviewComment(itemReview.comment);
+                                          }}
+                                          title="Verified review published. Click to view or edit."
+                                        >
+                                          <span className="reviewed-stars">{"★".repeat(itemReview.rating)}</span>
+                                          <span>Reviewed ({itemReview.rating}/5)</span>
+                                        </button>
+                                      ) : (
+                                        <button
+                                          type="button"
+                                          className="order-item-rate-btn"
+                                          onClick={() => {
+                                            setReviewingItem({ order, item });
+                                            setReviewRating(5);
+                                            setReviewTitle("");
+                                            setReviewComment("");
+                                          }}
+                                          title="Rate & Review this delivered fragrance"
+                                        >
+                                          <Star size={13} fill="#aa8050" color="#aa8050" />
+                                          <span>Rate &amp; Review</span>
+                                        </button>
+                                      )}
+                                    </div>
+                                  )}
                                 </div>
-                                <div className="order-item-desc">
-                                  <strong className="item-name">{item.product_name}</strong>
-                                  <span className="item-meta">
-                                    Size: {item.size} · Quantity: {item.quantity}
-                                  </span>
-                                </div>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
 
                           {/* Order Footer & Actions */}
@@ -1418,6 +1543,102 @@ export default function CustomerAccount({ email }: { email: string }) {
           fallbackPhone={data?.profile.phone || profile.phone}
           onClose={() => setSelectedLabelOrder(null)}
         />
+      )}
+
+      {/* Verified Fragrance Rating & Review Modal */}
+      {reviewingItem && (
+        <div className="review-modal-scrim" onClick={() => setReviewingItem(null)}>
+          <div className="review-modal-box" onClick={(e) => e.stopPropagation()}>
+            <div className="review-modal-header">
+              <div>
+                <span className="review-modal-eyebrow">VERIFIED PATRON EXPERIENCE</span>
+                <h3 className="review-modal-title">Rate &amp; Review {reviewingItem.item.product_name}</h3>
+                <p className="review-modal-sub">
+                  Delivered on Order #{reviewingItem.order.order_number} · Your review will appear on the product page and storefront.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="review-modal-close"
+                onClick={() => setReviewingItem(null)}
+                aria-label="Close review dialog"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={submitReview} className="review-modal-form">
+              <div className="review-form-field">
+                <label className="review-field-label">Your Overall Fragrance Rating</label>
+                <div className="review-stars-interactive">
+                  {[1, 2, 3, 4, 5].map((starVal) => (
+                    <button
+                      key={starVal}
+                      type="button"
+                      className={`star-choice-btn ${starVal <= reviewRating ? "active" : ""}`}
+                      onClick={() => setReviewRating(starVal)}
+                      aria-label={`${starVal} star rating`}
+                    >
+                      <Star
+                        size={24}
+                        fill={starVal <= reviewRating ? "#e5b23d" : "transparent"}
+                        color={starVal <= reviewRating ? "#e5b23d" : "#c5bba8"}
+                      />
+                    </button>
+                  ))}
+                  <span className="review-star-hint">
+                    {reviewRating === 5 && "Flawless Masterpiece (5/5)"}
+                    {reviewRating === 4 && "Great Luxury Sillage (4/5)"}
+                    {reviewRating === 3 && "Average Scent (3/5)"}
+                    {reviewRating === 2 && "Could Be Better (2/5)"}
+                    {reviewRating === 1 && "Not As Expected (1/5)"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="review-form-field">
+                <label className="review-field-label">Headline / Title</label>
+                <input
+                  type="text"
+                  required
+                  value={reviewTitle}
+                  onChange={(e) => setReviewTitle(e.target.value)}
+                  placeholder="e.g., Intoxicating drydown, lasts over 12 hours"
+                  className="review-text-input"
+                />
+              </div>
+
+              <div className="review-form-field">
+                <label className="review-field-label">Your Scent Experience &amp; Notes</label>
+                <textarea
+                  required
+                  rows={4}
+                  value={reviewComment}
+                  onChange={(e) => setReviewComment(e.target.value)}
+                  placeholder="Describe the projection, sillage, compliments received, and how the fragrance evolves throughout the day..."
+                  className="review-textarea"
+                />
+              </div>
+
+              <div className="review-modal-actions">
+                <button
+                  type="button"
+                  className="review-cancel-btn"
+                  onClick={() => setReviewingItem(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={reviewSubmitting}
+                  className="review-submit-gold-btn"
+                >
+                  {reviewSubmitting ? "Publishing Review…" : reviewingItem.existingReview ? "Update Review" : "Publish Verified Review"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );
