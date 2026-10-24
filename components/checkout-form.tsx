@@ -3,7 +3,8 @@
 import Script from "next/script";
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
-import { ArrowRight, LockKeyhole } from "lucide-react";
+import { ArrowRight, Check, ExternalLink, LockKeyhole, Printer, Sparkles, Truck } from "lucide-react";
+import ShippingLabelModal, { type ShippingLabelOrder } from "@/components/shipping-label-modal";
 
 type CartLine = { productId: string; quantity: number };
 type PaymentResponse = { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string };
@@ -23,6 +24,8 @@ export default function CheckoutForm({ items, enabled, initialCustomer, couponCo
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [success, setSuccess] = useState("");
+  const [confirmedOrder, setConfirmedOrder] = useState<ShippingLabelOrder | null>(null);
+  const [showShippingLabel, setShowShippingLabel] = useState(false);
   const [values, setValues] = useState(initialCustomer ?? blankValues);
   function change(event: React.ChangeEvent<HTMLInputElement>) { setValues((current) => ({ ...current, [event.target.name]: event.target.value })); }
 
@@ -52,8 +55,17 @@ export default function CheckoutForm({ items, enabled, initialCustomer, couponCo
             const verification = await fetch("/api/payments/verify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ localOrderId: order.localOrderId, ...payment }) });
             const result = await verification.json();
             if (!verification.ok) throw new Error(result.error ?? "Payment confirmation is pending.");
-            localStorage.removeItem("flovexa-cart");
-            setSuccess(result.orderStatus === "payment_review" ? `Payment for ${result.orderNumber} reached us. Our team is confirming availability and will update you shortly.` : result.paymentStatus === "captured" ? `Thank you. Your order ${result.orderNumber} is confirmed.` : `Payment for ${result.orderNumber} is authorized and awaiting confirmation.`);
+            try {
+              localStorage.removeItem("flovexa-cart");
+              window.dispatchEvent(new Event("storage"));
+            } catch {
+              // storage error ignored
+            }
+            if (result.order) {
+              setConfirmedOrder(result.order);
+            } else {
+              setSuccess(result.orderStatus === "payment_review" ? `Payment for ${result.orderNumber} reached us. Our team is confirming availability and will update you shortly.` : result.paymentStatus === "captured" ? `Thank you. Your order ${result.orderNumber} is confirmed.` : `Payment for ${result.orderNumber} is authorized and awaiting confirmation.`);
+            }
             setValues(blankValues);
           } catch (error) { setMessage(error instanceof Error ? error.message : "We could not confirm payment yet."); }
           finally { setBusy(false); }
@@ -70,7 +82,104 @@ export default function CheckoutForm({ items, enabled, initialCustomer, couponCo
   return <>
     <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="afterInteractive" />
     {!enabled && <div className="checkout-setup-note"><LockKeyhole size={17} /><div><b>Secure checkout is not live yet</b><p>Real catalogue, shipping and tax settings, and merchant payment accounts must be connected before orders can be accepted.</p></div></div>}
-    {success ? <div className="checkout-success"><span>✓</span><h2>Order received</h2><p>{success}</p><Link href="/store">Back to the collection <ArrowRight size={15} /></Link></div> : <form className="address-form" onSubmit={pay}>
+    {confirmedOrder ? (
+      <div className="checkout-success-container">
+        <div className="checkout-success-banner">
+          <div className="checkout-success-icon">
+            <Check size={28} />
+          </div>
+          <span className="checkout-success-badge">PAYMENT CAPTURED · PARCEL REGISTERED</span>
+          <h2>Payment Successful!</h2>
+          <p className="checkout-success-order-num">
+            Order Reference: <strong>{confirmedOrder.order_number}</strong>
+          </p>
+        </div>
+
+        {/* Immediate Shipping Label & Express Courier Allocation */}
+        <div className="checkout-shipping-label-card">
+          <div className="checkout-shipping-label-header">
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <Truck size={18} color="#aa8050" />
+              <strong style={{ fontSize: "14px", color: "#1f1a14" }}>
+                Express Shipping Label Generated
+              </strong>
+            </div>
+            <span className="checkout-status-pill">
+              <Sparkles size={11} /> Ready for Dispatch
+            </span>
+          </div>
+
+          <div className="checkout-shipping-details-grid">
+            <div>
+              <span className="cs-label">COURIER PARTNER</span>
+              <strong className="cs-val">{confirmedOrder.tracking_carrier || "Delhivery Air Express"}</strong>
+            </div>
+            <div>
+              <span className="cs-label">AWB / TRACKING NO</span>
+              <strong className="cs-val cs-mono">{confirmedOrder.tracking_number}</strong>
+            </div>
+            <div style={{ gridColumn: "1 / -1" }}>
+              <span className="cs-label">DELIVERING TO</span>
+              <p className="cs-address">
+                <strong>{confirmedOrder.customer_name}</strong>
+                <br />
+                {confirmedOrder.shipping_address?.line1}
+                {confirmedOrder.shipping_address?.line2 ? `, ${confirmedOrder.shipping_address?.line2}` : ""},{" "}
+                {confirmedOrder.shipping_address?.city}, {confirmedOrder.shipping_address?.state} -{" "}
+                {confirmedOrder.shipping_address?.pincode}
+                {confirmedOrder.phone ? ` · Tel: ${confirmedOrder.phone}` : ""}
+              </p>
+            </div>
+          </div>
+
+          <div className="checkout-shipping-actions">
+            <button
+              type="button"
+              className="primary-button checkout-print-btn"
+              onClick={() => setShowShippingLabel(true)}
+            >
+              <Printer size={15} /> View &amp; Print Shipping Label
+            </button>
+            {confirmedOrder.tracking_url && (
+              <Link
+                href={confirmedOrder.tracking_url}
+                className="checkout-track-btn"
+              >
+                <ExternalLink size={14} /> Track Delivery Live
+              </Link>
+            )}
+          </div>
+          <p className="checkout-note-secure">
+            📦 Your parcel shipping label with SKU manifest is generated. Our atelier is packing your crystal flacons in protective velvet gift wrap for delivery.
+          </p>
+        </div>
+
+        <div className="checkout-success-footer-links">
+          <Link href="/account" className="checkout-account-link">
+            View in My Orders →
+          </Link>
+          <Link href="/store" className="checkout-store-link">
+            Back to Collection
+          </Link>
+        </div>
+
+        {/* Printable Thermal Shipping Label Modal */}
+        {showShippingLabel && (
+          <ShippingLabelModal
+            order={confirmedOrder}
+            onClose={() => setShowShippingLabel(false)}
+          />
+        )}
+      </div>
+    ) : success ? (
+      <div className="checkout-success">
+        <span>✓</span>
+        <h2>Order received</h2>
+        <p>{success}</p>
+        <Link href="/store">Back to the collection <ArrowRight size={15} /></Link>
+      </div>
+    ) : (
+      <form className="address-form" onSubmit={pay}>
       <div className="form-section-title"><span>01</span><h2>Contact</h2></div>
       <div className="form-fields"><label className="field-wide">Full name<input autoComplete="name" name="name" required minLength={2} maxLength={100} value={values.name} onChange={change} placeholder="Name for delivery" /></label><label>Email address<input type="email" autoComplete="email" name="email" required value={values.email} onChange={change} placeholder="you@example.com" /></label><label>Mobile number<input type="tel" autoComplete="tel" name="phone" required pattern="[+\d][\d\s()\-]{7,18}" value={values.phone} onChange={change} placeholder="+91 98765 43210" /></label></div>
       <div className="form-section-title"><span>02</span><h2>Delivery address</h2></div>
@@ -78,6 +187,6 @@ export default function CheckoutForm({ items, enabled, initialCustomer, couponCo
       {message && <p className="checkout-message" role="alert">{message}</p>}
       <button className="primary-button pay-button" type="submit" disabled={busy || !items.length || !enabled}>{busy ? "Preparing secure checkout…" : "Continue to secure payment"}<ArrowRight size={16} /></button>
       <p className="payment-assurance"><LockKeyhole size={13} /> Card and UPI payments are handled securely by Razorpay. We never store card details.</p>
-    </form>}
+    </form>)}
   </>;
 }

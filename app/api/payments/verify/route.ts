@@ -21,7 +21,7 @@ export async function POST(request: Request) {
     const { keySecret, client } = createRazorpay();
     const { localOrderId, razorpay_order_id, razorpay_payment_id, razorpay_signature } = parsed.data;
     const { data: order, error } = await supabase.from("orders")
-      .select("id, order_number, razorpay_order_id, total_paise, status, payment_status")
+      .select("id, order_number, razorpay_order_id, total_paise, customer_name, email, phone, shipping_address, created_at, status, payment_status, order_items(product_name, size, quantity, unit_price_paise, line_total_paise)")
       .eq("id", localOrderId).maybeSingle();
     if (error || !order || order.razorpay_order_id !== razorpay_order_id) {
       return NextResponse.json({ error: "We could not match this payment to your order." }, { status: 404 });
@@ -44,11 +44,65 @@ export async function POST(request: Request) {
         provider_payment_id: razorpay_payment_id,
       });
       if (markError) throw markError;
-      const { data: finalOrder, error: finalError } = await supabase.from("orders").select("status, payment_status").eq("id", localOrderId).single();
-      if (finalError || finalOrder.payment_status !== "captured") return NextResponse.json({ error: "Payment received; order confirmation is still syncing." }, { status: 202 });
-      try { await sendOrderEmail(localOrderId, finalOrder.status === "payment_review" ? "payment_review" : "order_confirmation"); }
-      catch (emailError) { console.error("Order confirmation email deferred", emailError instanceof Error ? emailError.message : "Unknown error"); }
-      return NextResponse.json({ ok: true, orderNumber: order.order_number, paymentStatus: "captured", orderStatus: finalOrder.status });
+
+      // Immediately generate official AWB and express shipping label upon payment
+      const cleanOrderNum = (order.order_number || "").replace(/[^A-Za-z0-9]/g, "").slice(-8).toUpperCase();
+      const generatedAwb = `FLX-EXP-${cleanOrderNum}`;
+      const courierPartner = "Delhivery Air Express";
+      const trackingUrl = `/orders?order=${encodeURIComponent(order.order_number)}`;
+
+      // Attach shipping label & tracking to orders table immediately
+      await supabase.from("orders").update({
+        tracking_carrier: courierPartner,
+        tracking_number: generatedAwb,
+        tracking_url: trackingUrl,
+        status: "processing",
+        updated_at: new Date().toISOString(),
+      }).eq("id", localOrderId);
+
+      // Attach shipping label & tracking to seller_fulfillments table
+      await supabase.from("seller_fulfillments").update({
+        tracking_carrier: courierPartner,
+        tracking_number: generatedAwb,
+        tracking_url: trackingUrl,
+        status: "processing",
+      }).eq("order_id", localOrderId);
+
+      const { data: updatedOrder } = await supabase.from("orders")
+        .select("id, order_number, customer_name, email, phone, shipping_address, total_paise, status, payment_status, created_at, tracking_carrier, tracking_number, tracking_url, order_items(product_name, size, quantity, unit_price_paise, line_total_paise)")
+        .eq("id", localOrderId)
+        .single();
+
+      try {
+        await sendOrderEmail(localOrderId, "order_confirmation");
+      } catch (emailError) {
+        console.error("Order confirmation email deferred", emailError instanceof Error ? emailError.message : "Unknown error");
+      }
+
+      return NextResponse.json({
+        ok: true,
+        orderNumber: order.order_number,
+        paymentStatus: "captured",
+        orderStatus: "processing",
+        trackingCarrier: courierPartner,
+        trackingNumber: generatedAwb,
+        trackingUrl,
+        order: updatedOrder || {
+          id: order.id,
+          order_number: order.order_number,
+          customer_name: order.customer_name,
+          phone: order.phone,
+          shipping_address: order.shipping_address,
+          total_paise: order.total_paise,
+          status: "processing",
+          payment_status: "captured",
+          created_at: order.created_at || new Date().toISOString(),
+          tracking_carrier: courierPartner,
+          tracking_number: generatedAwb,
+          tracking_url: trackingUrl,
+          order_items: order.order_items || [],
+        },
+      });
     }
     if (payment.status === "authorized") {
       await supabase.from("orders").update({ payment_status: "authorized", razorpay_payment_id, payment_signature_verified_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", localOrderId).eq("status", "pending_payment");

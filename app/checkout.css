@@ -53,6 +53,32 @@
 .checkout-success h2{margin:14px 0 4px;font:27px var(--serif)}
 .checkout-success p{color:#746d62;font-size:11px;line-height:1.7}
 .checkout-success a{display:inline-flex;gap:9px;align-items:center;margin-top:13px;color:#745b3a;font-size:10px;text-transform:uppercase;letter-spacing:.1em}
+
+/* Post-Payment Instant Shipping Label Card */
+.checkout-success-container { display: flex; flex-direction: column; gap: 20px; }
+.checkout-success-banner { text-align: center; padding: 26px 18px; background: #fbf9f5; border: 1px solid var(--line); }
+.checkout-success-icon { width: 48px; height: 48px; margin: 0 auto 12px; display: grid; place-items: center; border-radius: 50%; background: #465a40; color: #fff; }
+.checkout-success-badge { display: inline-block; font-size: 9px; font-weight: 700; letter-spacing: 0.12em; color: #aa8050; margin-bottom: 6px; }
+.checkout-success-banner h2 { font: 30px var(--serif); margin: 0 0 6px; color: var(--ink); }
+.checkout-success-order-num { font-size: 13px; color: #6a6258; margin: 0; }
+.checkout-success-order-num strong { color: #1f1a14; letter-spacing: 0.5px; }
+
+.checkout-shipping-label-card { padding: 22px; background: #fff; border: 1px solid #d9d1c5; box-shadow: 0 4px 16px rgba(40, 32, 24, 0.04); }
+.checkout-shipping-label-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 14px; border-bottom: 1px dashed #e2dbcf; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
+.checkout-status-pill { display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px; background: #eef5eb; color: #3b6032; font-size: 11px; font-weight: 600; border-radius: 4px; }
+.checkout-shipping-details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 18px; }
+.cs-label { display: block; font-size: 9px; letter-spacing: 0.08em; color: #8c8275; margin-bottom: 4px; font-weight: 600; }
+.cs-val { font-size: 13px; color: #241e17; }
+.cs-mono { font-family: var(--font-mono, monospace); color: #aa8050; background: #f7f3ed; padding: 2px 7px; border-radius: 4px; font-size: 12px; }
+.cs-address { font-size: 12px; line-height: 1.5; color: #554d43; margin: 0; }
+.checkout-shipping-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+.checkout-print-btn { flex: 1; min-width: 200px; justify-content: center; gap: 8px; }
+.checkout-track-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 11px 18px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; background: #f0ebe2; color: #3d352c; border: 1px solid #d4cbbd; transition: all 0.2s; }
+.checkout-track-btn:hover { background: #e5ded2; }
+.checkout-note-secure { font-size: 11px; line-height: 1.5; color: #7b7266; margin: 0; padding-top: 10px; border-top: 1px solid #f0ebe2; }
+.checkout-success-footer-links { display: flex; justify-content: space-between; align-items: center; padding-top: 8px; font-size: 12px; }
+.checkout-account-link { font-weight: 600; color: #aa8050; text-decoration: underline; }
+.checkout-store-link { color: #6a6258; }
 .checkout-footer{min-height:54px;display:flex;justify-content:center;align-items:center;gap:24px;border-top:1px solid var(--line);color:#888073;font-size:8px;letter-spacing:.09em}
 .checkout-footer a:hover{color:var(--gold)}
 @media(max-width:760px){.checkout-header{height:65px;padding-inline:15px}.checkout-header .wordmark{font-size:15px}.checkout-back{font-size:8px;gap:5px}.checkout-back svg{width:13px}.secure-label{font-size:7px}.checkout-layout{padding:38px 17px 55px;grid-template-columns:1fr;gap:32px}.checkout-main h1{font-size:36px}.order-summary{grid-row:1;padding:20px}.order-summary h2{font-size:24px}.checkout-footer{gap:13px;font-size:7px}}

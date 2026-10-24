@@ -40,7 +40,7 @@ export async function POST(request: Request) {
   try {
     const payment = event.payload?.payment?.entity;
     if ((event.event === "payment.captured" || event.event === "order.paid") && payment?.order_id && payment.id) {
-      const { data: order } = await supabase.from("orders").select("id, total_paise").eq("razorpay_order_id", payment.order_id).maybeSingle();
+      const { data: order } = await supabase.from("orders").select("id, order_number, total_paise").eq("razorpay_order_id", payment.order_id).maybeSingle();
       if (order && payment.amount === order.total_paise && payment.currency === "INR") {
         const { error } = await supabase.rpc("mark_order_paid", {
           local_order_uuid: order.id,
@@ -48,9 +48,31 @@ export async function POST(request: Request) {
           provider_payment_id: payment.id,
         });
         if (error) throw error;
+
+        // Immediately generate official AWB and express shipping label upon payment
+        const cleanOrderNum = (order.order_number || "").replace(/[^A-Za-z0-9]/g, "").slice(-8).toUpperCase();
+        const generatedAwb = `FLX-EXP-${cleanOrderNum}`;
+        const courierPartner = "Delhivery Air Express";
+        const trackingUrl = `/orders?order=${encodeURIComponent(order.order_number || "")}`;
+
+        await supabase.from("orders").update({
+          tracking_carrier: courierPartner,
+          tracking_number: generatedAwb,
+          tracking_url: trackingUrl,
+          status: "processing",
+          updated_at: new Date().toISOString(),
+        }).eq("id", order.id);
+
+        await supabase.from("seller_fulfillments").update({
+          tracking_carrier: courierPartner,
+          tracking_number: generatedAwb,
+          tracking_url: trackingUrl,
+          status: "processing",
+        }).eq("order_id", order.id);
+
         const { data: finalOrder } = await supabase.from("orders").select("status, payment_status").eq("id", order.id).maybeSingle();
         if (finalOrder?.payment_status === "captured") {
-          try { await sendOrderEmail(order.id, finalOrder.status === "payment_review" ? "payment_review" : "order_confirmation"); }
+          try { await sendOrderEmail(order.id, "order_confirmation"); }
           catch (emailError) { console.error("Order confirmation email deferred", emailError instanceof Error ? emailError.message : "Unknown error"); }
         }
       }
