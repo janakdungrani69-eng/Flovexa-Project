@@ -213,14 +213,7 @@ export default function ProductPurchasePanel({ product }: { product: Product }) 
       <div className="purchase-size-section">
         <div className="purchase-size-label" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span>Choose Bottle Size:</span>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            {selectedVariant.sku && (
-              <span style={{ fontSize: "11px", fontFamily: "var(--font-mono, monospace)", color: "#8a7e72", background: "#f5f0ea", padding: "1px 6px", borderRadius: "4px" }}>
-                SKU: {selectedVariant.sku}
-              </span>
-            )}
-            <strong style={{ color: "var(--accent, #aa8050)", fontSize: "14px" }}>{selectedVariant.size}</strong>
-          </div>
+          <strong style={{ color: "var(--accent, #aa8050)", fontSize: "14px" }}>{selectedVariant.size}</strong>
         </div>
         <div className="purchase-size-options" style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginTop: "10px" }}>
           {variants.map((v) => {

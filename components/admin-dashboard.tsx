@@ -37,7 +37,7 @@ import {
   Users,
   UsersRound,
 } from "lucide-react";
-import type { Product } from "@/lib/products";
+import { generateDefaultSku, type Product } from "@/lib/products";
 import AdminCustomers, { type AdminCustomer } from "@/components/admin-customers";
 import AdminStorefront from "@/components/admin-storefront";
 import AdminReviews, { type AdminReview } from "@/components/admin-reviews";
@@ -77,6 +77,7 @@ export type AdminOrder = {
     product_name: string;
     size: string;
     quantity: number;
+    sku?: string;
     unit_price_paise?: number;
     line_total_paise?: number;
     seller_id?: string | null;
@@ -852,7 +853,10 @@ export default function AdminDashboard({
                             <div className="oor-items">
                               {order.order_items.map((item, idx) => (
                                 <span key={`${order.id}-${idx}`}>
-                                  {item.product_name} × {item.quantity}
+                                  {item.product_name} · {item.size || "50 ml"} × {item.quantity}
+                                  <code style={{ marginLeft: "5px", fontSize: "11px", fontFamily: "var(--font-mono, monospace)", background: "#f0ece7", padding: "1px 5px", borderRadius: "3px", color: "#54463a", fontWeight: 600 }}>
+                                    SKU: {item.sku || generateDefaultSku(item.product_name, item.size, idx)}
+                                  </code>
                                   {item.seller_name && item.seller_name !== "Flovexa Official" ? (
                                     <small className="oor-seller-tag"> ({item.seller_name})</small>
                                   ) : null}
@@ -1169,6 +1173,9 @@ export default function AdminDashboard({
                             <span>
                               <b>{item.product_name}</b> · {item.size} × {item.quantity}
                             </span>
+                            <code style={{ fontSize: "11px", fontFamily: "var(--font-mono, monospace)", background: "#f0ece7", padding: "1px 6px", borderRadius: "3px", color: "#54463a", fontWeight: 600 }}>
+                              SKU: {item.sku || generateDefaultSku(item.product_name, item.size, index)}
+                            </code>
                             {item.seller_name && (
                               <span className="order-seller-badge">
                                 <Store size={10} /> {item.seller_name}
@@ -1601,6 +1608,9 @@ export default function AdminDashboard({
                         </div>
                         <small>
                           {product.category} · {product.size} ·{" "}
+                          <code style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "11px", background: "#f0ece7", padding: "1px 5px", borderRadius: "3px", color: "#50443a", fontWeight: 600 }}>
+                            SKU: {product.sku || (product.variants && product.variants[0]?.sku) || generateDefaultSku(product.name, product.size, 0)}
+                          </code> ·{" "}
                           <span
                             className={isOutOfStock ? "stock-out-tag" : isLowStock ? "stock-low-tag" : "stock-ok-tag"}
                           >

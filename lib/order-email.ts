@@ -1,6 +1,7 @@
 import "server-only";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { sendMail } from "@/lib/mailer";
+import { generateDefaultSku } from "@/lib/products";
 
 type NotificationType = "order_confirmation" | "payment_review" | "shipment_update" | "refund_update";
 const escapeHtml = (value: unknown) => String(value ?? "").replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]!);
@@ -20,7 +21,10 @@ export async function sendOrderEmail(orderId: string, eventType: NotificationTyp
     if (itemsError) throw itemsError;
     const safeName = escapeHtml(order.customer_name);
     const safeNumber = escapeHtml(order.order_number);
-    const rows = (items ?? []).map((item) => `<tr><td style="padding:12px 0;border-bottom:1px solid #e8e0d3">${escapeHtml(item.product_name)} <span style="color:#81796e">· ${escapeHtml(item.size)} × ${item.quantity}</span></td><td style="padding:12px 0;border-bottom:1px solid #e8e0d3;text-align:right">₹${(item.line_total_paise / 100).toLocaleString("en-IN")}</td></tr>`).join("");
+    const rows = (items ?? []).map((item, idx) => {
+      const sku = generateDefaultSku(item.product_name, item.size, idx);
+      return `<tr><td style="padding:12px 0;border-bottom:1px solid #e8e0d3">${escapeHtml(item.product_name)} <span style="color:#81796e">· ${escapeHtml(item.size)} × ${item.quantity} · SKU: ${escapeHtml(sku)}</span></td><td style="padding:12px 0;border-bottom:1px solid #e8e0d3;text-align:right">₹${(item.line_total_paise / 100).toLocaleString("en-IN")}</td></tr>`;
+    }).join("");
     const discountRow = order.discount_paise > 0 ? `<tr><td style="padding:12px 0;color:#53634b">Discount${order.coupon_code ? ` · ${escapeHtml(order.coupon_code)}` : ""}</td><td style="padding:12px 0;text-align:right;color:#53634b">−₹${(order.discount_paise / 100).toLocaleString("en-IN")}</td></tr>` : "";
     const info = eventType === "shipment_update"
       ? `<p>Your order has been handed to ${escapeHtml(order.tracking_carrier || "the courier partner")}.</p><p>Tracking number: <strong>${escapeHtml(order.tracking_number)}</strong></p>${order.tracking_url ? `<p><a href="${escapeHtml(order.tracking_url)}">Track your shipment</a></p>` : ""}`

@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { Check, Package, Printer, Sparkles, X, ShieldAlert } from "lucide-react";
+import { generateDefaultSku } from "@/lib/products";
 
 export type ShippingLabelOrder = {
   id: string;
@@ -27,6 +28,7 @@ export type ShippingLabelOrder = {
     product_name: string;
     size: string;
     quantity: number;
+    sku?: string;
     unit_price_paise?: number;
     line_total_paise?: number;
   }>;
@@ -285,6 +287,7 @@ export default function ShippingLabelModal({
                   <tr>
                     <th style={{ width: "38px" }}>#</th>
                     <th>FRAGRANCE / ITEM DESCRIPTION</th>
+                    <th style={{ width: "120px", textAlign: "left" }}>SKU CODE</th>
                     <th style={{ width: "70px", textAlign: "center" }}>SIZE</th>
                     <th style={{ width: "50px", textAlign: "center" }}>QTY</th>
                     <th style={{ width: "110px", textAlign: "right" }}>PACKAGING</th>
@@ -296,6 +299,11 @@ export default function ShippingLabelModal({
                       <td style={{ textAlign: "center", fontWeight: 700 }}>{idx + 1}</td>
                       <td>
                         <strong>{item.product_name}</strong>
+                      </td>
+                      <td>
+                        <code style={{ fontFamily: "monospace", fontSize: "11px", background: "#f0ece7", padding: "2px 6px", borderRadius: "3px", fontWeight: 700, color: "#332c26", letterSpacing: "0.5px" }}>
+                          {item.sku || generateDefaultSku(item.product_name, item.size, idx)}
+                        </code>
                       </td>
                       <td style={{ textAlign: "center" }}>{item.size}</td>
                       <td style={{ textAlign: "center", fontWeight: 800 }}>×{item.quantity}</td>

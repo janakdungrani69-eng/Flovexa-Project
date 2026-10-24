@@ -98,6 +98,7 @@ type SellerOrderItem = {
   size: string;
   unit_price_paise: number;
   quantity: number;
+  sku?: string;
   line_total_paise: number;
 };
 
@@ -2292,6 +2293,9 @@ export default function SellerDashboard({
                             <div key={`${order.id}-${index}`}>
                               <span>
                                 {item.product_name} · {item.size} × {item.quantity}
+                                <span style={{ marginLeft: "8px", fontSize: "11px", fontFamily: "var(--font-mono, monospace)", background: "#eee7de", padding: "1px 6px", borderRadius: "3px", color: "#54463a", fontWeight: 700 }}>
+                                  SKU: {item.sku || generateDefaultSku(item.product_name, item.size, index)}
+                                </span>
                               </span>
                               <b>{money(item.line_total_paise)}</b>
                             </div>

@@ -29,6 +29,7 @@ import {
   X,
 } from "lucide-react";
 import ShippingLabelModal from "@/components/shipping-label-modal";
+import { generateDefaultSku } from "@/lib/products";
 
 type Tab = "orders" | "wishlist" | "addresses" | "profile" | "privilege" | "concierge";
 
@@ -47,6 +48,7 @@ type OrderItem = {
   product_name: string;
   size: string;
   quantity: number;
+  sku?: string;
 };
 
 type CustomerReview = {
@@ -855,7 +857,7 @@ export default function CustomerAccount({ email }: { email: string }) {
                                   <div className="order-item-desc">
                                     <strong className="item-name">{item.product_name}</strong>
                                     <span className="item-meta">
-                                      Size: {item.size} · Quantity: {item.quantity}
+                                      Size: {item.size} · Quantity: {item.quantity} · <code style={{ fontSize: "11px", fontFamily: "var(--font-mono, monospace)", background: "#f5f0ea", padding: "1px 5px", borderRadius: "3px", color: "#6a5c4e" }}>SKU: {item.sku || generateDefaultSku(item.product_name, item.size, idx)}</code>
                                     </span>
                                   </div>
 
