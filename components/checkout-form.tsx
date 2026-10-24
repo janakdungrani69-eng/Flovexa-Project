@@ -110,11 +110,11 @@ export default function CheckoutForm({ items, enabled, initialCustomer, couponCo
           <div className="checkout-shipping-details-grid">
             <div>
               <span className="cs-label">COURIER PARTNER</span>
-              <strong className="cs-val">{confirmedOrder.tracking_carrier || "Shree Mahavir Courier"}</strong>
+              <strong className="cs-val">{confirmedOrder.tracking_carrier || "Flovexa Priority Express"}</strong>
             </div>
             <div>
               <span className="cs-label">AWB / TRACKING NO</span>
-              <strong className="cs-val cs-mono">{confirmedOrder.tracking_number || "Will update upon Mahavir Courier handover"}</strong>
+              <strong className="cs-val cs-mono">{confirmedOrder.tracking_number || "Assigned upon atelier dispatch"}</strong>
             </div>
             <div style={{ gridColumn: "1 / -1" }}>
               <span className="cs-label">DELIVERING TO</span>

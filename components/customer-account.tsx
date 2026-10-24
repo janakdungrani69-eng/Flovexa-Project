@@ -1037,23 +1037,25 @@ export default function CustomerAccount({ email }: { email: string }) {
                             </div>
                           </div>
 
-                          {/* Shree Mahavir Courier Live Tracking Bar */}
+                          {/* Express Courier Live Tracking Bar */}
                           {order.tracking_number && (
                             <div style={{ marginTop: "12px", padding: "10px 14px", background: "#f5f8f3", border: "1px solid #d4e3ce", borderRadius: "4px", fontSize: "12px", color: "#2d5423", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
                               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                                 <Truck size={15} color="#3b6032" />
                                 <span>
-                                  Courier: <strong>{order.tracking_carrier || "Shree Mahavir Courier"}</strong> · Consignment ID: <code style={{ fontFamily: "var(--font-mono, monospace)", fontWeight: 700, background: "#e8f0e5", padding: "2px 7px", borderRadius: "3px", color: "#1f3d17" }}>{order.tracking_number}</code>
+                                  Logistics Partner: <strong>{order.tracking_carrier || "Flovexa Priority Express"}</strong> · Consignment ID: <code style={{ fontFamily: "var(--font-mono, monospace)", fontWeight: 700, background: "#e8f0e5", padding: "2px 7px", borderRadius: "3px", color: "#1f3d17" }}>{order.tracking_number}</code>
                                 </span>
                               </div>
-                              <a
-                                href={order.tracking_url || "https://www.shreemahavircourier.com/"}
-                                target="_blank"
-                                rel="noreferrer"
-                                style={{ display: "inline-flex", alignItems: "center", gap: "5px", color: "#aa8050", fontWeight: 700, textDecoration: "underline" }}
-                              >
-                                <ExternalLink size={12} /> Live Mahavir Tracking ↗
-                              </a>
+                              {order.tracking_url && (
+                                <a
+                                  href={order.tracking_url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  style={{ display: "inline-flex", alignItems: "center", gap: "5px", color: "#aa8050", fontWeight: 700, textDecoration: "underline" }}
+                                >
+                                  <ExternalLink size={12} /> Track Courier Delivery ↗
+                                </a>
+                              )}
                             </div>
                           )}
 

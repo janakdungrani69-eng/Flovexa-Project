@@ -6,7 +6,7 @@ import { sendOrderEmail } from "@/lib/order-email";
 
 const updateSchema = z.object({
   status: z.enum(["processing", "shipped", "delivered"]),
-  trackingCarrier: z.string().trim().max(80).optional().default("Shree Mahavir Courier"),
+  trackingCarrier: z.string().trim().max(80).optional().default("Flovexa Priority Express"),
   trackingNumber: z.string().trim().max(120).optional().default(""),
   trackingUrl: z.string().trim().optional().default(""),
 }).strict();
@@ -44,12 +44,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       return NextResponse.json({ error: "That fulfillment status change is not allowed." }, { status: 409 });
     }
     if (parsed.data.status === "shipped" && !parsed.data.trackingNumber) {
-      return NextResponse.json({ error: "Please enter the Mahavir Courier Tracking ID before marking order shipped." }, { status: 400 });
+      return NextResponse.json({ error: "Please enter the Consignment / Tracking ID before marking order shipped." }, { status: 400 });
     }
 
-    const carrier = parsed.data.trackingCarrier || "Shree Mahavir Courier";
+    const carrier = parsed.data.trackingCarrier || "Flovexa Priority Express";
     const trackingNum = parsed.data.trackingNumber || null;
-    const trackingUrl = parsed.data.trackingUrl || (trackingNum ? "https://www.shreemahavircourier.com/" : null);
+    const trackingUrl = parsed.data.trackingUrl || null;
 
     const { data, error } = await seller.supabase.from("seller_fulfillments").upsert({
       seller_id: seller.user.id,

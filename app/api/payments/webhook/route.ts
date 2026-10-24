@@ -51,7 +51,7 @@ export async function POST(request: Request) {
 
         // Status remains 'paid' (new request waiting for seller to accept and pack in Seller Panel)
         await supabase.from("orders").update({
-          tracking_carrier: "Shree Mahavir Courier",
+          tracking_carrier: "Flovexa Priority Express",
           updated_at: new Date().toISOString(),
         }).eq("id", order.id);
 

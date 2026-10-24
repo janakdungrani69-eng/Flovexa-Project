@@ -280,7 +280,7 @@ export default function DeliveredOrderThankYouModal({
                   marginBottom: "10px",
                 }}
               >
-                <PackageCheck size={13} color="#275420" /> Delivered via Shree Mahavir Courier
+                <PackageCheck size={13} color="#275420" /> Delivered to Patron · Verified Luxury Delivery
               </div>
 
               <h2
@@ -508,3 +508,4 @@ export default function DeliveredOrderThankYouModal({
     </div>
   );
 }
+

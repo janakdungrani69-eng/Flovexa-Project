@@ -55,7 +55,7 @@ export async function POST(request: Request) {
     // Check if already dispatched with courier or delivered
     if (["shipped", "delivered"].includes(order.status)) {
       return NextResponse.json(
-        { error: "This parcel has already been handed to Shree Mahavir Courier for delivery and cannot be cancelled." },
+        { error: "This parcel has already been dispatched for delivery and cannot be cancelled." },
         { status: 400 }
       );
     }

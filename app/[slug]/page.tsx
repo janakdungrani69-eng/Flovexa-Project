@@ -55,7 +55,7 @@ export default async function InformationPage({ params }: { params: Promise<{ sl
           <p>
             <strong>3. Transit Protection &amp; Broken Seal Claims:</strong>
             <br />
-            All packages are dispatched via <strong>Shree Mahavir Courier</strong> in tamper-evident packaging. In the rare event of transit damage or shattered glass during shipment, notify our concierge within 24 hours of delivery with photographic parcel proof for an immediate replacement.
+            All packages are dispatched via <strong>Priority Insured Express Logistics</strong> in tamper-evident packaging. In the rare event of transit damage or shattered glass during shipment, notify our concierge within 24 hours of delivery with photographic parcel proof for an immediate replacement.
           </p>
         </div>
       ) : (

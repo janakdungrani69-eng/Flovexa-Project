@@ -920,9 +920,9 @@ export default function SellerDashboard({
     return (
       drafts[order.id] ?? {
         status: order.fulfillment.status,
-        trackingCarrier: order.fulfillment.tracking_carrier || "Shree Mahavir Courier",
+        trackingCarrier: order.fulfillment.tracking_carrier || "Flovexa Priority Express",
         trackingNumber: order.fulfillment.tracking_number ?? "",
-        trackingUrl: order.fulfillment.tracking_url || "https://www.shreemahavircourier.com/",
+        trackingUrl: order.fulfillment.tracking_url || "",
       }
     );
   }
@@ -960,7 +960,7 @@ export default function SellerDashboard({
     try {
       const payload = {
         status: merged.status,
-        trackingCarrier: merged.tracking_carrier || (merged as any).trackingCarrier || "Shree Mahavir Courier",
+        trackingCarrier: merged.tracking_carrier || (merged as any).trackingCarrier || "Flovexa Priority Express",
         trackingNumber: merged.tracking_number || (merged as any).trackingNumber || "",
         trackingUrl: merged.tracking_url || (merged as any).trackingUrl || "",
       };
@@ -2365,32 +2365,32 @@ export default function SellerDashboard({
                           </div>
                         )}
 
-                        {/* 2. Order Packed - Ready for Shree Mahavir Courier Handover (Status: processing) */}
+                        {/* 2. Order Packed - Ready for Courier Dispatch (Status: processing) */}
                         {order.fulfillment.status === "processing" && (
                           <div style={{ marginTop: "14px", padding: "14px", background: "#f5f8f3", border: "1px solid #d4e3ce", borderRadius: "4px" }}>
                             <strong style={{ display: "flex", alignItems: "center", gap: "6px", color: "#2d5423", fontSize: "13px" }}>
-                              <Package size={14} /> Order Packed in Atelier · Ready for Shree Mahavir Courier
+                              <Package size={14} /> Order Packed in Atelier · Ready for Dispatch
                             </strong>
                             <p style={{ margin: "4px 0 12px", fontSize: "11px", color: "#4f6848" }}>
-                              Hand the parcel to <strong>Shree Mahavir Courier</strong> and enter the Tracking ID / Consignment No from the receipt slip:
+                              Hand the parcel to the express courier partner and enter the Tracking ID / Consignment No from the receipt slip:
                             </p>
                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1.5fr auto", gap: "10px", alignItems: "flex-end" }}>
                               <div>
-                                <label style={{ display: "block", fontSize: "10px", fontWeight: 600, color: "#4d5b48", marginBottom: "4px" }}>Courier Partner</label>
+                                <label style={{ display: "block", fontSize: "10px", fontWeight: 600, color: "#4d5b48", marginBottom: "4px" }}>Logistics Partner</label>
                                 <input
                                   type="text"
-                                  value={draft.trackingCarrier || "Shree Mahavir Courier"}
+                                  value={draft.trackingCarrier || "Flovexa Priority Express"}
                                   onChange={(e) => setDrafts((curr) => ({ ...curr, [order.id]: { ...draft, trackingCarrier: e.target.value } }))}
                                   style={{ width: "100%", height: "36px", padding: "0 10px", fontSize: "12px", border: "1px solid #c2d4bc", borderRadius: "3px" }}
                                 />
                               </div>
                               <div>
-                                <label style={{ display: "block", fontSize: "10px", fontWeight: 600, color: "#4d5b48", marginBottom: "4px" }}>Mahavir Tracking ID / Consignment No *</label>
+                                <label style={{ display: "block", fontSize: "10px", fontWeight: 600, color: "#4d5b48", marginBottom: "4px" }}>Tracking ID / Consignment No *</label>
                                 <input
                                   type="text"
                                   required
                                   value={draft.trackingNumber}
-                                  placeholder="e.g. MC123456789 (from receipt slip)"
+                                  placeholder="e.g. EXP123456789"
                                   onChange={(e) => setDrafts((curr) => ({ ...curr, [order.id]: { ...draft, trackingNumber: e.target.value } }))}
                                   style={{ width: "100%", height: "36px", padding: "0 10px", fontSize: "12px", border: "1px solid #c2d4bc", borderRadius: "3px", fontWeight: 600 }}
                                 />
@@ -2398,28 +2398,28 @@ export default function SellerDashboard({
                               <button
                                 type="button"
                                 style={{ height: "36px", display: "inline-flex", alignItems: "center", gap: "6px", background: "#aa8050", color: "#fff", border: "none", padding: "0 16px", borderRadius: "3px", fontSize: "12px", fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}
-                                onClick={() => void handleQuickStatusUpdate(order, { status: "shipped", tracking_carrier: draft.trackingCarrier || "Shree Mahavir Courier", tracking_number: draft.trackingNumber, tracking_url: "https://www.shreemahavircourier.com/" })}
+                                onClick={() => void handleQuickStatusUpdate(order, { status: "shipped", tracking_carrier: draft.trackingCarrier || "Flovexa Priority Express", tracking_number: draft.trackingNumber, tracking_url: draft.trackingUrl || "" })}
                                 disabled={savingFulfillment === order.id || !draft.trackingNumber.trim()}
                               >
                                 <Truck size={14} />
-                                {savingFulfillment === order.id ? "Saving…" : "Dispatch via Mahavir"}
+                                {savingFulfillment === order.id ? "Saving…" : "Dispatch Parcel"}
                               </button>
                             </div>
                           </div>
                         )}
 
-                        {/* 3. In Transit via Shree Mahavir Courier (Status: shipped) */}
+                        {/* 3. In Transit (Status: shipped) */}
                         {order.fulfillment.status === "shipped" && (
                           <div style={{ marginTop: "14px", padding: "14px", background: "#f8f9fa", border: "1px solid #dee2e6", borderRadius: "4px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "10px" }}>
                             <div>
                               <strong style={{ display: "flex", alignItems: "center", gap: "6px", color: "#1f1a14", fontSize: "13px" }}>
-                                <Truck size={14} color="#aa8050" /> In Transit via Shree Mahavir Courier
+                                <Truck size={14} color="#aa8050" /> In Transit · Express Delivery
                               </strong>
                               <span style={{ fontSize: "11px", color: "#665f57" }}>
-                                Tracking ID: <code style={{ fontFamily: "var(--font-mono, monospace)", background: "#eee", padding: "1px 6px", borderRadius: "3px", fontWeight: 700 }}>{order.fulfillment.tracking_number}</code>
+                                Courier: <strong>{order.fulfillment.tracking_carrier || "Flovexa Priority Express"}</strong> · Tracking ID: <code style={{ fontFamily: "var(--font-mono, monospace)", background: "#eee", padding: "1px 6px", borderRadius: "3px", fontWeight: 700 }}>{order.fulfillment.tracking_number}</code>
                                 {order.fulfillment.tracking_url && (
                                   <a href={order.fulfillment.tracking_url} target="_blank" rel="noreferrer" style={{ marginLeft: "8px", color: "#aa8050", textDecoration: "underline" }}>
-                                    Open Courier Portal ↗
+                                    Open Tracking Portal ↗
                                   </a>
                                 )}
                               </span>

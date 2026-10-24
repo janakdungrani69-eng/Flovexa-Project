@@ -46,9 +46,8 @@ export async function POST(request: Request) {
       if (markError) throw markError;
 
       // Status remains 'paid' (new request waiting for seller to accept and pack in Seller Panel)
-      // Carrier defaults to Shree Mahavir Courier
       await supabase.from("orders").update({
-        tracking_carrier: "Shree Mahavir Courier",
+        tracking_carrier: "Flovexa Priority Express",
         updated_at: new Date().toISOString(),
       }).eq("id", localOrderId);
 
@@ -68,7 +67,7 @@ export async function POST(request: Request) {
         orderNumber: order.order_number,
         paymentStatus: "captured",
         orderStatus: updatedOrder?.status || "paid",
-        trackingCarrier: updatedOrder?.tracking_carrier || "Shree Mahavir Courier",
+        trackingCarrier: updatedOrder?.tracking_carrier || "Flovexa Priority Express",
         trackingNumber: updatedOrder?.tracking_number || null,
         trackingUrl: updatedOrder?.tracking_url || null,
         order: updatedOrder || {
@@ -81,7 +80,7 @@ export async function POST(request: Request) {
           status: "paid",
           payment_status: "captured",
           created_at: order.created_at || new Date().toISOString(),
-          tracking_carrier: "Shree Mahavir Courier",
+          tracking_carrier: "Flovexa Priority Express",
           tracking_number: null,
           tracking_url: null,
           order_items: order.order_items || [],

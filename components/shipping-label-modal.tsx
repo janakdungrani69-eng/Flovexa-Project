@@ -58,7 +58,7 @@ export default function ShippingLabelModal({
   const awbNumber =
     order.tracking_number ||
     `FLX-${order.order_number.replace(/[^A-Za-z0-9]/g, "").toUpperCase()}-EXP`;
-  const courierPartner = order.tracking_carrier || "Shree Mahavir Courier";
+  const courierPartner = order.tracking_carrier || "Flovexa Priority Express";
 
   const recipientName = order.customer_name || fallbackCustomerName || "Valued Fragrance Patron";
   const recipientPhone = order.phone || fallbackPhone || "+91 (Verified on Checkout)";
@@ -232,39 +232,118 @@ export default function ShippingLabelModal({
               </div>
             </div>
 
-            {/* 3. Address Matrix: Ship To (Buyer) vs Ship From (Atelier) */}
+            {/* 3. Luxury Express Routing & Address Matrix: Ship To vs Ship From */}
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "6px 12px",
+              background: "#000",
+              color: "#fff",
+              fontSize: "10.5px",
+              fontWeight: 800,
+              letterSpacing: "0.08em",
+              marginBottom: "10px",
+              borderRadius: "2px"
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <span style={{ color: "#d5b482" }}>ORIGIN:</span>
+                <span>SURAT ATELIER (STV-HUB)</span>
+              </div>
+              <div style={{ letterSpacing: "1.5px", color: "#d5b482", fontWeight: 900 }}>
+                ➔ ➔ EXPRESS AIR DISPATCH ➔ ➔
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <span style={{ color: "#d5b482" }}>DEST:</span>
+                <span>{address.city?.toUpperCase()} ({address.pincode})</span>
+              </div>
+            </div>
+
             <div className="thermal-address-grid">
+              {/* SHIP TO (DELIVERY ADDRESS) */}
               <div className="thermal-ship-to-box">
-                <span className="thermal-box-tag">SHIP TO (DELIVERY ADDRESS):</span>
-                <strong className="thermal-recipient-name">{recipientName}</strong>
-                <span className="thermal-recipient-phone">TEL: {recipientPhone}</span>
-                <p className="thermal-street-address">
-                  {address.line1}
-                  {address.line2 ? `, ${address.line2}` : ""}
-                  <br />
-                  {address.city}, {address.state}
-                </p>
-                <div className="thermal-pincode-highlight">
-                  <span>PINCODE:</span>
-                  <strong>{address.pincode}</strong>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "2px solid #000", paddingBottom: "4px", marginBottom: "8px" }}>
+                  <span style={{ background: "#000", color: "#fff", padding: "3px 8px", fontSize: "10px", fontWeight: 900, letterSpacing: "0.1em", borderRadius: "2px" }}>
+                    SHIP TO · DELIVERY DESTINATION
+                  </span>
+                  <span style={{ fontSize: "9.5px", fontWeight: 800, color: "#111" }}>
+                    PREPAID PARCEL
+                  </span>
+                </div>
+
+                <strong className="thermal-recipient-name" style={{ fontSize: "16px", textTransform: "uppercase", letterSpacing: "0.02em" }}>
+                  {recipientName}
+                </strong>
+                <span className="thermal-recipient-phone" style={{ fontSize: "12px", background: "#f2ece4", padding: "2px 8px", borderRadius: "3px", width: "fit-content", margin: "3px 0 6px" }}>
+                  TEL: {recipientPhone}
+                </span>
+
+                <div className="thermal-street-address" style={{ fontSize: "12px", lineHeight: "1.45", color: "#111" }}>
+                  <div style={{ fontWeight: 600 }}>{address.line1}</div>
+                  {address.line2 && <div>{address.line2}</div>}
+                  <div style={{ fontWeight: 800, marginTop: "3px", textTransform: "uppercase" }}>
+                    {address.city}, {address.state}
+                  </div>
+                </div>
+
+                <div style={{
+                  marginTop: "auto",
+                  border: "2px solid #000",
+                  background: "#000",
+                  color: "#fff",
+                  padding: "6px 12px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  borderRadius: "2px"
+                }}>
+                  <span style={{ fontSize: "10px", fontWeight: 800, letterSpacing: "0.1em" }}>DESTINATION PINCODE</span>
+                  <strong style={{ fontSize: "18px", fontWeight: 900, letterSpacing: "0.16em", color: "#fff" }}>
+                    {address.pincode}
+                  </strong>
                 </div>
               </div>
 
+              {/* SHIP FROM (ORIGIN ATELIER) */}
               <div className="thermal-ship-from-box">
-                <span className="thermal-box-tag">RETURN / SHIP FROM:</span>
-                <strong className="thermal-from-name">FLOVEXA LUXURY PARFUMS</strong>
-                <p className="thermal-from-address">
-                  Atelier Fulfillment Unit 4,
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "2px solid #000", paddingBottom: "4px", marginBottom: "8px" }}>
+                  <span style={{ background: "#332a22", color: "#fff", padding: "3px 8px", fontSize: "10px", fontWeight: 900, letterSpacing: "0.1em", borderRadius: "2px" }}>
+                    SHIP FROM · ORIGIN ATELIER
+                  </span>
+                  <span style={{ fontSize: "9px", fontWeight: 800, color: "#555" }}>
+                    AUTHENTIC
+                  </span>
+                </div>
+
+                <strong className="thermal-from-name" style={{ fontSize: "13px", letterSpacing: "0.06em", color: "#1f1a14" }}>
+                  FLOVEXA LUXURY PARFUMS
+                </strong>
+                <div className="thermal-from-address" style={{ fontSize: "10.5px", lineHeight: "1.4", color: "#333", margin: "4px 0 8px" }}>
+                  Atelier Fulfillment &amp; Packing Vault
                   <br />
-                  Luxury Fragrance Park, BKC,
+                  Surat / Mumbai Fragrance Trade Center
                   <br />
-                  Mumbai, Maharashtra 400051
+                  Gujarat - 395011, India
                   <br />
-                  Helpline: +91 98765 43210
-                </p>
-                <div className="thermal-hub-code">
-                  <span>SORT HUB:</span>
-                  <strong>{address.city?.substring(0, 3).toUpperCase() || "BOM"}-{address.pincode?.substring(0, 3) || "400"}</strong>
+                  <strong>Helpline:</strong> +91 99257 57698
+                  <br />
+                  <strong>Email:</strong> concierge@flovexa.in
+                </div>
+
+                <div style={{
+                  marginTop: "auto",
+                  border: "1.5px solid #000",
+                  background: "#f7f3ed",
+                  padding: "5px 10px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  borderRadius: "2px"
+                }}>
+                  <span style={{ fontSize: "9px", fontWeight: 800, color: "#444" }}>SORT HUB:</span>
+                  <strong style={{ fontSize: "12px", fontWeight: 900, color: "#000", letterSpacing: "0.05em" }}>
+                    STV-W01 · {address.city?.substring(0, 3).toUpperCase() || "DEL"}
+                  </strong>
                 </div>
               </div>
             </div>

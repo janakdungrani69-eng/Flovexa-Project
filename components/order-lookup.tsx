@@ -124,7 +124,7 @@ export default function OrderLookup() {
                     fontSize: "13px",
                   }}
                 >
-                  <Sparkles size={16} color="#aa8050" /> Parcel Delivered by Shree Mahavir Courier
+                  <Sparkles size={16} color="#aa8050" /> Parcel Hand-Delivered Successfully
                 </strong>
                 <p style={{ margin: "4px 0 0", fontSize: "12px", color: "#615446" }}>
                   Thank you for choosing Flovexa Artisanal Fragrances! How was your sillage experience? Sign in to your
