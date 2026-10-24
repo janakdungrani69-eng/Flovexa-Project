@@ -51,19 +51,13 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
   });
   const subtotal = lines.reduce((sum, line) => sum + line.product.pricePaise * line.quantity, 0);
   const pricingConfig = getPricingConfig();
-  const pricing = pricingConfig ? calculateOrderPricing(subtotal, pricingConfig) : null;
+  const pricing = calculateOrderPricing(subtotal, pricingConfig);
   const hasRealProductIds = lines.length > 0 && lines.every((line) => !line.product.id.startsWith("demo-"));
   const paymentKeyConfigured = Boolean(
     (process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID) &&
     process.env.RAZORPAY_KEY_SECRET
   );
-  const serverConfigured = Boolean(
-    process.env.NEXT_PUBLIC_SUPABASE_URL &&
-    process.env.SUPABASE_SERVICE_ROLE_KEY &&
-    paymentKeyConfigured &&
-    pricingConfig
-  );
-  const checkoutReady = hasRealProductIds && serverConfigured;
+  const checkoutReady = hasRealProductIds && paymentKeyConfigured;
   let initialCustomer: { name: string; email: string; phone: string; line1: string; line2: string; city: string; state: string; pincode: string } | undefined;
   if (user && getStoreRole(user) === "customer") {
     try {
