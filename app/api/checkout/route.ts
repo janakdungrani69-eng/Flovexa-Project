@@ -33,11 +33,12 @@ export async function POST(request: Request) {
     if (!pricing) {
       return NextResponse.json({ error: "Checkout pricing rules are not configured yet." }, { status: 503 });
     }
-    if (!process.env.RESEND_API_KEY || !process.env.ORDER_FROM_EMAIL || !process.env.ORDER_LOOKUP_PEPPER || !process.env.NEXT_PUBLIC_SITE_URL) {
-      return NextResponse.json({ error: "Order email and tracking are not configured yet." }, { status: 503 });
-    }
-    if (process.env.NODE_ENV === "production" && !process.env.RAZORPAY_KEY_ID?.startsWith("rzp_live_")) {
-      return NextResponse.json({ error: "Live payment credentials have not been configured." }, { status: 503 });
+    const hasRazorpayKeys = Boolean(
+      (process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID) &&
+      process.env.RAZORPAY_KEY_SECRET
+    );
+    if (!hasRazorpayKeys) {
+      return NextResponse.json({ error: "Razorpay payment gateway is not configured yet." }, { status: 503 });
     }
 
     const supabase = createAdminSupabase();

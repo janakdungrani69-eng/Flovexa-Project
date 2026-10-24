@@ -41,10 +41,11 @@ export default function CheckoutForm({ items, enabled, initialCustomer, couponCo
       const order = await response.json();
       if (!response.ok) throw new Error(order.error ?? "We could not start checkout.");
       if (!window.Razorpay) throw new Error("Secure payment is unavailable in this browser. Please refresh and try again.");
+      const razorpayKey = order.keyId || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_TrjBPlrR7USoQs";
       const checkout = new window.Razorpay({
-        key: order.keyId, amount: order.amountPaise, currency: order.currency, name: "FLOVEXA PERFUMES",
+        key: razorpayKey, amount: order.amountPaise, currency: order.currency, name: "FLOVEXA PERFUMES",
         description: `Order ${order.orderNumber}`, order_id: order.razorpayOrderId,
-        prefill: { name: values.name, email: values.email, contact: values.phone }, theme: { color: "#342b20" },
+        prefill: { name: values.name, email: values.email, contact: values.phone }, theme: { color: "#aa8050" },
         modal: { ondismiss: () => setBusy(false) },
         handler: async (payment) => {
           try {

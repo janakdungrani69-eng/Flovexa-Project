@@ -53,12 +53,15 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
   const pricingConfig = getPricingConfig();
   const pricing = pricingConfig ? calculateOrderPricing(subtotal, pricingConfig) : null;
   const hasRealProductIds = lines.length > 0 && lines.every((line) => !line.product.id.startsWith("demo-"));
-  const paymentKeyIsLive = process.env.NODE_ENV !== "production" || process.env.RAZORPAY_KEY_ID?.startsWith("rzp_live_");
+  const paymentKeyConfigured = Boolean(
+    (process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID) &&
+    process.env.RAZORPAY_KEY_SECRET
+  );
   const serverConfigured = Boolean(
-    process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY &&
-    process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET &&
-    process.env.RAZORPAY_WEBHOOK_SECRET && process.env.RESEND_API_KEY && process.env.ORDER_FROM_EMAIL &&
-    process.env.ORDER_LOOKUP_PEPPER && process.env.NEXT_PUBLIC_SITE_URL && pricingConfig && paymentKeyIsLive,
+    process.env.NEXT_PUBLIC_SUPABASE_URL &&
+    process.env.SUPABASE_SERVICE_ROLE_KEY &&
+    paymentKeyConfigured &&
+    pricingConfig
   );
   const checkoutReady = hasRealProductIds && serverConfigured;
   let initialCustomer: { name: string; email: string; phone: string; line1: string; line2: string; city: string; state: string; pincode: string } | undefined;
