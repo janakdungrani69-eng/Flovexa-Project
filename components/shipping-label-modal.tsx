@@ -55,9 +55,7 @@ export default function ShippingLabelModal({
   const totalBottles = order.order_items.reduce((sum, item) => sum + (item.quantity || 1), 0);
   const isCombo = totalBottles > 1 || order.order_items.length > 1;
 
-  const awbNumber =
-    order.tracking_number ||
-    `FLX-${order.order_number.replace(/[^A-Za-z0-9]/g, "").toUpperCase()}-EXP`;
+  const hasTrackingNumber = Boolean(order.tracking_number && order.tracking_number.trim());
   const courierPartner = order.tracking_carrier || "Flovexa Priority Express";
 
   const recipientName = order.customer_name || fallbackCustomerName || "Valued Fragrance Patron";
@@ -66,9 +64,9 @@ export default function ShippingLabelModal({
   const address = order.shipping_address || {
     line1: "Customer Shipping Address",
     line2: "",
-    city: "Mumbai",
-    state: "Maharashtra",
-    pincode: "400001",
+    city: "Surat",
+    state: "Gujarat",
+    pincode: "395011",
     country: "India",
   };
 
@@ -144,7 +142,7 @@ export default function ShippingLabelModal({
               <div className="thermal-brand-cell">
                 <span className="thermal-brand-name">FLOVEXA</span>
                 <span className="thermal-brand-sub">LUXURY PARFUMS ATELIER</span>
-                <small className="thermal-origin-tag">MUMBAI · INDIA</small>
+                <small className="thermal-origin-tag">SURAT · GUJARAT · INDIA</small>
               </div>
 
               <div className="thermal-routing-cell">
@@ -164,71 +162,80 @@ export default function ShippingLabelModal({
               </div>
             </div>
 
-            {/* 2. Courier AWB & Barcode Section */}
+            {/* 2. Parcel Reference & Barcode Section */}
             <div className="thermal-barcode-strip">
               <div className="thermal-carrier-row">
-                <span>COURIER PARTNER: <strong>{courierPartner}</strong></span>
-                <span>ORDER: <strong>#{order.order_number}</strong></span>
+                <span>PARCEL REF: <strong>#{order.order_number}</strong></span>
+                <span>COURIER: <strong>{courierPartner}</strong></span>
                 <span>DATE: <strong>{orderDateFormatted}</strong></span>
               </div>
 
-              {/* Scannable SVG Barcode Graphic */}
+              {/* Scannable SVG Barcode Graphic for Order Reference */}
               <div className="thermal-barcode-graphic">
                 <svg
                   className="barcode-svg"
-                  viewBox="0 0 340 54"
+                  viewBox="0 0 340 44"
                   preserveAspectRatio="none"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   {/* High contrast barcode stripes */}
-                  <rect x="0" y="0" width="4" height="54" fill="#000" />
-                  <rect x="7" y="0" width="2" height="54" fill="#000" />
-                  <rect x="12" y="0" width="6" height="54" fill="#000" />
-                  <rect x="22" y="0" width="3" height="54" fill="#000" />
-                  <rect x="29" y="0" width="5" height="54" fill="#000" />
-                  <rect x="38" y="0" width="2" height="54" fill="#000" />
-                  <rect x="44" y="0" width="7" height="54" fill="#000" />
-                  <rect x="55" y="0" width="3" height="54" fill="#000" />
-                  <rect x="62" y="0" width="4" height="54" fill="#000" />
-                  <rect x="70" y="0" width="2" height="54" fill="#000" />
-                  <rect x="76" y="0" width="6" height="54" fill="#000" />
-                  <rect x="86" y="0" width="3" height="54" fill="#000" />
-                  <rect x="93" y="0" width="5" height="54" fill="#000" />
-                  <rect x="102" y="0" width="3" height="54" fill="#000" />
-                  <rect x="109" y="0" width="7" height="54" fill="#000" />
-                  <rect x="120" y="0" width="4" height="54" fill="#000" />
-                  <rect x="128" y="0" width="2" height="54" fill="#000" />
-                  <rect x="134" y="0" width="5" height="54" fill="#000" />
-                  <rect x="143" y="0" width="8" height="54" fill="#000" />
-                  <rect x="155" y="0" width="3" height="54" fill="#000" />
-                  <rect x="162" y="0" width="4" height="54" fill="#000" />
-                  <rect x="170" y="0" width="6" height="54" fill="#000" />
-                  <rect x="180" y="0" width="2" height="54" fill="#000" />
-                  <rect x="186" y="0" width="5" height="54" fill="#000" />
-                  <rect x="195" y="0" width="4" height="54" fill="#000" />
-                  <rect x="203" y="0" width="6" height="54" fill="#000" />
-                  <rect x="213" y="0" width="3" height="54" fill="#000" />
-                  <rect x="220" y="0" width="7" height="54" fill="#000" />
-                  <rect x="231" y="0" width="3" height="54" fill="#000" />
-                  <rect x="238" y="0" width="5" height="54" fill="#000" />
-                  <rect x="247" y="0" width="2" height="54" fill="#000" />
-                  <rect x="253" y="0" width="6" height="54" fill="#000" />
-                  <rect x="263" y="0" width="4" height="54" fill="#000" />
-                  <rect x="271" y="0" width="3" height="54" fill="#000" />
-                  <rect x="278" y="0" width="5" height="54" fill="#000" />
-                  <rect x="287" y="0" width="7" height="54" fill="#000" />
-                  <rect x="298" y="0" width="3" height="54" fill="#000" />
-                  <rect x="305" y="0" width="4" height="54" fill="#000" />
-                  <rect x="313" y="0" width="6" height="54" fill="#000" />
-                  <rect x="323" y="0" width="3" height="54" fill="#000" />
-                  <rect x="330" y="0" width="5" height="54" fill="#000" />
-                  <rect x="338" y="0" width="2" height="54" fill="#000" />
+                  <rect x="0" y="0" width="4" height="44" fill="#000" />
+                  <rect x="7" y="0" width="2" height="44" fill="#000" />
+                  <rect x="12" y="0" width="6" height="44" fill="#000" />
+                  <rect x="22" y="0" width="3" height="44" fill="#000" />
+                  <rect x="29" y="0" width="5" height="44" fill="#000" />
+                  <rect x="38" y="0" width="2" height="44" fill="#000" />
+                  <rect x="44" y="0" width="7" height="44" fill="#000" />
+                  <rect x="55" y="0" width="3" height="44" fill="#000" />
+                  <rect x="62" y="0" width="4" height="44" fill="#000" />
+                  <rect x="70" y="0" width="2" height="44" fill="#000" />
+                  <rect x="76" y="0" width="6" height="44" fill="#000" />
+                  <rect x="86" y="0" width="3" height="44" fill="#000" />
+                  <rect x="93" y="0" width="5" height="44" fill="#000" />
+                  <rect x="102" y="0" width="3" height="44" fill="#000" />
+                  <rect x="109" y="0" width="7" height="44" fill="#000" />
+                  <rect x="120" y="0" width="4" height="44" fill="#000" />
+                  <rect x="128" y="0" width="2" height="44" fill="#000" />
+                  <rect x="134" y="0" width="5" height="44" fill="#000" />
+                  <rect x="143" y="0" width="8" height="44" fill="#000" />
+                  <rect x="155" y="0" width="3" height="44" fill="#000" />
+                  <rect x="162" y="0" width="4" height="44" fill="#000" />
+                  <rect x="170" y="0" width="6" height="44" fill="#000" />
+                  <rect x="180" y="0" width="2" height="44" fill="#000" />
+                  <rect x="186" y="0" width="5" height="44" fill="#000" />
+                  <rect x="195" y="0" width="4" height="44" fill="#000" />
+                  <rect x="203" y="0" width="6" height="44" fill="#000" />
+                  <rect x="213" y="0" width="3" height="44" fill="#000" />
+                  <rect x="220" y="0" width="7" height="44" fill="#000" />
+                  <rect x="231" y="0" width="3" height="44" fill="#000" />
+                  <rect x="238" y="0" width="5" height="44" fill="#000" />
+                  <rect x="247" y="0" width="2" height="44" fill="#000" />
+                  <rect x="253" y="0" width="6" height="44" fill="#000" />
+                  <rect x="263" y="0" width="4" height="44" fill="#000" />
+                  <rect x="271" y="0" width="3" height="44" fill="#000" />
+                  <rect x="278" y="0" width="5" height="44" fill="#000" />
+                  <rect x="287" y="0" width="7" height="44" fill="#000" />
+                  <rect x="298" y="0" width="3" height="44" fill="#000" />
+                  <rect x="305" y="0" width="4" height="44" fill="#000" />
+                  <rect x="313" y="0" width="6" height="44" fill="#000" />
+                  <rect x="323" y="0" width="3" height="44" fill="#000" />
+                  <rect x="330" y="0" width="5" height="44" fill="#000" />
+                  <rect x="338" y="0" width="2" height="44" fill="#000" />
                 </svg>
               </div>
 
               <div className="thermal-awb-num">
-                <span>AWB / TRACKING NO:</span>
-                <strong>{awbNumber}</strong>
+                <span>ORDER / MANIFEST NO:</span>
+                <strong>#{order.order_number}</strong>
+                {hasTrackingNumber ? (
+                  <span style={{ marginLeft: "10px", paddingLeft: "10px", borderLeft: "2px solid #000" }}>
+                    AWB: <strong>{order.tracking_number}</strong>
+                  </span>
+                ) : (
+                  <span style={{ marginLeft: "10px", fontSize: "10px", color: "#555", fontWeight: 700 }}>
+                    [ COURIER AWB AFFIXED ON DISPATCH ]
+                  </span>
+                )}
               </div>
             </div>
 
@@ -321,7 +328,7 @@ export default function ShippingLabelModal({
                 <div className="thermal-from-address" style={{ fontSize: "10.5px", lineHeight: "1.4", color: "#333", margin: "4px 0 8px" }}>
                   Atelier Fulfillment &amp; Packing Vault
                   <br />
-                  Surat / Mumbai Fragrance Trade Center
+                  Surat Fragrance Trade Center
                   <br />
                   Gujarat - 395011, India
                   <br />

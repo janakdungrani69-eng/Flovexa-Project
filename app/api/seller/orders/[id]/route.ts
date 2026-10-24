@@ -12,7 +12,7 @@ const updateSchema = z.object({
 }).strict();
 
 const nextStates: Record<string, string[]> = {
-  paid: ["processing"],
+  paid: ["processing", "shipped"],
   processing: ["shipped"],
   shipped: ["delivered"],
   delivered: [],
