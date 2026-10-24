@@ -42,6 +42,21 @@ export default function CheckoutForm({ items, enabled, initialCustomer, couponCo
       }) });
       const order = await response.json();
       if (!response.ok) throw new Error(order.error ?? "We could not start checkout.");
+      if (!window.Razorpay) {
+        await new Promise<void>((resolve, reject) => {
+          const existingScript = document.querySelector('script[src*="checkout.razorpay.com"]');
+          if (existingScript && window.Razorpay) {
+            resolve();
+            return;
+          }
+          const script = document.createElement("script");
+          script.src = "https://checkout.razorpay.com/v1/checkout.js";
+          script.async = true;
+          script.onload = () => resolve();
+          script.onerror = () => reject(new Error("Secure payment is taking longer to load. Please check your connection and try again."));
+          document.body.appendChild(script);
+        });
+      }
       if (!window.Razorpay) throw new Error("Secure payment is unavailable in this browser. Please refresh and try again.");
       const razorpayKey = order.keyId || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_TrjBPlrR7USoQs";
       const checkout = new window.Razorpay({

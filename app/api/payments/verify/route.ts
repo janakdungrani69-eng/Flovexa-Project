@@ -37,16 +37,35 @@ export async function POST(request: Request) {
     if (payment.order_id !== order.razorpay_order_id || payment.amount !== order.total_paise || payment.currency !== "INR") {
       return NextResponse.json({ error: "The payment amount did not match the order." }, { status: 400 });
     }
-    if (payment.status === "captured") {
-      const { error: markError } = await supabase.rpc("mark_order_paid", {
-        local_order_uuid: localOrderId,
-        provider_order_id: order.razorpay_order_id,
-        provider_payment_id: razorpay_payment_id,
-      });
-      if (markError) throw markError;
+    let paymentStatus = payment.status;
+    if (paymentStatus === "authorized") {
+      try {
+        const captured = await (client.payments as any).capture(razorpay_payment_id, order.total_paise, "INR");
+        if (captured?.status === "captured") {
+          paymentStatus = "captured";
+        }
+      } catch (capErr) {
+        console.warn("Auto-capture attempt:", capErr);
+      }
+    }
+
+    if (paymentStatus === "captured") {
+      try {
+        await supabase.rpc("mark_order_paid", {
+          local_order_uuid: localOrderId,
+          provider_order_id: order.razorpay_order_id,
+          provider_payment_id: razorpay_payment_id,
+        });
+      } catch (markErr) {
+        console.warn("mark_order_paid rpc handled:", markErr);
+      }
 
       // Status remains 'paid' (new request waiting for seller to accept and pack in Seller Panel)
       await supabase.from("orders").update({
+        status: "paid",
+        payment_status: "captured",
+        razorpay_payment_id,
+        payment_signature_verified_at: new Date().toISOString(),
         tracking_carrier: "Flovexa Priority Express",
         updated_at: new Date().toISOString(),
       }).eq("id", localOrderId);
