@@ -1,11 +1,26 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import SignupForm from "@/components/signup-form";
+import { getSignedInUser, getStoreRole } from "@/lib/supabase/roles";
 import { noIndexMetadata } from "@/lib/seo";
 
 export const metadata = noIndexMetadata("Customer Registration — Flovexa Perfumes");
 
 export default async function SignupPage({ searchParams }: { searchParams?: Promise<{ next?: string }> }) {
   const { next } = (await searchParams) ?? {};
+
+  // If already logged in, never ask to register again — send immediately to destination or store!
+  const user = await getSignedInUser();
+  if (user) {
+    if (next && next.startsWith("/") && !next.startsWith("//")) {
+      redirect(next);
+    }
+    const role = getStoreRole(user);
+    if (role === "admin") redirect("/admin");
+    if (role === "seller") redirect("/seller");
+    redirect("/store");
+  }
+
   const loginHref = next ? `/login?next=${encodeURIComponent(next)}` : "/login";
 
   return (
