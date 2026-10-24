@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getActiveSeller } from "@/lib/supabase/seller-user";
+import { createAdminSupabase } from "@/lib/supabase/admin";
+import { sendOrderEmail } from "@/lib/order-email";
 
 const updateSchema = z.object({
   status: z.enum(["processing", "shipped", "delivered"]),
-  trackingCarrier: z.string().trim().max(80),
-  trackingNumber: z.string().trim().max(120),
-  trackingUrl: z.string().trim().refine((value) => value === "" || (URL.canParse(value) && new URL(value).protocol === "https:")).max(2048),
+  trackingCarrier: z.string().trim().max(80).optional().default("Shree Mahavir Courier"),
+  trackingNumber: z.string().trim().max(120).optional().default(""),
+  trackingUrl: z.string().trim().optional().default(""),
 }).strict();
 
 const nextStates: Record<string, string[]> = {
@@ -41,20 +43,44 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     if (!unchanged && !nextStates[currentStatus]?.includes(parsed.data.status)) {
       return NextResponse.json({ error: "That fulfillment status change is not allowed." }, { status: 409 });
     }
-    if (parsed.data.status === "shipped" && (!parsed.data.trackingCarrier || !parsed.data.trackingNumber || !parsed.data.trackingUrl)) {
-      return NextResponse.json({ error: "Add the courier, tracking number and secure tracking link before shipping." }, { status: 400 });
+    if (parsed.data.status === "shipped" && !parsed.data.trackingNumber) {
+      return NextResponse.json({ error: "Please enter the Mahavir Courier Tracking ID before marking order shipped." }, { status: 400 });
     }
+
+    const carrier = parsed.data.trackingCarrier || "Shree Mahavir Courier";
+    const trackingNum = parsed.data.trackingNumber || null;
+    const trackingUrl = parsed.data.trackingUrl || (trackingNum ? "https://www.shreemahavircourier.com/" : null);
 
     const { data, error } = await seller.supabase.from("seller_fulfillments").upsert({
       seller_id: seller.user.id,
       order_id: id,
       status: parsed.data.status,
-      tracking_carrier: parsed.data.trackingCarrier || null,
-      tracking_number: parsed.data.trackingNumber || null,
-      tracking_url: parsed.data.trackingUrl || null,
+      tracking_carrier: carrier,
+      tracking_number: trackingNum,
+      tracking_url: trackingUrl,
       updated_at: new Date().toISOString(),
     }, { onConflict: "seller_id,order_id" }).select("order_id, status, tracking_carrier, tracking_number, tracking_url").single();
     if (error) throw error;
+
+    // Immediately sync to customer-facing public.orders table so customer sees live tracking!
+    const adminDb = createAdminSupabase();
+    await adminDb.from("orders").update({
+      status: parsed.data.status,
+      tracking_carrier: carrier,
+      tracking_number: trackingNum,
+      tracking_url: trackingUrl,
+      updated_at: new Date().toISOString(),
+    }).eq("id", id);
+
+    // If order was marked shipped, notify customer with tracking ID
+    if (parsed.data.status === "shipped") {
+      try {
+        await sendOrderEmail(id, "shipment_update");
+      } catch (emailErr) {
+        console.error("Shipment update email deferred:", emailErr);
+      }
+    }
+
     return NextResponse.json({ fulfillment: data });
   } catch (error) {
     console.error("Seller fulfillment update failed", error instanceof Error ? error.message : "Unknown error");

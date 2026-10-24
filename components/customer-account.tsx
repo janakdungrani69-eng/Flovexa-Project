@@ -18,6 +18,7 @@ import {
   Phone,
   Plus,
   Printer,
+  ShieldAlert,
   ShieldCheck,
   ShoppingBag,
   Sparkles,
@@ -195,6 +196,37 @@ export default function CustomerAccount({ email }: { email: string }) {
   const [reviewTitle, setReviewTitle] = useState<string>("");
   const [reviewComment, setReviewComment] = useState<string>("");
   const [reviewSubmitting, setReviewSubmitting] = useState<boolean>(false);
+  const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
+
+  async function handleCancelOrder(order: Order) {
+    if (!confirm(`Are you sure you want to cancel Order #${order.order_number}? Orders can only be cancelled within 24 hours of placement.`)) {
+      return;
+    }
+    setCancellingOrderId(order.id);
+    setError("");
+    setNotice("");
+    try {
+      const res = await fetch("/api/account/orders/cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: order.id }),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Could not cancel order.");
+      setData((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          orders: prev.orders.map((o) => (o.id === order.id ? { ...o, status: "cancelled" } : o)),
+        };
+      });
+      setNotice(result.message || `Order #${order.order_number} cancelled successfully.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to cancel order.");
+    } finally {
+      setCancellingOrderId(null);
+    }
+  }
 
   useEffect(() => {
     let active = true;
@@ -773,8 +805,13 @@ export default function CustomerAccount({ email }: { email: string }) {
                       });
 
                       const isDelivered = order.status === "delivered";
-                      const isShipped = ["shipped", "out_for_delivery"].includes(order.status);
-                      const isConfirmed = ["confirmed", "processing", "packed"].includes(order.status) || isShipped || isDelivered;
+                      const isShipped = ["shipped", "out_for_delivery"].includes(order.status) || isDelivered;
+                      const isPacked = ["confirmed", "processing", "packed"].includes(order.status) || isShipped;
+                      const isConfirmed = isPacked;
+
+                      const placedAtMs = new Date(order.created_at).getTime();
+                      const hoursSincePlaced = (Date.now() - placedAtMs) / (1000 * 60 * 60);
+                      const canCancelOrder = hoursSincePlaced < 24 && !["shipped", "delivered", "cancelled"].includes(order.status);
 
                       const totalBottles = order.order_items.reduce((sum, item) => sum + (item.quantity || 1), 0);
                       const isCombo = totalBottles > 1 || order.order_items.length > 1;
@@ -808,7 +845,7 @@ export default function CustomerAccount({ email }: { email: string }) {
                             <div className={`stepper-line ${isConfirmed ? "active" : ""}`} />
                             <div className={`stepper-step ${isConfirmed ? "completed" : ""}`}>
                               <div className="stepper-circle">{isConfirmed ? "✓" : "2"}</div>
-                              <span>Confirmed</span>
+                              <span>Order Packed</span>
                             </div>
                             <div className={`stepper-line ${isShipped ? "active" : ""}`} />
                             <div className={`stepper-step ${isShipped ? "completed" : ""}`}>
@@ -932,68 +969,60 @@ export default function CustomerAccount({ email }: { email: string }) {
                               </button>
                             </div>
 
-                            <div className="order-support-actions">
-                              {canReturn && !returnRequest && (
+                            <div className="order-support-actions" style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+                              {/* 24-Hour Order Cancellation */}
+                              {canCancelOrder ? (
                                 <button
                                   type="button"
-                                  className="return-btn-link"
-                                  onClick={() => {
-                                    setReturningOrder(order.id);
-                                    setReturnDetails("");
-                                  }}
+                                  className="order-cancel-btn"
+                                  style={{ background: "#7a2b2b", color: "#fff", border: "none", padding: "6px 14px", borderRadius: "3px", fontSize: "11px", fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "6px" }}
+                                  onClick={() => void handleCancelOrder(order)}
+                                  disabled={cancellingOrderId === order.id}
                                 >
-                                  Request Return / Help
+                                  <X size={13} />
+                                  {cancellingOrderId === order.id ? "Cancelling…" : `Cancel Order (${Math.max(1, Math.round(24 - hoursSincePlaced))}h remaining)`}
                                 </button>
-                              )}
-                              {returnRequest && (
-                                <span className="return-status-pill">
-                                  Return Status: {returnRequest.status.replaceAll("_", " ")}
+                              ) : !["shipped", "delivered", "cancelled"].includes(order.status) ? (
+                                <span style={{ fontSize: "11px", color: "#8a7e72", background: "#f0ece7", padding: "4px 8px", borderRadius: "3px" }}>
+                                  Cancellation closed (24h window passed)
+                                </span>
+                              ) : null}
+
+                              {order.status === "cancelled" && (
+                                <span style={{ fontSize: "11px", color: "#8e2a2a", background: "#fde8e8", padding: "4px 10px", borderRadius: "3px", fontWeight: 700 }}>
+                                  Order Cancelled
                                 </span>
                               )}
                             </div>
                           </div>
 
-                          {/* Return Drawer */}
-                          {returningOrder === order.id && (
-                            <form className="order-return-form" onSubmit={submitReturn}>
-                              <h5>Request Return or Replacement for #{order.order_number}</h5>
-                              <label>
-                                Reason for request *
-                                <select
-                                  value={returnReason}
-                                  onChange={(e) => setReturnReason(e.target.value)}
-                                >
-                                  <option value="damaged">Perfume arrived damaged or broken bottle</option>
-                                  <option value="wrong_item">Received different perfume than ordered</option>
-                                  <option value="quality">Atomizer or spray nozzle issue</option>
-                                  <option value="other">Other reason</option>
-                                </select>
-                              </label>
-                              <label>
-                                Describe details &amp; batch details *
-                                <textarea
-                                  required
-                                  maxLength={1000}
-                                  rows={3}
-                                  value={returnDetails}
-                                  onChange={(e) => setReturnDetails(e.target.value)}
-                                  placeholder="Please provide details regarding the bottle or courier issue..."
-                                />
-                              </label>
-                              <div className="return-form-btns">
-                                <button type="submit" className="primary-gold-btn" disabled={busy}>
-                                  {busy ? "Submitting…" : "Submit Return Request"}
-                                </button>
-                                <button
-                                  type="button"
-                                  className="secondary-btn"
-                                  onClick={() => setReturningOrder("")}
-                                >
-                                  Cancel
-                                </button>
+                          {/* Shree Mahavir Courier Live Tracking Bar */}
+                          {order.tracking_number && (
+                            <div style={{ marginTop: "12px", padding: "10px 14px", background: "#f5f8f3", border: "1px solid #d4e3ce", borderRadius: "4px", fontSize: "12px", color: "#2d5423", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                <Truck size={15} color="#3b6032" />
+                                <span>
+                                  Courier: <strong>{order.tracking_carrier || "Shree Mahavir Courier"}</strong> · Consignment ID: <code style={{ fontFamily: "var(--font-mono, monospace)", fontWeight: 700, background: "#e8f0e5", padding: "2px 7px", borderRadius: "3px", color: "#1f3d17" }}>{order.tracking_number}</code>
+                                </span>
                               </div>
-                            </form>
+                              <a
+                                href={order.tracking_url || "https://www.shreemahavircourier.com/"}
+                                target="_blank"
+                                rel="noreferrer"
+                                style={{ display: "inline-flex", alignItems: "center", gap: "5px", color: "#aa8050", fontWeight: 700, textDecoration: "underline" }}
+                              >
+                                <ExternalLink size={12} /> Live Mahavir Tracking ↗
+                              </a>
+                            </div>
                           )}
+
+                          {/* Strict No-Return Policy Notice */}
+                          <div style={{ marginTop: "10px", padding: "9px 12px", background: "#fdfbf7", border: "1px solid #ebd9bf", borderRadius: "4px", fontSize: "11px", color: "#6e5d4e", display: "flex", alignItems: "center", gap: "8px" }}>
+                            <ShieldAlert size={14} color="#aa8050" style={{ flexShrink: 0 }} />
+                            <span>
+                              <strong>Strict No-Return Policy:</strong> Due to artisanal fragrance hygiene &amp; bottle seal safety, perfume orders are final sale once dispatched. Cancellations are only permitted within 24 hours of placement before courier handover.
+                            </span>
+                          </div>
                         </div>
                       );
                     })}

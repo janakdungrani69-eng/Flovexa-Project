@@ -45,28 +45,12 @@ export async function POST(request: Request) {
       });
       if (markError) throw markError;
 
-      // Immediately generate official AWB and express shipping label upon payment
-      const cleanOrderNum = (order.order_number || "").replace(/[^A-Za-z0-9]/g, "").slice(-8).toUpperCase();
-      const generatedAwb = `FLX-EXP-${cleanOrderNum}`;
-      const courierPartner = "Delhivery Air Express";
-      const trackingUrl = `/orders?order=${encodeURIComponent(order.order_number)}`;
-
-      // Attach shipping label & tracking to orders table immediately
+      // Status remains 'paid' (new request waiting for seller to accept and pack in Seller Panel)
+      // Carrier defaults to Shree Mahavir Courier
       await supabase.from("orders").update({
-        tracking_carrier: courierPartner,
-        tracking_number: generatedAwb,
-        tracking_url: trackingUrl,
-        status: "processing",
+        tracking_carrier: "Shree Mahavir Courier",
         updated_at: new Date().toISOString(),
       }).eq("id", localOrderId);
-
-      // Attach shipping label & tracking to seller_fulfillments table
-      await supabase.from("seller_fulfillments").update({
-        tracking_carrier: courierPartner,
-        tracking_number: generatedAwb,
-        tracking_url: trackingUrl,
-        status: "processing",
-      }).eq("order_id", localOrderId);
 
       const { data: updatedOrder } = await supabase.from("orders")
         .select("id, order_number, customer_name, email, phone, shipping_address, total_paise, status, payment_status, created_at, tracking_carrier, tracking_number, tracking_url, order_items(product_name, size, quantity, unit_price_paise, line_total_paise)")
@@ -83,10 +67,10 @@ export async function POST(request: Request) {
         ok: true,
         orderNumber: order.order_number,
         paymentStatus: "captured",
-        orderStatus: "processing",
-        trackingCarrier: courierPartner,
-        trackingNumber: generatedAwb,
-        trackingUrl,
+        orderStatus: updatedOrder?.status || "paid",
+        trackingCarrier: updatedOrder?.tracking_carrier || "Shree Mahavir Courier",
+        trackingNumber: updatedOrder?.tracking_number || null,
+        trackingUrl: updatedOrder?.tracking_url || null,
         order: updatedOrder || {
           id: order.id,
           order_number: order.order_number,
@@ -94,12 +78,12 @@ export async function POST(request: Request) {
           phone: order.phone,
           shipping_address: order.shipping_address,
           total_paise: order.total_paise,
-          status: "processing",
+          status: "paid",
           payment_status: "captured",
           created_at: order.created_at || new Date().toISOString(),
-          tracking_carrier: courierPartner,
-          tracking_number: generatedAwb,
-          tracking_url: trackingUrl,
+          tracking_carrier: "Shree Mahavir Courier",
+          tracking_number: null,
+          tracking_url: null,
           order_items: order.order_items || [],
         },
       });

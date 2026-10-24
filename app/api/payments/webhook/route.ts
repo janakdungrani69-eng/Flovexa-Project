@@ -49,26 +49,11 @@ export async function POST(request: Request) {
         });
         if (error) throw error;
 
-        // Immediately generate official AWB and express shipping label upon payment
-        const cleanOrderNum = (order.order_number || "").replace(/[^A-Za-z0-9]/g, "").slice(-8).toUpperCase();
-        const generatedAwb = `FLX-EXP-${cleanOrderNum}`;
-        const courierPartner = "Delhivery Air Express";
-        const trackingUrl = `/orders?order=${encodeURIComponent(order.order_number || "")}`;
-
+        // Status remains 'paid' (new request waiting for seller to accept and pack in Seller Panel)
         await supabase.from("orders").update({
-          tracking_carrier: courierPartner,
-          tracking_number: generatedAwb,
-          tracking_url: trackingUrl,
-          status: "processing",
+          tracking_carrier: "Shree Mahavir Courier",
           updated_at: new Date().toISOString(),
         }).eq("id", order.id);
-
-        await supabase.from("seller_fulfillments").update({
-          tracking_carrier: courierPartner,
-          tracking_number: generatedAwb,
-          tracking_url: trackingUrl,
-          status: "processing",
-        }).eq("order_id", order.id);
 
         const { data: finalOrder } = await supabase.from("orders").select("status, payment_status").eq("id", order.id).maybeSingle();
         if (finalOrder?.payment_status === "captured") {

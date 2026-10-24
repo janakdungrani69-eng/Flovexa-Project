@@ -58,7 +58,7 @@ export default function ShippingLabelModal({
   const awbNumber =
     order.tracking_number ||
     `FLX-${order.order_number.replace(/[^A-Za-z0-9]/g, "").toUpperCase()}-EXP`;
-  const courierPartner = order.tracking_carrier || "Delhivery Air Express / Blue Dart Luxe";
+  const courierPartner = order.tracking_carrier || "Shree Mahavir Courier";
 
   const recipientName = order.customer_name || fallbackCustomerName || "Valued Fragrance Patron";
   const recipientPhone = order.phone || fallbackPhone || "+91 (Verified on Checkout)";
