@@ -43,25 +43,25 @@ export default async function StorePage() {
     const supabase = createAdminSupabase();
     const { data: dbReviews } = await supabase
       .from("product_reviews")
-      .select("id, customer_name, location, rating, title, comment, created_at, product_name, product_slug, products(name, slug)")
-      .eq("featured", true)
+      .select("id, customer_name, location, rating, title, comment, created_at, product_name, product_slug")
+      .eq("status", "approved")
       .order("created_at", { ascending: false })
-      .limit(8);
+      .limit(10);
 
     if (dbReviews && dbReviews.length > 0) {
       featuredReviews = dbReviews.map((r: any) => ({
         id: r.id,
         author: r.customer_name || "Verified Buyer",
         city: r.location || "India",
-        product: r.product_name || r.products?.name || "Flovexa Fragrance",
-        productSlug: r.product_slug || r.products?.slug,
+        product: r.product_name || "Flovexa Fragrance",
+        productSlug: r.product_slug,
         quote: r.comment || r.title || "Exceptional fragrance with stunning sillage.",
         rating: r.rating || 5,
         date: r.created_at,
       }));
     }
-  } catch {
-    // Fallback handled inside Storefront
+  } catch (revError) {
+    console.warn("Storefront reviews query handled:", revError);
   }
 
   return (

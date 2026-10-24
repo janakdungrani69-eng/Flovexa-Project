@@ -130,8 +130,11 @@ export default function ProductLuxuryDetails({ product, relatedProducts, verifie
     location: string;
   }>>([]);
   const reviews = useMemo(() => {
-    if (verifiedReviews && verifiedReviews.length > 0) {
-      return [...userReviews, ...verifiedReviews];
+    const verified = verifiedReviews || [];
+    if (verified.length > 0) {
+      const uniqueTitles = new Set(verified.map((v) => v.title.toLowerCase()));
+      const filteredDefaults = defaultReviews.filter((d) => !uniqueTitles.has(d.title.toLowerCase()));
+      return [...userReviews, ...verified, ...filteredDefaults];
     }
     return [...userReviews, ...defaultReviews];
   }, [userReviews, verifiedReviews, defaultReviews]);

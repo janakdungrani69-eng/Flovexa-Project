@@ -30,6 +30,7 @@ import {
   X,
 } from "lucide-react";
 import ShippingLabelModal from "@/components/shipping-label-modal";
+import DeliveredOrderThankYouModal from "@/components/delivered-order-thank-you-modal";
 import { generateDefaultSku } from "@/lib/products";
 
 type Tab = "orders" | "wishlist" | "addresses" | "profile" | "privilege" | "concierge";
@@ -197,6 +198,7 @@ export default function CustomerAccount({ email }: { email: string }) {
   const [reviewComment, setReviewComment] = useState<string>("");
   const [reviewSubmitting, setReviewSubmitting] = useState<boolean>(false);
   const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
+  const [deliveredThankYouOrder, setDeliveredThankYouOrder] = useState<Order | null>(null);
 
   async function handleCancelOrder(order: Order) {
     if (!confirm(`Are you sure you want to cancel Order #${order.order_number}? Orders can only be cancelled within 24 hours of placement.`)) {
@@ -248,6 +250,20 @@ export default function CustomerAccount({ email }: { email: string }) {
           gender: result.profile?.gender || "prefer_not_to_say",
         });
         setLoading(false);
+
+        // Auto-trigger luxury Thank You & Rating popup for delivered orders awaiting review
+        try {
+          const unreviewedDelivered = (result.orders ?? []).find(
+            (o: Order) =>
+              o.status === "delivered" &&
+              !localStorage.getItem(`flovexa_thankyou_dismissed_${o.id}`) &&
+              !localStorage.getItem(`flovexa_reviewed_order_${o.id}`) &&
+              !(result.reviews ?? []).some((r: CustomerReview) => r.order_id === o.id)
+          );
+          if (unreviewedDelivered) {
+            setDeliveredThankYouOrder(unreviewedDelivered);
+          }
+        } catch {}
       })
       .catch((err) => {
         if (!active) return;
@@ -970,6 +986,31 @@ export default function CustomerAccount({ email }: { email: string }) {
                             </div>
 
                             <div className="order-support-actions" style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+                              {/* Delivered Order Thank You & Review Action */}
+                              {isDelivered && (
+                                <button
+                                  type="button"
+                                  style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: "6px",
+                                    background: "#fbf6ed",
+                                    color: "#8a6639",
+                                    border: "1px solid #ebd9bf",
+                                    padding: "6px 14px",
+                                    borderRadius: "3px",
+                                    fontSize: "11px",
+                                    fontWeight: 700,
+                                    cursor: "pointer",
+                                  }}
+                                  onClick={() => setDeliveredThankYouOrder(order)}
+                                  title="Share your review & rating for this delivered fragrance"
+                                >
+                                  <Star size={13} fill="#aa8050" color="#aa8050" />
+                                  <span>Rate &amp; Review Order</span>
+                                </button>
+                              )}
+
                               {/* 24-Hour Order Cancellation */}
                               {canCancelOrder ? (
                                 <button
@@ -1670,6 +1711,36 @@ export default function CustomerAccount({ email }: { email: string }) {
             </form>
           </div>
         </div>
+      )}
+      {/* Automatic Thank You & Rating Experience Modal for Delivered Orders */}
+      {deliveredThankYouOrder && (
+        <DeliveredOrderThankYouModal
+          order={deliveredThankYouOrder}
+          existingReviews={data?.reviews}
+          onClose={() => {
+            try {
+              localStorage.setItem(`flovexa_thankyou_dismissed_${deliveredThankYouOrder.id}`, "true");
+            } catch {}
+            setDeliveredThankYouOrder(null);
+          }}
+          onReviewSubmitted={(newReview) => {
+            if (newReview && data) {
+              setData({
+                ...data,
+                reviews: [
+                  newReview,
+                  ...(data.reviews ?? []).filter(
+                    (r) =>
+                      !(
+                        r.order_id === deliveredThankYouOrder.id &&
+                        r.product_name.toLowerCase() === (newReview.product_name || "").toLowerCase()
+                      )
+                  ),
+                ],
+              });
+            }
+          }}
+        />
       )}
     </div>
   );

@@ -50,9 +50,10 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     const { data: dbReviews } = await supabase
       .from("product_reviews")
       .select("id, customer_name, location, rating, title, comment, created_at")
-      .or(`product_id.eq.${product.id},product_slug.eq.${product.slug}`)
+      .eq("status", "approved")
+      .or(`product_id.eq.${product.id},product_slug.eq.${product.slug},product_name.ilike.%${product.name}%`)
       .order("created_at", { ascending: false })
-      .limit(20);
+      .limit(25);
 
     if (dbReviews && dbReviews.length > 0) {
       verifiedReviews = dbReviews.map((r: any) => ({

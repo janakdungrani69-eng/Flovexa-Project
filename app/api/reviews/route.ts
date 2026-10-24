@@ -7,6 +7,7 @@ export const runtime = "nodejs";
 
 const reviewSchema = z.object({
   orderId: z.string().min(1, "Order ID is required"),
+  customerEmail: z.string().email().optional(),
   productId: z.string().optional().nullable(),
   productSlug: z.string().optional().nullable(),
   productName: z.string().min(1, "Product name is required"),
@@ -62,13 +63,6 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const user = await getCustomerUser();
-  if (!user || !user.email) {
-    return NextResponse.json(
-      { error: "You must be signed in to submit a review." },
-      { status: 401 }
-    );
-  }
-
   const rawJson = await request.json().catch(() => null);
   const parsed = reviewSchema.safeParse(rawJson);
   if (!parsed.success) {
@@ -76,15 +70,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: errorMsg }, { status: 400 });
   }
 
-  const { orderId, productId, productSlug, productName, rating, title, comment, location } = parsed.data;
+  const { orderId, customerEmail, productId, productSlug, productName, rating, title, comment, location } = parsed.data;
 
   try {
     const supabase = createAdminSupabase();
 
-    // 1. Verify that order exists, belongs to this customer, and is DELIVERED
+    // 1. Verify that order exists and is DELIVERED
     const { data: order, error: orderErr } = await supabase
       .from("orders")
-      .select("id, order_number, email, status, shipping_address")
+      .select("id, order_number, customer_name, email, status, shipping_address")
       .eq("id", orderId)
       .maybeSingle();
 
@@ -95,9 +89,10 @@ export async function POST(request: Request) {
       );
     }
 
-    if (order.email.toLowerCase() !== user.email.toLowerCase()) {
+    const verifiedEmail = (user?.email || customerEmail || "").toLowerCase().trim();
+    if (!verifiedEmail || order.email.toLowerCase() !== verifiedEmail) {
       return NextResponse.json(
-        { error: "You can only review fragrances from your own orders." },
+        { error: "You can only review fragrances from your own verified orders." },
         { status: 403 }
       );
     }
@@ -113,16 +108,17 @@ export async function POST(request: Request) {
     }
 
     // 2. Fetch customer full name if available
-    const { data: customerProfile } = await supabase
-      .from("customer_profiles")
-      .select("full_name")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    const customerName =
-      customerProfile?.full_name ||
-      user.user_metadata?.full_name ||
-      (user.email.split("@")[0] ? user.email.split("@")[0].replace(/[._]/g, " ") : "Flovexa Connoisseur");
+    let customerName = order.customer_name || "Flovexa Connoisseur";
+    if (user?.id) {
+      const { data: customerProfile } = await supabase
+        .from("customer_profiles")
+        .select("full_name")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (customerProfile?.full_name) {
+        customerName = customerProfile.full_name;
+      }
+    }
 
     const resolvedCity =
       location ||
@@ -169,9 +165,9 @@ export async function POST(request: Request) {
           product_id: productId || null,
           product_slug: productSlug || null,
           product_name: productName,
-          user_id: user.id,
+          user_id: user?.id ?? null,
           customer_name: customerName,
-          customer_email: user.email.toLowerCase(),
+          customer_email: verifiedEmail,
           location: resolvedCity,
           rating,
           title,
