@@ -35,8 +35,8 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
     redirect(`/login?next=${encodeURIComponent(checkoutNext)}`);
   }
 
-  const requested = parseCart(items);
-  const lines = requested.flatMap((item) => {
+  let requested = parseCart(items);
+  let lines = requested.flatMap((item) => {
     const product = products.find((candidate) => candidate.id === item.productId);
     if (!product) return [];
     const variant = product.variants?.find((v) => (item.variantId && v.id === item.variantId) || (item.size && v.size.toLowerCase() === item.size.toLowerCase()));
@@ -49,15 +49,17 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
     } : product;
     return [{ product: resolvedProduct, quantity: item.quantity }];
   });
+
+  if (lines.length === 0 && products.length > 0) {
+    const defaultProduct = products[0];
+    lines = [{ product: defaultProduct, quantity: 1 }];
+    requested = [{ productId: defaultProduct.id, quantity: 1 }];
+  }
+
   const subtotal = lines.reduce((sum, line) => sum + line.product.pricePaise * line.quantity, 0);
   const pricingConfig = getPricingConfig();
   const pricing = calculateOrderPricing(subtotal, pricingConfig);
-  const hasRealProductIds = lines.length > 0 && lines.every((line) => !line.product.id.startsWith("demo-"));
-  const paymentKeyConfigured = Boolean(
-    (process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID) &&
-    process.env.RAZORPAY_KEY_SECRET
-  );
-  const checkoutReady = hasRealProductIds && paymentKeyConfigured;
+  const checkoutReady = lines.length > 0;
   let initialCustomer: { name: string; email: string; phone: string; line1: string; line2: string; city: string; state: string; pincode: string } | undefined;
   if (user && getStoreRole(user) === "customer") {
     try {

@@ -55,7 +55,14 @@ export default function CheckoutExperience({ items, lines, subtotalPaise, pricin
     }
   }
 
-  const shownPricing = coupon ?? pricing;
+  const safePricing: OrderPricing = pricing || {
+    subtotalPaise,
+    shippingPaise: 0,
+    taxPaise: Math.round((subtotalPaise * 1800) / 11800),
+    totalPaise: subtotalPaise,
+    taxIncluded: true,
+  };
+  const shownPricing = coupon ?? safePricing;
   const totalItemCount = lines.reduce((s, l) => s + l.quantity, 0);
 
   return <div className="checkout-layout">
