@@ -41,7 +41,7 @@ export default async function AdminPage() {
           .order("created_at", { ascending: false }),
         supabase
           .from("orders")
-          .select("id, order_number, customer_name, email, phone, shipping_address, total_paise, discount_paise, coupon_code, status, payment_status, tracking_carrier, tracking_number, tracking_url, created_at, order_items(id, product_id, product_name, size, quantity, line_total_paise, seller_id)")
+          .select("id, order_number, customer_name, email, phone, shipping_address, total_paise, status, payment_status, tracking_carrier, tracking_number, tracking_url, created_at, order_items(id, product_id, product_name, size, quantity, line_total_paise, seller_id)")
           .order("created_at", { ascending: false })
           .limit(100),
         supabase
@@ -175,8 +175,11 @@ export default async function AdminPage() {
             : "Flovexa Official",
         }));
 
+        const shippingAddr = (order.shipping_address as any) || {};
         return {
           ...order,
+          discount_paise: (order as any).discount_paise ?? shippingAddr.discount_paise ?? 0,
+          coupon_code: (order as any).coupon_code ?? shippingAddr.coupon_code ?? null,
           order_items: enrichedItems,
           seller_fulfillments: sellerFulfillmentsByOrder.get(order.id) ?? [],
         };

@@ -47,9 +47,16 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       updated_at: new Date().toISOString(),
     };
     if (parsed.data.status !== "cancelled") update.status = parsed.data.status;
-    const { data: order, error } = await supabase.from("orders").update(update).eq("id", id).select("id, order_number, customer_name, email, phone, shipping_address, total_paise, discount_paise, coupon_code, status, payment_status, tracking_carrier, tracking_number, tracking_url, created_at, order_items(product_name, size, quantity)").single();
+    const { data: order, error } = await supabase.from("orders").update(update).eq("id", id).select("id, order_number, customer_name, email, phone, shipping_address, total_paise, status, payment_status, tracking_carrier, tracking_number, tracking_url, created_at, order_items(product_name, size, quantity)").single();
     if (error) throw error;
-    return NextResponse.json({ order });
+    const shippingAddr = (order.shipping_address as any) || {};
+    return NextResponse.json({
+      order: {
+        ...order,
+        discount_paise: shippingAddr.discount_paise ?? 0,
+        coupon_code: shippingAddr.coupon_code ?? null,
+      },
+    });
   } catch (error) {
     console.error("Order update failed", error instanceof Error ? error.message : "Unknown error");
     return NextResponse.json({ error: "Could not update this order." }, { status: 500 });
