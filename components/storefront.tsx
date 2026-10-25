@@ -60,11 +60,22 @@ export default function Storefront({
   const [cartLoaded, setCartLoaded] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [savedProductIds, setSavedProductIds] = useState<string[]>([]);
-  const filteredProducts = useMemo(() => products.filter((product) => {
-    const matchesCategory = category === "All scents" || product.category === category;
-    const words = `${product.name} ${product.category} ${product.notes.join(" ")}`.toLowerCase();
-    return matchesCategory && words.includes(query.trim().toLowerCase());
-  }), [products, category, query]);
+  const [sortBy, setSortBy] = useState<"featured" | "price-asc" | "price-desc" | "name">("featured");
+  const [sortOpen, setSortOpen] = useState(false);
+  const filteredProducts = useMemo(() => {
+    const list = products.filter((product) => {
+      const matchesCategory = category === "All scents" || product.category === category;
+      const words = `${product.name} ${product.category} ${product.notes.join(" ")}`.toLowerCase();
+      return matchesCategory && words.includes(query.trim().toLowerCase());
+    });
+
+    return [...list].sort((a, b) => {
+      if (sortBy === "price-asc") return a.pricePaise - b.pricePaise;
+      if (sortBy === "price-desc") return b.pricePaise - a.pricePaise;
+      if (sortBy === "name") return a.name.localeCompare(b.name);
+      return (b.featured ? 1 : 0) - (a.featured ? 1 : 0);
+    });
+  }, [products, category, query, sortBy]);
   const cartLines = useMemo(() => cart.map((item) => ({ ...item, product: products.find((product) => product.id === item.productId) })).filter((line): line is CartItem & { product: Product } => Boolean(line.product)), [cart, products]);
   const cartQuantity = cartLines.reduce((sum, line) => sum + line.quantity, 0);
   const cartTotal = cartLines.reduce((sum, line) => sum + line.product.pricePaise * line.quantity, 0);
@@ -227,7 +238,63 @@ export default function Storefront({
               </button>
             ))}
           </div>
-          <button className="sort-button" onClick={() => setCategory("All scents")}>Curated edit <ChevronDown size={14} /></button>
+          <div className="sort-dropdown-wrap">
+            <button
+              className={`sort-button${sortOpen ? " is-active" : ""}`}
+              onClick={() => setSortOpen((v) => !v)}
+              aria-haspopup="listbox"
+              aria-expanded={sortOpen}
+              type="button"
+            >
+              <span>
+                {sortBy === "featured" && "Curated edit"}
+                {sortBy === "price-asc" && "Price: Low to High"}
+                {sortBy === "price-desc" && "Price: High to Low"}
+                {sortBy === "name" && "Alphabetical: A - Z"}
+              </span>
+              <ChevronDown size={14} className={`sort-chevron${sortOpen ? " is-rotated" : ""}`} />
+            </button>
+
+            {sortOpen && (
+              <>
+                <div className="sort-backdrop" onClick={() => setSortOpen(false)} />
+                <div className="sort-menu" role="listbox">
+                  <button
+                    type="button"
+                    className={`sort-option${sortBy === "featured" ? " is-selected" : ""}`}
+                    onClick={() => { setSortBy("featured"); setSortOpen(false); }}
+                  >
+                    <span>Curated edit (Featured)</span>
+                    {sortBy === "featured" && <Check size={13} />}
+                  </button>
+                  <button
+                    type="button"
+                    className={`sort-option${sortBy === "price-asc" ? " is-selected" : ""}`}
+                    onClick={() => { setSortBy("price-asc"); setSortOpen(false); }}
+                  >
+                    <span>Price: Low to High</span>
+                    {sortBy === "price-asc" && <Check size={13} />}
+                  </button>
+                  <button
+                    type="button"
+                    className={`sort-option${sortBy === "price-desc" ? " is-selected" : ""}`}
+                    onClick={() => { setSortBy("price-desc"); setSortOpen(false); }}
+                  >
+                    <span>Price: High to Low</span>
+                    {sortBy === "price-desc" && <Check size={13} />}
+                  </button>
+                  <button
+                    type="button"
+                    className={`sort-option${sortBy === "name" ? " is-selected" : ""}`}
+                    onClick={() => { setSortBy("name"); setSortOpen(false); }}
+                  >
+                    <span>Alphabetical: A - Z</span>
+                    {sortBy === "name" && <Check size={13} />}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
         <div className="product-grid">
           {filteredProducts.map((product, index) => <article className="product-card" key={product.id}>
