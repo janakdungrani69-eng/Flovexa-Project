@@ -1,19 +1,33 @@
 import { NextResponse } from "next/server";
 import { getActiveSeller } from "@/lib/supabase/seller-user";
+import { getStoreRole } from "@/lib/supabase/roles";
 
 export async function GET() {
   try {
     const seller = await getActiveSeller();
     if (!seller) return NextResponse.json({ error: "Active seller access is required." }, { status: 403 });
 
+    const role = getStoreRole(seller.user);
+    const isMasterAdmin =
+      role === "admin" ||
+      seller.user.email?.trim().toLowerCase() === "janakdungrani69@gmail.com";
+
     let items: Array<{ id: string; order_id: string; product_name: string; size: string; unit_price_paise: number; quantity: number; line_total_paise: number }> = [];
     try {
-      const { data: itemRows, error: itemError } = await seller.supabase
-        .from("order_items")
-        .select("id, order_id, product_name, size, unit_price_paise, quantity, line_total_paise")
-        .eq("seller_id", seller.user.id)
-        .order("order_id", { ascending: false })
-        .limit(500);
+      const itemsQuery = isMasterAdmin
+        ? seller.supabase
+            .from("order_items")
+            .select("id, order_id, product_name, size, unit_price_paise, quantity, line_total_paise")
+            .order("order_id", { ascending: false })
+            .limit(500)
+        : seller.supabase
+            .from("order_items")
+            .select("id, order_id, product_name, size, unit_price_paise, quantity, line_total_paise")
+            .eq("seller_id", seller.user.id)
+            .order("order_id", { ascending: false })
+            .limit(500);
+
+      const { data: itemRows, error: itemError } = await itemsQuery;
 
       if (itemError) {
         console.error("[seller/orders] Notice: Could not read order_items:", itemError);
@@ -30,9 +44,20 @@ export async function GET() {
     }
 
     try {
+      const fulfillmentQuery = isMasterAdmin
+        ? seller.supabase
+            .from("seller_fulfillments")
+            .select("order_id, status, tracking_carrier, tracking_number, tracking_url")
+            .in("order_id", orderIds)
+        : seller.supabase
+            .from("seller_fulfillments")
+            .select("order_id, status, tracking_carrier, tracking_number, tracking_url")
+            .eq("seller_id", seller.user.id)
+            .in("order_id", orderIds);
+
       const [orderResult, fulfillmentResult, returnResult] = await Promise.all([
-        seller.supabase.from("orders").select("id, order_number, customer_name, phone, shipping_address, status, payment_status, created_at").in("id", orderIds),
-        seller.supabase.from("seller_fulfillments").select("order_id, status, tracking_carrier, tracking_number, tracking_url").eq("seller_id", seller.user.id).in("order_id", orderIds),
+        seller.supabase.from("orders").select("id, order_number, customer_name, phone, shipping_address, status, payment_status, created_at, tracking_carrier, tracking_number, tracking_url").in("id", orderIds),
+        fulfillmentQuery,
         seller.supabase.from("return_requests").select("id, order_id, reason, details, status, created_at").in("order_id", orderIds).order("created_at", { ascending: false }),
       ]);
 
@@ -48,7 +73,16 @@ export async function GET() {
       const orders = [...itemsByOrder.entries()].flatMap(([orderId, orderItems]) => {
         const order = orderMap.get(orderId);
         if (!order || order.payment_status !== "captured" || ["cancelled", "refunded"].includes(order.status)) return [];
-        return [{ ...order, order_items: orderItems, fulfillment: fulfillmentMap.get(orderId) ?? { status: "paid", tracking_carrier: null, tracking_number: null, tracking_url: null } }];
+        return [{
+          ...order,
+          order_items: orderItems,
+          fulfillment: fulfillmentMap.get(orderId) ?? {
+            status: order.status || "paid",
+            tracking_carrier: order.tracking_carrier || "Flovexa Priority Express",
+            tracking_number: order.tracking_number || null,
+            tracking_url: order.tracking_url || null,
+          },
+        }];
       }).sort((a, b) => b.created_at.localeCompare(a.created_at));
 
       const returns = (returnResult.data ?? []).flatMap((request) => {

@@ -36,9 +36,9 @@ export default async function SellerPage() {
   }
 
   const role = getStoreRole(user);
-  if (role === "admin") {
-    redirect("/admin");
-  }
+  const isMasterAdmin =
+    role === "admin" ||
+    user.email?.trim().toLowerCase() === "janakdungrani69@gmail.com";
 
   let profile: {
     store_name?: string;
@@ -67,7 +67,7 @@ export default async function SellerPage() {
     }
 
     // 1. If seller has an application pending owner approval or suspended access
-    if (profile && (profile.admin_note?.includes("PENDING_APPROVAL") || profile.status === "suspended")) {
+    if (!isMasterAdmin && profile && (profile.admin_note?.includes("PENDING_APPROVAL") || profile.status === "suspended")) {
       return (
         <SellerApplicationPending
           email={user.email ?? ""}
@@ -79,16 +79,23 @@ export default async function SellerPage() {
     }
 
     // 2. If user is not an approved active seller, show the portal landing / application form
-    if (role !== "seller" && (!profile || profile.status !== "active")) {
+    if (!isMasterAdmin && role !== "seller" && (!profile || profile.status !== "active")) {
       return <SellerPortalLanding />;
     }
 
+    const productQuery = isMasterAdmin
+      ? supabase
+          .from("products")
+          .select("id, slug, name, category, price_paise, compare_at_paise, size, concentration, notes, description, image_url, accent, stock, active, created_at")
+          .order("created_at", { ascending: false })
+      : supabase
+          .from("products")
+          .select("id, slug, name, category, price_paise, compare_at_paise, size, concentration, notes, description, image_url, accent, stock, active, created_at")
+          .eq("seller_id", user.id)
+          .order("created_at", { ascending: false });
+
     const [{ data: products, error: productError }, { data: categories, error: categoryError }] = await Promise.all([
-      supabase
-        .from("products")
-        .select("id, slug, name, category, price_paise, compare_at_paise, size, concentration, notes, description, image_url, accent, stock, active, created_at")
-        .eq("seller_id", user.id)
-        .order("created_at", { ascending: false }),
+      productQuery,
       supabase
         .from("store_categories")
         .select("name")
@@ -109,7 +116,7 @@ export default async function SellerPage() {
     }
   } catch (catchErr) {
     console.error("[SellerPage] Handled server error:", catchErr);
-    if (role !== "seller") {
+    if (!isMasterAdmin && role !== "seller") {
       return <SellerPortalLanding />;
     }
   }

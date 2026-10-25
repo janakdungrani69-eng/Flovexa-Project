@@ -111,8 +111,7 @@ export async function POST(request: Request) {
       }
     }
 
-    const targetUrl = role === "admin" ? "/admin" : "/seller";
-    return NextResponse.json({ success: true, redirect: targetUrl });
+    return NextResponse.json({ success: true, redirect: "/seller" });
   } catch (err) {
     console.error("Seller login error:", err);
     return NextResponse.json(

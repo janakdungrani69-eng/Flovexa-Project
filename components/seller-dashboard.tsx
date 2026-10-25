@@ -28,6 +28,7 @@ import {
   UploadCloud,
   Sparkles,
   ArrowLeft,
+  ShieldCheck,
   ArrowRight,
   CheckCircle2,
 } from "lucide-react";
@@ -1004,6 +1005,9 @@ export default function SellerDashboard({
           </span>
         </div>
         <div className="admin-topbar-actions">
+          <Link href="/admin" className="portal-switch-link" title="Open Master Admin Control">
+            <ShieldCheck size={12} /> Executive Admin ↗
+          </Link>
           <Link href="/store" className="portal-switch-link" target="_blank" rel="noopener noreferrer">
             <ExternalLink size={12} /> View Customer Store ↗
           </Link>

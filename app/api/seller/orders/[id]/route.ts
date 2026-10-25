@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getActiveSeller } from "@/lib/supabase/seller-user";
+import { getStoreRole } from "@/lib/supabase/roles";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { sendOrderEmail } from "@/lib/order-email";
 
@@ -27,10 +28,23 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const parsed = updateSchema.safeParse(body);
     if (!parsed.success) return NextResponse.json({ error: "Please check the shipment details." }, { status: 400 });
 
+    const role = getStoreRole(seller.user);
+    const isMasterAdmin =
+      role === "admin" ||
+      seller.user.email?.trim().toLowerCase() === "janakdungrani69@gmail.com";
+
+    const ownItemPromise = isMasterAdmin
+      ? Promise.resolve({ data: { id }, error: null })
+      : seller.supabase.from("order_items").select("id").eq("seller_id", seller.user.id).eq("order_id", id).limit(1).maybeSingle();
+
+    const currentFulfillmentPromise = isMasterAdmin
+      ? seller.supabase.from("seller_fulfillments").select("status").eq("order_id", id).maybeSingle()
+      : seller.supabase.from("seller_fulfillments").select("status").eq("seller_id", seller.user.id).eq("order_id", id).maybeSingle();
+
     const [{ data: ownItem, error: itemError }, { data: order, error: orderError }, { data: current, error: currentError }] = await Promise.all([
-      seller.supabase.from("order_items").select("id").eq("seller_id", seller.user.id).eq("order_id", id).limit(1).maybeSingle(),
+      ownItemPromise,
       seller.supabase.from("orders").select("id, payment_status, status").eq("id", id).maybeSingle(),
-      seller.supabase.from("seller_fulfillments").select("status").eq("seller_id", seller.user.id).eq("order_id", id).maybeSingle(),
+      currentFulfillmentPromise,
     ]);
     if (itemError || orderError || currentError) throw itemError ?? orderError ?? currentError;
     if (!ownItem || !order) return NextResponse.json({ error: "This order is not assigned to your store." }, { status: 404 });
@@ -38,7 +52,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       return NextResponse.json({ error: "Only paid orders can be processed." }, { status: 409 });
     }
 
-    const currentStatus = current?.status ?? "paid";
+    const currentStatus = current?.status ?? order.status ?? "paid";
     const unchanged = currentStatus === parsed.data.status;
     if (!unchanged && !nextStates[currentStatus]?.includes(parsed.data.status)) {
       return NextResponse.json({ error: "That fulfillment status change is not allowed." }, { status: 409 });
