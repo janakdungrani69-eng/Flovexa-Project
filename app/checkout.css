@@ -81,4 +81,20 @@
 .checkout-store-link { color: #6a6258; }
 .checkout-footer{min-height:54px;display:flex;justify-content:center;align-items:center;gap:24px;border-top:1px solid var(--line);color:#888073;font-size:8px;letter-spacing:.09em}
 .checkout-footer a:hover{color:var(--gold)}
-@media(max-width:760px){.checkout-header{height:65px;padding-inline:15px}.checkout-header .wordmark{font-size:15px}.checkout-back{font-size:8px;gap:5px}.checkout-back svg{width:13px}.secure-label{font-size:7px}.checkout-layout{padding:38px 17px 55px;grid-template-columns:1fr;gap:32px}.checkout-main h1{font-size:36px}.order-summary{grid-row:1;padding:20px}.order-summary h2{font-size:24px}.checkout-footer{gap:13px;font-size:7px}}
+@media(max-width:760px){
+  .checkout-header{height:65px;padding-inline:15px}
+  .checkout-header .wordmark{font-size:15px}
+  .checkout-back{font-size:8px;gap:5px}
+  .checkout-back svg{width:13px}
+  .secure-label{font-size:7px}
+  .checkout-layout{padding:32px 16px 48px;grid-template-columns:1fr;gap:24px}
+  .checkout-main h1{font-size:30px}
+  .order-summary{grid-row:1;padding:18px;border-radius:10px}
+  .order-summary h2{font-size:22px}
+  .form-fields{grid-template-columns:1fr !important}
+  .form-fields input{height:46px !important;font-size:14px !important;border-radius:6px !important}
+  .coupon-entry input{height:44px !important;font-size:13px !important}
+  .coupon-entry button{min-height:44px !important;padding:0 16px !important;font-size:11px !important}
+  .pay-button{min-height:50px !important;font-size:12px !important;border-radius:8px !important}
+  .checkout-footer{gap:13px;font-size:7px}
+}

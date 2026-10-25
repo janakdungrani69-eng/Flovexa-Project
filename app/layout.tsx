@@ -1,10 +1,17 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { siteUrl } from "@/lib/seo";
 import "./globals.css";
 import "./checkout.css";
 import "./product-detail.css";
 import "./operations.css";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: "#14110d",
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
