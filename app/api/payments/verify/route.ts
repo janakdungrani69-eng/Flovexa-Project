@@ -66,7 +66,7 @@ export async function POST(request: Request) {
         payment_status: "captured",
         razorpay_payment_id,
         payment_signature_verified_at: new Date().toISOString(),
-        tracking_carrier: "Flovexa Priority Express",
+        tracking_carrier: "Mahavir Express",
         updated_at: new Date().toISOString(),
       }).eq("id", localOrderId);
 
@@ -86,7 +86,7 @@ export async function POST(request: Request) {
         orderNumber: order.order_number,
         paymentStatus: "captured",
         orderStatus: updatedOrder?.status || "paid",
-        trackingCarrier: updatedOrder?.tracking_carrier || "Flovexa Priority Express",
+        trackingCarrier: updatedOrder?.tracking_carrier || "Mahavir Express",
         trackingNumber: updatedOrder?.tracking_number || null,
         trackingUrl: updatedOrder?.tracking_url || null,
         order: updatedOrder || {
@@ -99,7 +99,7 @@ export async function POST(request: Request) {
           status: "paid",
           payment_status: "captured",
           created_at: order.created_at || new Date().toISOString(),
-          tracking_carrier: "Flovexa Priority Express",
+          tracking_carrier: "Mahavir Express",
           tracking_number: null,
           tracking_url: null,
           order_items: order.order_items || [],

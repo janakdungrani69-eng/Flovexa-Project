@@ -184,19 +184,19 @@ export default function OrderLookup() {
                   <span>
                     {shipment.storeName} · {shipment.status.replaceAll("_", " ")}
                   </span>
-                  {shipment.trackingUrl && (
-                    <a href={shipment.trackingUrl} target="_blank" rel="noreferrer">
-                      {shipment.trackingCarrier || "Track shipment"}
+                  {(shipment.trackingUrl || shipment.trackingNumber) && (
+                    <a href={shipment.trackingUrl || "https://shreemahavircourier.com/"} target="_blank" rel="noreferrer">
+                      {shipment.trackingCarrier || "Mahavir Express"}
                       {shipment.trackingNumber ? ` · ${shipment.trackingNumber}` : ""}
                       <ArrowRight size={14} />
                     </a>
                   )}
                 </div>
               ))
-            : result.trackingUrl && (
-                <a className="tracking-link" href={result.trackingUrl} target="_blank" rel="noreferrer">
+            : (result.trackingUrl || result.trackingNumber) && (
+                <a className="tracking-link" href={result.trackingUrl || "https://shreemahavircourier.com/"} target="_blank" rel="noreferrer">
                   <Truck size={15} />
-                  {result.trackingCarrier || "Track shipment"} · {result.trackingNumber}
+                  {result.trackingCarrier || "Mahavir Express"} · Consignment #{result.trackingNumber}
                   <ArrowRight size={15} />
                 </a>
               )}

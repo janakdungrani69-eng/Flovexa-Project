@@ -1043,19 +1043,17 @@ export default function CustomerAccount({ email }: { email: string }) {
                               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                                 <Truck size={15} color="#3b6032" />
                                 <span>
-                                  Logistics Partner: <strong>{order.tracking_carrier || "Flovexa Priority Express"}</strong> · Consignment ID: <code style={{ fontFamily: "var(--font-mono, monospace)", fontWeight: 700, background: "#e8f0e5", padding: "2px 7px", borderRadius: "3px", color: "#1f3d17" }}>{order.tracking_number}</code>
+                                  Logistics Partner: <strong>{order.tracking_carrier || "Mahavir Express"}</strong> · Consignment ID: <code style={{ fontFamily: "var(--font-mono, monospace)", fontWeight: 700, background: "#e8f0e5", padding: "2px 7px", borderRadius: "3px", color: "#1f3d17" }}>{order.tracking_number}</code>
                                 </span>
                               </div>
-                              {order.tracking_url && (
-                                <a
-                                  href={order.tracking_url}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  style={{ display: "inline-flex", alignItems: "center", gap: "5px", color: "#aa8050", fontWeight: 700, textDecoration: "underline" }}
-                                >
-                                  <ExternalLink size={12} /> Track Courier Delivery ↗
-                                </a>
-                              )}
+                              <a
+                                href={order.tracking_url || "https://shreemahavircourier.com/"}
+                                target="_blank"
+                                rel="noreferrer"
+                                style={{ display: "inline-flex", alignItems: "center", gap: "5px", color: "#aa8050", fontWeight: 700, textDecoration: "underline" }}
+                              >
+                                <ExternalLink size={12} /> Track on Mahavir Express ↗
+                              </a>
                             </div>
                           )}
 

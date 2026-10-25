@@ -78,7 +78,7 @@ export async function GET() {
           order_items: orderItems,
           fulfillment: fulfillmentMap.get(orderId) ?? {
             status: order.status || "paid",
-            tracking_carrier: order.tracking_carrier || "Flovexa Priority Express",
+            tracking_carrier: order.tracking_carrier || "Mahavir Express",
             tracking_number: order.tracking_number || null,
             tracking_url: order.tracking_url || null,
           },

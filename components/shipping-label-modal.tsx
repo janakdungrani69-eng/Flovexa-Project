@@ -56,7 +56,7 @@ export default function ShippingLabelModal({
   const isCombo = totalBottles > 1 || order.order_items.length > 1;
 
   const hasTrackingNumber = Boolean(order.tracking_number && order.tracking_number.trim());
-  const courierPartner = order.tracking_carrier || "Flovexa Priority Express";
+  const courierPartner = order.tracking_carrier || "Mahavir Express";
 
   const recipientName = order.customer_name || fallbackCustomerName || "Valued Fragrance Patron";
   const recipientPhone = order.phone || fallbackPhone || "+91 (Verified on Checkout)";
@@ -233,7 +233,7 @@ export default function ShippingLabelModal({
                   </span>
                 ) : (
                   <span style={{ marginLeft: "10px", fontSize: "10px", color: "#555", fontWeight: 700 }}>
-                    [ COURIER AWB AFFIXED ON DISPATCH ]
+                    [ MAHAVIR EXPRESS AWB AFFIXED ON DISPATCH ]
                   </span>
                 )}
               </div>
@@ -257,8 +257,8 @@ export default function ShippingLabelModal({
                 <span style={{ color: "#d5b482" }}>ORIGIN:</span>
                 <span>SURAT ATELIER (STV-HUB)</span>
               </div>
-              <div style={{ letterSpacing: "1.5px", color: "#d5b482", fontWeight: 900 }}>
-                ➔ ➔ EXPRESS AIR DISPATCH ➔ ➔
+              <div style={{ letterSpacing: "1.2px", color: "#d5b482", fontWeight: 900 }}>
+                ➔ ➔ MAHAVIR EXPRESS AIR DISPATCH ➔ ➔
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                 <span style={{ color: "#d5b482" }}>DEST:</span>

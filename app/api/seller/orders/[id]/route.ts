@@ -7,7 +7,7 @@ import { sendOrderEmail } from "@/lib/order-email";
 
 const updateSchema = z.object({
   status: z.enum(["processing", "shipped", "delivered"]),
-  trackingCarrier: z.string().trim().max(80).optional().default("Flovexa Priority Express"),
+  trackingCarrier: z.string().trim().max(80).optional().default("Mahavir Express"),
   trackingNumber: z.string().trim().max(120).optional().default(""),
   trackingUrl: z.string().trim().optional().default(""),
 }).strict();
@@ -61,9 +61,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       return NextResponse.json({ error: "Please enter the Consignment / Tracking ID before marking order shipped." }, { status: 400 });
     }
 
-    const carrier = parsed.data.trackingCarrier || "Flovexa Priority Express";
+    const carrier = parsed.data.trackingCarrier || "Mahavir Express";
     const trackingNum = parsed.data.trackingNumber || null;
-    const trackingUrl = parsed.data.trackingUrl || null;
+    const trackingUrl = parsed.data.trackingUrl || (trackingNum ? "https://shreemahavircourier.com/" : null);
 
     const { data, error } = await seller.supabase.from("seller_fulfillments").upsert({
       seller_id: seller.user.id,
@@ -86,12 +86,18 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       updated_at: new Date().toISOString(),
     }).eq("id", id);
 
-    // If order was marked shipped, notify customer with tracking ID
+    // If order was marked shipped or delivered, notify customer
     if (parsed.data.status === "shipped") {
       try {
         await sendOrderEmail(id, "shipment_update");
       } catch (emailErr) {
         console.error("Shipment update email deferred:", emailErr);
+      }
+    } else if (parsed.data.status === "delivered") {
+      try {
+        await sendOrderEmail(id, "delivered");
+      } catch (emailErr) {
+        console.error("Delivered email deferred:", emailErr);
       }
     }
 

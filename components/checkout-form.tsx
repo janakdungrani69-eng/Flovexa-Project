@@ -125,7 +125,7 @@ export default function CheckoutForm({ items, enabled, initialCustomer, couponCo
           <div className="checkout-shipping-details-grid">
             <div>
               <span className="cs-label">COURIER PARTNER</span>
-              <strong className="cs-val">{confirmedOrder.tracking_carrier || "Flovexa Priority Express"}</strong>
+              <strong className="cs-val">{confirmedOrder.tracking_carrier || "Mahavir Express"}</strong>
             </div>
             <div>
               <span className="cs-label">AWB / TRACKING NO</span>

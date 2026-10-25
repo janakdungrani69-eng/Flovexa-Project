@@ -425,14 +425,19 @@ export default function AdminDashboard({
 
   async function updateOrder(order: AdminOrder, status = order.status) {
     const values = shipments[order.id] ?? {
-      trackingCarrier: order.tracking_carrier ?? "",
+      trackingCarrier: order.tracking_carrier || "Mahavir Express",
       trackingNumber: order.tracking_number ?? "",
-      trackingUrl: order.tracking_url ?? "",
+      trackingUrl: order.tracking_url || "https://shreemahavircourier.com/",
     };
     const response = await fetch(`/api/admin/orders/${order.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status, ...values }),
+      body: JSON.stringify({
+        status,
+        trackingCarrier: values.trackingCarrier || "Mahavir Express",
+        trackingNumber: values.trackingNumber,
+        trackingUrl: values.trackingUrl || "https://shreemahavircourier.com/",
+      }),
     });
     const result = await response.json();
     if (response.ok) {
@@ -1235,7 +1240,7 @@ export default function AdminDashboard({
                           <label>
                             Courier Carrier
                             <input
-                              value={shipments[order.id]?.trackingCarrier ?? order.tracking_carrier ?? ""}
+                              value={shipments[order.id]?.trackingCarrier ?? order.tracking_carrier ?? "Mahavir Express"}
                               onChange={(event) =>
                                 setShipments((all) => ({
                                   ...all,
@@ -1243,11 +1248,11 @@ export default function AdminDashboard({
                                     ...all[order.id],
                                     trackingCarrier: event.target.value,
                                     trackingNumber: all[order.id]?.trackingNumber ?? order.tracking_number ?? "",
-                                    trackingUrl: all[order.id]?.trackingUrl ?? order.tracking_url ?? "",
+                                    trackingUrl: all[order.id]?.trackingUrl ?? order.tracking_url ?? "https://shreemahavircourier.com/",
                                   },
                                 }))
                               }
-                              placeholder="e.g. BlueDart / Delhivery"
+                              placeholder="Mahavir Express"
                             />
                           </label>
                           <label>
@@ -1260,8 +1265,8 @@ export default function AdminDashboard({
                                   [order.id]: {
                                     ...all[order.id],
                                     trackingNumber: event.target.value,
-                                    trackingCarrier: all[order.id]?.trackingCarrier ?? order.tracking_carrier ?? "",
-                                    trackingUrl: all[order.id]?.trackingUrl ?? order.tracking_url ?? "",
+                                    trackingCarrier: all[order.id]?.trackingCarrier ?? order.tracking_carrier ?? "Mahavir Express",
+                                    trackingUrl: all[order.id]?.trackingUrl ?? order.tracking_url ?? "https://shreemahavircourier.com/",
                                   },
                                 }))
                               }
@@ -1271,19 +1276,19 @@ export default function AdminDashboard({
                           <label>
                             Live Tracking Link
                             <input
-                              value={shipments[order.id]?.trackingUrl ?? order.tracking_url ?? ""}
+                              value={shipments[order.id]?.trackingUrl ?? order.tracking_url ?? "https://shreemahavircourier.com/"}
                               onChange={(event) =>
                                 setShipments((all) => ({
                                   ...all,
                                   [order.id]: {
                                     ...all[order.id],
                                     trackingUrl: event.target.value,
-                                    trackingCarrier: all[order.id]?.trackingCarrier ?? order.tracking_carrier ?? "",
+                                    trackingCarrier: all[order.id]?.trackingCarrier ?? order.tracking_carrier ?? "Mahavir Express",
                                     trackingNumber: all[order.id]?.trackingNumber ?? order.tracking_number ?? "",
                                   },
                                 }))
                               }
-                              placeholder="https://track.bluedart.com/…"
+                              placeholder="https://shreemahavircourier.com/"
                             />
                           </label>
                           <button onClick={() => updateOrder(order)}>

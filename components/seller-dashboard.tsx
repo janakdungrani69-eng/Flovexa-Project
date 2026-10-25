@@ -921,9 +921,9 @@ export default function SellerDashboard({
     return (
       drafts[order.id] ?? {
         status: order.fulfillment.status,
-        trackingCarrier: order.fulfillment.tracking_carrier || "Flovexa Priority Express",
+        trackingCarrier: order.fulfillment.tracking_carrier || "Mahavir Express",
         trackingNumber: order.fulfillment.tracking_number ?? "",
-        trackingUrl: order.fulfillment.tracking_url || "",
+        trackingUrl: order.fulfillment.tracking_url || "https://shreemahavircourier.com/",
       }
     );
   }
@@ -937,7 +937,11 @@ export default function SellerDashboard({
       const response = await fetch(`/api/seller/orders/${order.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(draft),
+        body: JSON.stringify({
+          ...draft,
+          trackingCarrier: draft.trackingCarrier || "Mahavir Express",
+          trackingUrl: draft.trackingUrl || "https://shreemahavircourier.com/",
+        }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Could not update shipment.");
@@ -961,9 +965,9 @@ export default function SellerDashboard({
     try {
       const payload = {
         status: merged.status,
-        trackingCarrier: merged.tracking_carrier || (merged as any).trackingCarrier || "Flovexa Priority Express",
+        trackingCarrier: merged.tracking_carrier || (merged as any).trackingCarrier || "Mahavir Express",
         trackingNumber: merged.tracking_number || (merged as any).trackingNumber || "",
-        trackingUrl: merged.tracking_url || (merged as any).trackingUrl || "",
+        trackingUrl: merged.tracking_url || (merged as any).trackingUrl || "https://shreemahavircourier.com/",
       };
       const response = await fetch(`/api/seller/orders/${order.id}`, {
         method: "PATCH",
@@ -979,6 +983,37 @@ export default function SellerDashboard({
       setMessage(`Order ${order.order_number} status updated to ${data.fulfillment.status.replaceAll("_", " ")}.`);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Could not update shipment.");
+    } finally {
+      setSavingFulfillment(null);
+    }
+  }
+
+  async function handleSyncTracking(order: SellerOrder) {
+    setSavingFulfillment(order.id);
+    setMessage("");
+    setErrorMessage("");
+    try {
+      const res = await fetch("/api/orders/track-sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: order.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Could not sync tracking");
+      if (data.status === "delivered") {
+        setOrders((current) =>
+          current.map((item) =>
+            item.id === order.id
+              ? { ...item, fulfillment: { ...item.fulfillment, status: "delivered" } }
+              : item
+          )
+        );
+        setMessage(`Order ${order.order_number} verified as DELIVERED by Mahavir Express! Customer review enabled.`);
+      } else {
+        setMessage(`Mahavir Express Tracking: Order ${order.order_number} is In Transit (AWB #${order.fulfillment.tracking_number || ""}).`);
+      }
+    } catch (err) {
+      setErrorMessage(err instanceof Error ? err.message : "Tracking sync failed");
     } finally {
       setSavingFulfillment(null);
     }
@@ -2373,28 +2408,28 @@ export default function SellerDashboard({
                         {order.fulfillment.status === "processing" && (
                           <div style={{ marginTop: "14px", padding: "14px", background: "#f5f8f3", border: "1px solid #d4e3ce", borderRadius: "4px" }}>
                             <strong style={{ display: "flex", alignItems: "center", gap: "6px", color: "#2d5423", fontSize: "13px" }}>
-                              <Package size={14} /> Order Packed in Atelier · Ready for Dispatch
+                              <Package size={14} /> Order Packed in Atelier · Ready for Mahavir Express Handover
                             </strong>
                             <p style={{ margin: "4px 0 12px", fontSize: "11px", color: "#4f6848" }}>
-                              Hand the parcel to the express courier partner and enter the Tracking ID / Consignment No from the receipt slip:
+                              Parcel ko Mahavir Express courier partner ko de kar unse mila hua Tracking / Consignment Number yahan enter karein:
                             </p>
                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1.5fr auto", gap: "10px", alignItems: "flex-end" }}>
                               <div>
                                 <label style={{ display: "block", fontSize: "10px", fontWeight: 600, color: "#4d5b48", marginBottom: "4px" }}>Logistics Partner</label>
                                 <input
                                   type="text"
-                                  value={draft.trackingCarrier || "Flovexa Priority Express"}
+                                  value={draft.trackingCarrier || "Mahavir Express"}
                                   onChange={(e) => setDrafts((curr) => ({ ...curr, [order.id]: { ...draft, trackingCarrier: e.target.value } }))}
                                   style={{ width: "100%", height: "36px", padding: "0 10px", fontSize: "12px", border: "1px solid #c2d4bc", borderRadius: "3px" }}
                                 />
                               </div>
                               <div>
-                                <label style={{ display: "block", fontSize: "10px", fontWeight: 600, color: "#4d5b48", marginBottom: "4px" }}>Tracking ID / Consignment No *</label>
+                                <label style={{ display: "block", fontSize: "10px", fontWeight: 600, color: "#4d5b48", marginBottom: "4px" }}>Mahavir Tracking ID / Consignment No *</label>
                                 <input
                                   type="text"
                                   required
                                   value={draft.trackingNumber}
-                                  placeholder="e.g. EXP123456789"
+                                  placeholder="e.g. MHV123456789"
                                   onChange={(e) => setDrafts((curr) => ({ ...curr, [order.id]: { ...draft, trackingNumber: e.target.value } }))}
                                   style={{ width: "100%", height: "36px", padding: "0 10px", fontSize: "12px", border: "1px solid #c2d4bc", borderRadius: "3px", fontWeight: 600 }}
                                 />
@@ -2402,11 +2437,11 @@ export default function SellerDashboard({
                               <button
                                 type="button"
                                 style={{ height: "36px", display: "inline-flex", alignItems: "center", gap: "6px", background: "#aa8050", color: "#fff", border: "none", padding: "0 16px", borderRadius: "3px", fontSize: "12px", fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}
-                                onClick={() => void handleQuickStatusUpdate(order, { status: "shipped", tracking_carrier: draft.trackingCarrier || "Flovexa Priority Express", tracking_number: draft.trackingNumber, tracking_url: draft.trackingUrl || "" })}
+                                onClick={() => void handleQuickStatusUpdate(order, { status: "shipped", tracking_carrier: draft.trackingCarrier || "Mahavir Express", tracking_number: draft.trackingNumber, tracking_url: draft.trackingUrl || "https://shreemahavircourier.com/" })}
                                 disabled={savingFulfillment === order.id || !draft.trackingNumber.trim()}
                               >
                                 <Truck size={14} />
-                                {savingFulfillment === order.id ? "Saving…" : "Dispatch Parcel"}
+                                {savingFulfillment === order.id ? "Saving…" : "Dispatch via Mahavir Express"}
                               </button>
                             </div>
                           </div>
@@ -2417,26 +2452,35 @@ export default function SellerDashboard({
                           <div style={{ marginTop: "14px", padding: "14px", background: "#f8f9fa", border: "1px solid #dee2e6", borderRadius: "4px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "10px" }}>
                             <div>
                               <strong style={{ display: "flex", alignItems: "center", gap: "6px", color: "#1f1a14", fontSize: "13px" }}>
-                                <Truck size={14} color="#aa8050" /> In Transit · Express Delivery
+                                <Truck size={14} color="#aa8050" /> In Transit · Mahavir Express Delivery
                               </strong>
                               <span style={{ fontSize: "11px", color: "#665f57" }}>
-                                Courier: <strong>{order.fulfillment.tracking_carrier || "Flovexa Priority Express"}</strong> · Tracking ID: <code style={{ fontFamily: "var(--font-mono, monospace)", background: "#eee", padding: "1px 6px", borderRadius: "3px", fontWeight: 700 }}>{order.fulfillment.tracking_number}</code>
-                                {order.fulfillment.tracking_url && (
-                                  <a href={order.fulfillment.tracking_url} target="_blank" rel="noreferrer" style={{ marginLeft: "8px", color: "#aa8050", textDecoration: "underline" }}>
-                                    Open Tracking Portal ↗
-                                  </a>
-                                )}
+                                Courier: <strong>{order.fulfillment.tracking_carrier || "Mahavir Express"}</strong> · Consignment ID: <code style={{ fontFamily: "var(--font-mono, monospace)", background: "#eee", padding: "1px 6px", borderRadius: "3px", fontWeight: 700 }}>{order.fulfillment.tracking_number}</code>
+                                <a href={order.fulfillment.tracking_url || "https://shreemahavircourier.com/"} target="_blank" rel="noreferrer" style={{ marginLeft: "8px", color: "#aa8050", textDecoration: "underline" }}>
+                                  Open Mahavir Portal ↗
+                                </a>
                               </span>
                             </div>
-                            <button
-                              type="button"
-                              style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: "#24662d", color: "#fff", border: "none", padding: "8px 14px", borderRadius: "3px", fontSize: "12px", fontWeight: 700, cursor: "pointer" }}
-                              onClick={() => void handleQuickStatusUpdate(order, { status: "delivered" })}
-                              disabled={savingFulfillment === order.id}
-                            >
-                              <Check size={14} />
-                              {savingFulfillment === order.id ? "Updating…" : "Mark Delivered"}
-                            </button>
+                            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                              <button
+                                type="button"
+                                style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: "#f1ede6", color: "#634d38", border: "1px solid #d4c5b3", padding: "8px 12px", borderRadius: "3px", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}
+                                onClick={() => void handleSyncTracking(order)}
+                                disabled={savingFulfillment === order.id}
+                                title="Check Mahavir Express tracking and update status"
+                              >
+                                🔍 {savingFulfillment === order.id ? "Checking…" : "Sync Live Tracking"}
+                              </button>
+                              <button
+                                type="button"
+                                style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: "#24662d", color: "#fff", border: "none", padding: "8px 14px", borderRadius: "3px", fontSize: "12px", fontWeight: 700, cursor: "pointer" }}
+                                onClick={() => void handleQuickStatusUpdate(order, { status: "delivered" })}
+                                disabled={savingFulfillment === order.id}
+                              >
+                                <Check size={14} />
+                                {savingFulfillment === order.id ? "Updating…" : "Mark Delivered"}
+                              </button>
+                            </div>
                           </div>
                         )}
 

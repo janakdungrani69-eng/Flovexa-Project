@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { getAdminUser } from "@/lib/supabase/admin-user";
+import { sendOrderEmail } from "@/lib/order-email";
 
 const updateSchema = z.object({
   status: z.enum(["paid", "processing", "shipped", "delivered", "cancelled", "refunded"]),
@@ -31,24 +32,35 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     if (["paid", "processing", "shipped", "delivered"].includes(parsed.data.status) && current.payment_status !== "captured") {
       return NextResponse.json({ error: "A confirmed payment is required before fulfillment." }, { status: 409 });
     }
-    if (parsed.data.status === "shipped" && (!parsed.data.trackingCarrier || !parsed.data.trackingNumber || !parsed.data.trackingUrl)) {
+    if (parsed.data.status === "shipped" && !parsed.data.trackingNumber) {
       return NextResponse.json({ error: "Add the carrier and tracking details before marking an order shipped." }, { status: 400 });
     }
     if (parsed.data.status === "cancelled") {
       if (current.payment_status === "captured") return NextResponse.json({ error: "Refund captured payments before cancelling a paid order." }, { status: 409 });
       const { data: cancelled, error } = await supabase.rpc("cancel_pending_order", { order_uuid: id });
       if (error) throw error;
+
+
+
       if (!cancelled) return NextResponse.json({ error: "This order can no longer be cancelled." }, { status: 409 });
     }
     const update: Record<string, unknown> = {
-      tracking_carrier: parsed.data.trackingCarrier || null,
+      tracking_carrier: parsed.data.trackingCarrier || "Mahavir Express",
       tracking_number: parsed.data.trackingNumber || null,
-      tracking_url: parsed.data.trackingUrl || null,
+      tracking_url: parsed.data.trackingUrl || (parsed.data.trackingNumber ? "https://shreemahavircourier.com/" : null),
       updated_at: new Date().toISOString(),
     };
     if (parsed.data.status !== "cancelled") update.status = parsed.data.status;
     const { data: order, error } = await supabase.from("orders").update(update).eq("id", id).select("id, order_number, customer_name, email, phone, shipping_address, total_paise, status, payment_status, tracking_carrier, tracking_number, tracking_url, created_at, order_items(product_name, size, quantity)").single();
     if (error) throw error;
+
+
+
+    if (parsed.data.status === "shipped") {
+      try { await sendOrderEmail(id, "shipment_update"); } catch (e) { console.warn("Shipment email deferred:", e); }
+    } else if (parsed.data.status === "delivered") {
+      try { await sendOrderEmail(id, "delivered"); } catch (e) { console.warn("Delivered email deferred:", e); }
+    }
     const shippingAddr = (order.shipping_address as any) || {};
     return NextResponse.json({
       order: {
