@@ -347,10 +347,6 @@ export default function Storefront({
               <span className="reg-badge">®</span>
             </div>
             <div className="footer-tagline">SCENTS THAT STAY</div>
-            
-            <p className="footer-atelier-desc">
-              Fine artisanal fragrance extractions &amp; pure attars, hand-bottled with intention at our Surat atelier.
-            </p>
 
             <div className="footer-contact-list">
               <div className="footer-contact-item">
@@ -407,12 +403,12 @@ export default function Storefront({
               <Image
                 src="/flovexa-instagram-qr.png"
                 alt="Instagram QR Code - @flovexa_perfume"
-                width={92}
-                height={92}
+                width={76}
+                height={76}
                 className="footer-qr-img"
               />
               <div className="footer-insta-btn">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
                   <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
                   <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>

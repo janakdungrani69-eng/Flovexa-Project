@@ -7734,17 +7734,17 @@
    FLOVEXA LUXURY FOOTER ENHANCEMENTS (ONLY INSTAGRAM QR & CLEAN BRANDING)
    ========================================================================== */
 .site-footer {
-  background: #15120e !important;
+  background: #14110d !important;
   color: #e5ddcf;
   border-top: 1px solid rgba(201, 170, 126, 0.22);
-  padding: 56px max(32px, calc((100vw - var(--page)) / 2)) 0 !important;
+  padding: 24px max(32px, calc((100vw - var(--page)) / 2)) 0 !important;
 }
 
 .footer-top {
   display: grid;
   grid-template-columns: 1.8fr 1fr 1.1fr 1fr !important;
-  gap: 40px !important;
-  padding-bottom: 44px !important;
+  gap: 32px !important;
+  padding-bottom: 18px !important;
   align-items: start;
 }
 
@@ -7755,7 +7755,7 @@
 }
 
 .footer-brand-title .wordmark {
-  font-size: 22px !important;
+  font-size: 20px !important;
   letter-spacing: 0.16em !important;
   color: #ffffff !important;
   text-decoration: none;
@@ -7767,7 +7767,7 @@
 }
 
 .footer-brand-title .reg-badge {
-  font-size: 11px;
+  font-size: 10px;
   color: #c9aa7e;
   vertical-align: super;
   font-weight: 700;
@@ -7775,39 +7775,31 @@
 
 .footer-tagline {
   font-family: var(--serif, Georgia, serif);
-  font-size: 11px;
-  letter-spacing: 0.28em;
+  font-size: 10px;
+  letter-spacing: 0.26em;
   text-transform: uppercase;
   color: #c9aa7e;
   font-weight: 600;
-  margin: 5px 0 16px;
-}
-
-.footer-atelier-desc {
-  font-size: 12px;
-  line-height: 1.7;
-  color: #b0a394;
-  margin: 0 0 16px 0;
-  max-width: 320px;
+  margin: 2px 0 10px;
 }
 
 .footer-contact-list {
   display: flex;
   flex-direction: column;
-  gap: 9px;
-  font-size: 11.5px;
+  gap: 5px;
+  font-size: 11px;
   color: #b8aba0;
 }
 
 .footer-contact-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  line-height: 1.45;
+  gap: 7px;
+  line-height: 1.35;
 }
 
 .footer-contact-item .f-icon {
-  font-size: 12px;
+  font-size: 11px;
   opacity: 0.85;
 }
 
@@ -7832,17 +7824,34 @@
   font-weight: 600;
 }
 
+.footer-column {
+  display: flex;
+  flex-direction: column;
+  gap: 6px !important;
+}
+
 .footer-column > span {
   display: block;
-  font-size: 9px;
-  letter-spacing: 0.22em;
+  font-size: 8.5px;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: #c9aa7e;
   font-weight: 700;
-  margin-bottom: 16px;
+  margin-bottom: 8px !important;
 }
 
-/* Instagram QR Box - Compact Luxury Styling */
+.footer-column a {
+  font-size: 11px !important;
+  color: #d4ccbf !important;
+  line-height: 1.35;
+  transition: color 0.18s ease;
+}
+
+.footer-column a:hover {
+  color: #c9aa7e !important;
+}
+
+/* Instagram QR Box - Ultra Compact Luxury Styling */
 .footer-qr-card-wrap {
   display: inline-flex;
   flex-direction: column;
@@ -7850,25 +7859,25 @@
   text-decoration: none;
   background: #181410;
   border: 1px solid rgba(201, 170, 126, 0.32);
-  border-radius: 12px;
-  padding: 8px 10px 10px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  border-radius: 10px;
+  padding: 6px 8px 7px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   width: fit-content;
 }
 
 .footer-qr-card-wrap:hover {
   transform: translateY(-2px);
   border-color: #c9aa7e;
-  box-shadow: 0 8px 22px rgba(201, 170, 126, 0.2);
+  box-shadow: 0 6px 18px rgba(201, 170, 126, 0.2);
 }
 
 .footer-qr-img {
-  width: 92px;
-  height: 92px;
-  border-radius: 8px;
+  width: 76px;
+  height: 76px;
+  border-radius: 6px;
   display: block;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
   transition: transform 0.2s ease;
 }
 
@@ -7879,14 +7888,14 @@
 .footer-insta-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  margin-top: 8px;
-  padding: 5px 11px;
+  gap: 5px;
+  margin-top: 6px;
+  padding: 4px 9px;
   background: linear-gradient(135deg, #231c15, #35281d);
   border: 1px solid rgba(201, 170, 126, 0.65);
-  border-radius: 14px;
+  border-radius: 12px;
   color: #e5cdab !important;
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 600;
   text-decoration: none;
   transition: all 0.2s ease;
@@ -7900,7 +7909,14 @@
   background: linear-gradient(135deg, #be955f, #9b723e);
   color: #ffffff !important;
   border-color: #be955f;
-  box-shadow: 0 2px 8px rgba(190, 149, 95, 0.35);
+  box-shadow: 0 2px 6px rgba(190, 149, 95, 0.35);
+}
+
+.footer-bottom {
+  min-height: 38px !important;
+  padding: 8px 0 !important;
+  font-size: 8px !important;
+  border-top: 1px solid rgba(201, 170, 126, 0.16) !important;
 }
 
 .footer-thankyou {
