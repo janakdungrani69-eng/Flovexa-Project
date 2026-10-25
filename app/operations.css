@@ -7734,23 +7734,19 @@
    FLOVEXA LUXURY FOOTER ENHANCEMENTS (ONLY INSTAGRAM QR & CLEAN BRANDING)
    ========================================================================== */
 .site-footer {
-  background: #13100c !important;
+  background: #14110d !important;
   color: #e5ddcf;
   border-top: 1px solid rgba(201, 170, 126, 0.22);
-  padding: 24px max(32px, calc((100vw - var(--page)) / 2)) 14px !important;
+  padding: 36px max(32px, calc((100vw - var(--page)) / 2)) 0 !important;
 }
 
 .footer-top {
-  display: flex !important;
-  justify-content: space-between !important;
-  align-items: center !important;
-  gap: 32px !important;
-  padding-bottom: 18px !important;
+  display: grid !important;
+  grid-template-columns: 1.8fr 1fr 1.1fr 1fr !important;
+  gap: 36px !important;
+  padding-bottom: 28px !important;
+  align-items: start !important;
   border-bottom: 1px solid rgba(201, 170, 126, 0.16) !important;
-}
-
-.footer-brand-block {
-  max-width: 520px;
 }
 
 .footer-brand-title {
@@ -7785,14 +7781,14 @@
   text-transform: uppercase;
   color: #c9aa7e;
   font-weight: 600;
-  margin: 2px 0 10px;
+  margin: 3px 0 12px;
 }
 
 .footer-contact-list {
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  font-size: 11px;
+  gap: 6px;
+  font-size: 11.5px;
   color: #b8aba0;
 }
 
@@ -7829,22 +7825,40 @@
   font-weight: 600;
 }
 
-/* Instagram Column */
-.footer-insta-column {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  flex-shrink: 0;
+/* Middle Columns */
+.footer-column {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 9px !important;
 }
 
-.footer-column-label {
+.footer-column > span {
   display: block;
-  font-size: 8.5px;
+  font-size: 9px;
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: #c9aa7e;
   font-weight: 700;
-  margin-bottom: 8px;
+  margin-bottom: 12px !important;
+}
+
+.footer-column a {
+  font-size: 11.5px !important;
+  color: #d4ccbf !important;
+  line-height: 1.45;
+  text-decoration: none;
+  transition: color 0.18s ease;
+}
+
+.footer-column a:hover {
+  color: #c9aa7e !important;
+}
+
+/* Instagram Column */
+.footer-insta-column {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
 }
 
 .footer-qr-card-wrap {
@@ -7868,8 +7882,8 @@
 }
 
 .footer-qr-img {
-  width: 76px;
-  height: 76px;
+  width: 80px;
+  height: 80px;
   border-radius: 6px;
   display: block;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
@@ -7907,71 +7921,44 @@
   box-shadow: 0 2px 6px rgba(190, 149, 95, 0.35);
 }
 
-/* Footer Bottom Bar */
+/* Footer Bottom Bar with Centered THANK YOU */
 .footer-bottom {
-  min-height: 38px !important;
-  padding-top: 12px !important;
+  min-height: 44px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
+  padding: 10px 0 !important;
   font-size: 8.5px !important;
-  color: #8c8275 !important;
-  flex-wrap: wrap !important;
-  gap: 12px !important;
+  color: #9e9487 !important;
+  letter-spacing: 0.1em;
   border-top: none !important;
-}
-
-.footer-bottom-left {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  letter-spacing: 0.08em;
-}
-
-.footer-policy-links {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.footer-policy-links a {
-  color: #aba092 !important;
-  text-decoration: none;
-  font-size: 9.5px;
-  letter-spacing: 0.05em;
-  transition: color 0.18s ease;
-}
-
-.footer-policy-links a:hover {
-  color: #c9aa7e !important;
-  text-decoration: underline;
 }
 
 .footer-thankyou {
   font-family: var(--serif, Georgia, serif);
-  letter-spacing: 0.35em;
-  color: #c9aa7e;
+  letter-spacing: 0.38em;
+  color: #c9aa7e !important;
   font-weight: 700;
-  font-size: 10px;
+  font-size: 11px;
   text-transform: uppercase;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 960px) {
   .footer-top {
-    flex-direction: column !important;
-    align-items: flex-start !important;
-    gap: 20px !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 32px 24px !important;
+  }
+}
+
+@media (max-width: 540px) {
+  .footer-top {
+    grid-template-columns: 1fr !important;
+    gap: 28px !important;
   }
   .footer-bottom {
     flex-direction: column !important;
-    align-items: center !important;
     gap: 8px !important;
     text-align: center;
-  }
-  .footer-policy-links {
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 12px;
   }
 }
 
