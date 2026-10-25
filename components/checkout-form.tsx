@@ -2,7 +2,7 @@
 
 import Script from "next/script";
 import Link from "next/link";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { ArrowRight, Check, ExternalLink, LockKeyhole, Printer, Sparkles, Truck } from "lucide-react";
 import ShippingLabelModal, { type ShippingLabelOrder } from "@/components/shipping-label-modal";
 
@@ -26,14 +26,83 @@ export default function CheckoutForm({ items, enabled, initialCustomer, couponCo
   const [success, setSuccess] = useState("");
   const [confirmedOrder, setConfirmedOrder] = useState<ShippingLabelOrder | null>(null);
   const [showShippingLabel, setShowShippingLabel] = useState(false);
-  const [values, setValues] = useState(initialCustomer ?? blankValues);
-  function change(event: React.ChangeEvent<HTMLInputElement>) { setValues((current) => ({ ...current, [event.target.name]: event.target.value })); }
+  const [values, setValues] = useState<CustomerPrefill>(initialCustomer ?? blankValues);
+  const [savedAddressNotice, setSavedAddressNotice] = useState(false);
+
+  // Auto-restore previously saved address from localStorage if server prefill was empty
+  useEffect(() => {
+    try {
+      const savedRaw = localStorage.getItem("flovexa-saved-address");
+      if (savedRaw) {
+        const saved = JSON.parse(savedRaw);
+        if (saved && typeof saved === "object") {
+          setValues((prev) => {
+            const merged = {
+              name: prev.name || saved.name || "",
+              email: prev.email || saved.email || "",
+              phone: prev.phone || saved.phone || "",
+              line1: prev.line1 || saved.line1 || "",
+              line2: prev.line2 || saved.line2 || "",
+              city: prev.city || saved.city || "",
+              state: prev.state || saved.state || "",
+              pincode: prev.pincode || saved.pincode || "",
+            };
+            if (merged.line1 && merged.city && merged.pincode) {
+              setSavedAddressNotice(true);
+            }
+            return merged;
+          });
+        }
+      } else if (initialCustomer && initialCustomer.line1 && initialCustomer.city) {
+        setSavedAddressNotice(true);
+        try {
+          localStorage.setItem("flovexa-saved-address", JSON.stringify(initialCustomer));
+        } catch {}
+      }
+    } catch (e) {
+      console.warn("Storage address read error", e);
+    }
+  }, [initialCustomer]);
+
+  function change(event: React.ChangeEvent<HTMLInputElement>) {
+    const { name, value } = event.target;
+    setValues((current) => {
+      const updated = { ...current, [name]: value };
+      try {
+        localStorage.setItem("flovexa-saved-address", JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+  }
 
   async function pay(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage(""); setSuccess("");
     const checkoutItems = items.length ? items : [{ productId: "a6e76482-88a3-4035-8c53-26add1348ccc", quantity: 1 }];
     setBusy(true);
+
+    // Save address immediately to localStorage so customer never has to re-enter it
+    try {
+      localStorage.setItem("flovexa-saved-address", JSON.stringify(values));
+    } catch {}
+
+    // In background, also sync this address to customer account addresses if logged in
+    fetch("/api/account/addresses", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        label: "Default Delivery Address",
+        full_name: values.name,
+        phone: values.phone,
+        line1: values.line1,
+        line2: values.line2 || "",
+        city: values.city,
+        state: values.state,
+        pincode: values.pincode,
+        is_default: true,
+      }),
+    }).catch(() => undefined);
+
     try {
       const response = await fetch("/api/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
         items: checkoutItems.map(({ productId, quantity }) => ({ id: productId, quantity })),
@@ -80,7 +149,10 @@ export default function CheckoutForm({ items, enabled, initialCustomer, couponCo
             } else {
               setSuccess(result.orderStatus === "payment_review" ? `Payment for ${result.orderNumber} reached us. Our team is confirming availability and will update you shortly.` : result.paymentStatus === "captured" ? `Thank you. Your order ${result.orderNumber} is confirmed.` : `Payment for ${result.orderNumber} is authorized and awaiting confirmation.`);
             }
-            setValues(blankValues);
+            // IMPORTANT: Keep saved address permanently intact so next purchase is 1-click!
+            try {
+              localStorage.setItem("flovexa-saved-address", JSON.stringify(values));
+            } catch {}
           } catch (error) { setMessage(error instanceof Error ? error.message : "We could not confirm payment yet."); }
           finally { setBusy(false); }
         },
@@ -193,13 +265,44 @@ export default function CheckoutForm({ items, enabled, initialCustomer, couponCo
       </div>
     ) : (
       <form className="address-form" onSubmit={pay}>
-      <div className="form-section-title"><span>01</span><h2>Contact</h2></div>
-      <div className="form-fields"><label className="field-wide">Full name<input autoComplete="name" name="name" required minLength={2} maxLength={100} value={values.name} onChange={change} placeholder="Name for delivery" /></label><label>Email address<input type="email" autoComplete="email" name="email" required value={values.email} onChange={change} placeholder="you@example.com" /></label><label>Mobile number<input type="tel" autoComplete="tel" name="phone" required pattern="[+\d][\d\s()\-]{7,18}" value={values.phone} onChange={change} placeholder="+91 98765 43210" /></label></div>
-      <div className="form-section-title"><span>02</span><h2>Delivery address</h2></div>
-      <div className="form-fields"><label className="field-wide">Address<input autoComplete="address-line1" name="line1" required minLength={4} maxLength={150} value={values.line1} onChange={change} placeholder="House number and street" /></label><label className="field-wide">Apartment, suite, etc. <small>Optional</small><input autoComplete="address-line2" name="line2" maxLength={150} value={values.line2} onChange={change} placeholder="Apartment, floor, landmark" /></label><label>City<input autoComplete="address-level2" name="city" required value={values.city} onChange={change} /></label><label>State<input autoComplete="address-level1" name="state" required value={values.state} onChange={change} /></label><label>PIN code<input autoComplete="postal-code" name="pincode" required pattern="\d{6}" inputMode="numeric" value={values.pincode} onChange={change} placeholder="6-digit PIN" /></label></div>
-      {message && <p className="checkout-message" role="alert">{message}</p>}
-      <button className="primary-button pay-button" type="submit" disabled={busy}>{busy ? "Opening secure Razorpay…" : "Continue to secure payment"}<ArrowRight size={16} /></button>
-      <p className="payment-assurance"><LockKeyhole size={13} /> Card and UPI payments are handled securely by Razorpay. We never store card details.</p>
-    </form>)}
+        {savedAddressNotice && (
+          <div className="checkout-saved-address-pill">
+            <div className="saved-addr-left">
+              <span className="saved-addr-badge">✓ SAVED ADDRESS LOADED</span>
+              <span>Your delivery details are automatically saved. No need to re-type on every purchase!</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setValues({
+                  name: values.name,
+                  email: values.email,
+                  phone: values.phone,
+                  line1: "",
+                  line2: "",
+                  city: "",
+                  state: "",
+                  pincode: "",
+                });
+                setSavedAddressNotice(false);
+                try {
+                  localStorage.removeItem("flovexa-saved-address");
+                } catch {}
+              }}
+              className="checkout-clear-addr-btn"
+            >
+              Deliver to different address
+            </button>
+          </div>
+        )}
+        <div className="form-section-title"><span>01</span><h2>Contact</h2></div>
+        <div className="form-fields"><label className="field-wide">Full name<input autoComplete="name" name="name" required minLength={2} maxLength={100} value={values.name} onChange={change} placeholder="Name for delivery" /></label><label>Email address<input type="email" autoComplete="email" name="email" required value={values.email} onChange={change} placeholder="you@example.com" /></label><label>Mobile number<input type="tel" autoComplete="tel" name="phone" required pattern="[+\d][\d\s()\-]{7,18}" value={values.phone} onChange={change} placeholder="+91 98765 43210" /></label></div>
+        <div className="form-section-title"><span>02</span><h2>Delivery address</h2></div>
+        <div className="form-fields"><label className="field-wide">Address<input autoComplete="address-line1" name="line1" required minLength={4} maxLength={150} value={values.line1} onChange={change} placeholder="House number and street" /></label><label className="field-wide">Apartment, suite, etc. <small>Optional</small><input autoComplete="address-line2" name="line2" maxLength={150} value={values.line2} onChange={change} placeholder="Apartment, floor, landmark" /></label><label>City<input autoComplete="address-level2" name="city" required value={values.city} onChange={change} /></label><label>State<input autoComplete="address-level1" name="state" required value={values.state} onChange={change} /></label><label>PIN code<input autoComplete="postal-code" name="pincode" required pattern="\d{6}" inputMode="numeric" value={values.pincode} onChange={change} placeholder="6-digit PIN" /></label></div>
+        {message && <p className="checkout-message" role="alert">{message}</p>}
+        <button className="primary-button pay-button" type="submit" disabled={busy}>{busy ? "Opening secure Razorpay…" : "Continue to secure payment"}<ArrowRight size={16} /></button>
+        <p className="payment-assurance"><LockKeyhole size={13} /> Card and UPI payments are handled securely by Razorpay. We never store card details.</p>
+      </form>
+    )}
   </>;
 }

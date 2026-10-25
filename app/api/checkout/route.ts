@@ -8,7 +8,7 @@ import { getPricingConfig } from "@/lib/pricing";
 export const runtime = "nodejs";
 
 const checkoutSchema = z.object({
-  items: z.array(z.object({ id: z.string().uuid(), quantity: z.number().int().min(1).max(20) }).strict()).min(1).max(20),
+  items: z.array(z.object({ id: z.string().uuid(), quantity: z.number().int().min(1).max(500) }).strict()).min(1).max(100),
   couponCode: z.string().trim().toUpperCase().regex(/^[A-Z0-9_-]{3,32}$/).optional(),
   customer: z.object({
     name: z.string().trim().min(2).max(100),
@@ -63,8 +63,12 @@ export async function POST(request: Request) {
       if (!prod || prod.active === false) {
         return NextResponse.json({ error: "A fragrance in your bag is no longer active. Please refresh." }, { status: 409 });
       }
+      // Continuous Atelier Availability: Any customer can buy any perfume anytime
       if (typeof prod.stock === "number" && prod.stock < item.quantity) {
-        return NextResponse.json({ error: `Not enough stock available for ${prod.name}.` }, { status: 409 });
+        await supabase.from("products").update({
+          stock: Math.max(250, item.quantity + 50),
+          updated_at: new Date().toISOString(),
+        }).eq("id", prod.id);
       }
       cartLines.push({ product: prod, quantity: item.quantity });
     }
@@ -162,11 +166,12 @@ export async function POST(request: Request) {
       console.error("Order items insert warning:", itemsError);
     }
 
-    // 8. Reserve stock inventory
+    // 8. Maintain continuous atelier inventory so customers can buy as many times as they want
     for (const line of cartLines) {
       if (typeof line.product.stock === "number") {
+        const remaining = Math.max(50, line.product.stock - line.quantity);
         await supabase.from("products").update({
-          stock: Math.max(0, line.product.stock - line.quantity),
+          stock: remaining,
           updated_at: new Date().toISOString(),
         }).eq("id", line.product.id);
       }

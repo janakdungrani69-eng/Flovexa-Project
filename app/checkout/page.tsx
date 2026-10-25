@@ -20,11 +20,11 @@ function parseCart(value?: string): CartLine[] {
       if (!line || typeof line.productId !== "string" || !Number.isInteger(line.quantity)) return [];
       return [{
         productId: line.productId,
-        quantity: Math.max(1, Math.min(20, line.quantity)),
+        quantity: Math.max(1, Math.min(500, line.quantity)),
         variantId: typeof line.variantId === "string" ? line.variantId : undefined,
         size: typeof line.size === "string" ? line.size : undefined,
       }];
-    }).slice(0, 20);
+    }).slice(0, 50);
   } catch { return []; }
 }
 
@@ -61,19 +61,30 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
   const pricing = calculateOrderPricing(subtotal, pricingConfig);
   const checkoutReady = lines.length > 0;
   let initialCustomer: { name: string; email: string; phone: string; line1: string; line2: string; city: string; state: string; pincode: string } | undefined;
-  if (user && getStoreRole(user) === "customer") {
+  if (user) {
     try {
       const supabase = createAdminSupabase();
-      const [profileResult, addressResult] = await Promise.all([
+      const [profileResult, addressResult, lastOrderResult] = await Promise.all([
         supabase.from("customer_profiles").select("full_name, phone").eq("user_id", user.id).maybeSingle(),
         supabase.from("customer_addresses").select("full_name, phone, line1, line2, city, state, pincode").eq("user_id", user.id).order("is_default", { ascending: false }).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+        user.email ? supabase.from("orders").select("customer_name, phone, shipping_address").eq("email", user.email.toLowerCase()).order("created_at", { ascending: false }).limit(1).maybeSingle() : Promise.resolve({ data: null }),
       ]);
       const address = addressResult.data;
+      const lastOrder = lastOrderResult?.data;
+      const lastShipping = (lastOrder?.shipping_address ?? {}) as any;
       initialCustomer = {
-        name: address?.full_name || profileResult.data?.full_name || "", email: user.email ?? "", phone: address?.phone || profileResult.data?.phone || "",
-        line1: address?.line1 ?? "", line2: address?.line2 ?? "", city: address?.city ?? "", state: address?.state ?? "", pincode: address?.pincode ?? "",
+        name: address?.full_name || lastOrder?.customer_name || profileResult.data?.full_name || user.user_metadata?.full_name || "",
+        email: user.email ?? "",
+        phone: address?.phone || lastOrder?.phone || profileResult.data?.phone || "",
+        line1: address?.line1 || lastShipping?.line1 || "",
+        line2: address?.line2 || lastShipping?.line2 || "",
+        city: address?.city || lastShipping?.city || "",
+        state: address?.state || lastShipping?.state || "",
+        pincode: address?.pincode || lastShipping?.pincode || "",
       };
-    } catch { initialCustomer = { name: user.user_metadata?.full_name ?? "", email: user.email ?? "", phone: "", line1: "", line2: "", city: "", state: "", pincode: "" }; }
+    } catch {
+      initialCustomer = { name: user.user_metadata?.full_name ?? "", email: user.email ?? "", phone: "", line1: "", line2: "", city: "", state: "", pincode: "" };
+    }
   }
 
   return <main className="checkout-page">

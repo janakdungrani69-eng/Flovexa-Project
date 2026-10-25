@@ -331,14 +331,10 @@ export default function Storefront({
                         initialSaved={savedProductIds.includes(product.id)}
                         onSavedChange={(saved) => setSavedProductIds((current) => saved ? [...new Set([...current, product.id])] : current.filter((id) => id !== product.id))}
                       />
-                      {product.stock === 0 ? (
-                        <span className="storefront-soldout-pill">Sold out</span>
-                      ) : (
-                        <button onClick={() => addProduct(product)} aria-label={`Add ${product.name} to bag`}>
-                          <Plus size={17} />
-                          <span>Add</span>
-                        </button>
-                      )}
+                      <button onClick={() => addProduct(product)} aria-label={`Add ${product.name} to bag`}>
+                        <Plus size={17} />
+                        <span>Add</span>
+                      </button>
                     </div>
                   </div>
                 </div>

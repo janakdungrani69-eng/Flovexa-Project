@@ -218,7 +218,7 @@ export default function ProductPurchasePanel({ product }: { product: Product }) 
         <div className="purchase-size-options" style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginTop: "10px" }}>
           {variants.map((v) => {
             const isSelected = v.id === selectedVariant.id;
-            const isOut = v.stock === 0;
+            const isOut = false;
             const discount = v.compareAtPaise && v.compareAtPaise > v.pricePaise
               ? Math.round(((v.compareAtPaise - v.pricePaise) / v.compareAtPaise) * 100)
               : 0;
@@ -340,17 +340,10 @@ export default function ProductPurchasePanel({ product }: { product: Product }) 
         </label>
       </div>
 
-      {/* Stock Urgency or Out of Stock Alert */}
-      {selectedVariant.stock <= 5 && selectedVariant.stock > 0 && (
-        <div style={{ color: "#b45309", fontSize: "12px", fontWeight: 600, display: "flex", alignItems: "center", gap: "6px", marginBottom: "12px" }}>
-          <span>⚡ Only {selectedVariant.stock} bottles left in this size in stock — order soon</span>
-        </div>
-      )}
-      {selectedVariant.stock === 0 && (
-        <div style={{ color: "#dc2626", fontSize: "12px", fontWeight: 600, display: "flex", alignItems: "center", gap: "6px", marginBottom: "12px" }}>
-          <span>⚠️ Currently Out of Stock</span>
-        </div>
-      )}
+      {/* Continuous Atelier Hand-Bottled Freshness Assurance */}
+      <div style={{ color: "#8a6639", fontSize: "12px", fontWeight: 600, display: "flex", alignItems: "center", gap: "6px", marginBottom: "12px" }}>
+        <span>⚡ Freshly hand-bottled & sealed on demand for every order</span>
+      </div>
 
       {/* 8. Quantity & Add to Cart Action Row */}
       <div className="purchase-action-row">
@@ -359,7 +352,7 @@ export default function ProductPurchasePanel({ product }: { product: Product }) 
             type="button"
             className="purchase-qty-btn"
             onClick={() => updateQuantity(-1)}
-            disabled={selectedVariant.stock === 0}
+            disabled={quantity <= 1}
             aria-label="Decrease quantity"
           >
             <ChevronLeft size={18} strokeWidth={2.2} />
@@ -369,7 +362,7 @@ export default function ProductPurchasePanel({ product }: { product: Product }) 
             type="button"
             className="purchase-qty-btn"
             onClick={() => updateQuantity(1)}
-            disabled={selectedVariant.stock === 0 || (product.stock !== undefined && quantity >= product.stock)}
+            disabled={quantity >= 50}
             aria-label="Increase quantity"
           >
             <ChevronRight size={18} strokeWidth={2.2} />
@@ -380,11 +373,8 @@ export default function ProductPurchasePanel({ product }: { product: Product }) 
           type="button"
           className="purchase-add-to-cart-btn"
           onClick={handleAddToCart}
-          disabled={selectedVariant.stock === 0}
         >
-          {selectedVariant.stock === 0 ? (
-            "Out of stock"
-          ) : addedNotice ? (
+          {addedNotice ? (
             <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
               <Check size={18} /> Added to cart
             </span>
@@ -399,9 +389,8 @@ export default function ProductPurchasePanel({ product }: { product: Product }) 
         type="button"
         className="purchase-buy-now-btn"
         onClick={handleBuyItNow}
-        disabled={selectedVariant.stock === 0}
       >
-        <span>{selectedVariant.stock === 0 ? "Out of Stock" : "Buy it Now"}</span>
+        <span>Buy it Now</span>
         <div className="purchase-upi-icons" aria-hidden="true">
           {/* Paytm */}
           <span className="upi-icon paytm-icon">
