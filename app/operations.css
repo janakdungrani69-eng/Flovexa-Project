@@ -7731,20 +7731,21 @@
 }
 
 /* ==========================================================================
-   FLOVEXA LUXURY FOOTER ENHANCEMENTS (MATCHING OFFICIAL VIP CARD)
+   FLOVEXA LUXURY FOOTER ENHANCEMENTS (ONLY INSTAGRAM QR & CLEAN BRANDING)
    ========================================================================== */
 .site-footer {
-  background: #191612 !important;
+  background: #15120e !important;
   color: #e5ddcf;
-  border-top: 1px solid rgba(201, 170, 126, 0.25);
-  padding: 50px max(32px, calc((100vw - var(--page)) / 2)) 0 !important;
+  border-top: 1px solid rgba(201, 170, 126, 0.22);
+  padding: 56px max(32px, calc((100vw - var(--page)) / 2)) 0 !important;
 }
 
 .footer-top {
   display: grid;
-  grid-template-columns: 1.6fr 1fr 1fr 1.3fr !important;
-  gap: 36px !important;
-  padding-bottom: 42px !important;
+  grid-template-columns: 1.8fr 1fr 1.1fr 1fr !important;
+  gap: 40px !important;
+  padding-bottom: 44px !important;
+  align-items: start;
 }
 
 .footer-brand-title {
@@ -7754,7 +7755,7 @@
 }
 
 .footer-brand-title .wordmark {
-  font-size: 21px !important;
+  font-size: 22px !important;
   letter-spacing: 0.16em !important;
   color: #ffffff !important;
   text-decoration: none;
@@ -7774,53 +7775,100 @@
 
 .footer-tagline {
   font-family: var(--serif, Georgia, serif);
-  font-size: 11.5px;
+  font-size: 11px;
   letter-spacing: 0.28em;
   text-transform: uppercase;
   color: #c9aa7e;
   font-weight: 600;
-  margin: 6px 0 16px;
+  margin: 5px 0 16px;
 }
 
-.footer-meta-block {
+.footer-atelier-desc {
+  font-size: 12px;
+  line-height: 1.7;
+  color: #b0a394;
+  margin: 0 0 16px 0;
+  max-width: 320px;
+}
+
+.footer-contact-list {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
   font-size: 11.5px;
-  line-height: 1.65;
-  color: #a89c8e;
+  color: #b8aba0;
 }
 
-.footer-meta-row {
+.footer-contact-item {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 8px;
+  line-height: 1.45;
 }
 
-.footer-meta-row a {
-  color: #d8cebe;
+.footer-contact-item .f-icon {
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+.footer-contact-item a {
+  color: #e5ddcf;
   text-decoration: none;
   transition: color 0.18s ease;
 }
 
-.footer-meta-row a:hover {
-  color: #e8c99a;
+.footer-contact-item a:hover {
+  color: #c9aa7e;
   text-decoration: underline;
 }
 
-.footer-insta-card-wrap {
-  display: block;
-  border-radius: 8px;
-  overflow: hidden;
-  border: 1px solid rgba(201, 170, 126, 0.45);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
-  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-  max-width: 250px;
-  background: #0d0a07;
+.footer-contact-item .f-sep {
+  color: #7d7265;
+  margin: 0 2px;
 }
 
-.footer-insta-card-wrap:hover {
-  transform: translateY(-2px);
+.footer-contact-item .f-wa-link {
+  color: #25d366;
+  font-weight: 600;
+}
+
+.footer-column > span {
+  display: block;
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #c9aa7e;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+/* Instagram QR Box (Only QR Code from the Card) */
+.footer-qr-card-wrap {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  text-decoration: none;
+  background: #1f1a14;
+  border: 1px solid rgba(201, 170, 126, 0.35);
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  transition: all 0.22s ease;
+  width: fit-content;
+}
+
+.footer-qr-card-wrap:hover {
+  transform: translateY(-3px);
   border-color: #c9aa7e;
-  box-shadow: 0 12px 30px rgba(201, 170, 126, 0.25);
+  box-shadow: 0 12px 28px rgba(201, 170, 126, 0.22);
+}
+
+.footer-qr-img {
+  width: 140px;
+  height: auto;
+  border-radius: 8px;
+  display: block;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
 .footer-insta-btn {
@@ -7837,7 +7885,8 @@
   font-weight: 600;
   text-decoration: none;
   transition: all 0.2s ease;
-  width: fit-content;
+  width: 100%;
+  justify-content: center;
 }
 
 .footer-insta-btn:hover {
@@ -7858,7 +7907,7 @@
 @media (max-width: 960px) {
   .footer-top {
     grid-template-columns: 1fr 1fr !important;
-    gap: 32px 24px !important;
+    gap: 36px 24px !important;
   }
   .footer-brand-block {
     grid-column: 1 / -1;
@@ -7871,7 +7920,7 @@
 @media (max-width: 540px) {
   .footer-top {
     grid-template-columns: 1fr !important;
-    gap: 28px !important;
+    gap: 30px !important;
   }
 }
 

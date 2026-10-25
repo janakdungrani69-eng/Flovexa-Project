@@ -340,7 +340,7 @@ export default function Storefront({
 
       <footer className="site-footer">
         <div className="footer-top">
-          {/* 1. Official Brand & Manufacturer Block */}
+          {/* 1. Official Brand & Atelier Identity */}
           <div className="footer-brand-block">
             <div className="footer-brand-title">
               <a href="#top" className="wordmark">FLOVEXA<span>PARFUM</span></a>
@@ -348,29 +348,28 @@ export default function Storefront({
             </div>
             <div className="footer-tagline">SCENTS THAT STAY</div>
             
-            <div className="footer-meta-block">
-              <div style={{ color: "#e5ddcf", fontWeight: 600, marginBottom: "6px" }}>
-                Packed &amp; Marketed by: <span style={{ color: "#c9aa7e" }}>FLOVEXA</span>
+            <p className="footer-atelier-desc">
+              Fine artisanal fragrance extractions &amp; pure attars, hand-bottled with intention at our Surat atelier.
+            </p>
+
+            <div className="footer-contact-list">
+              <div className="footer-contact-item">
+                <span className="f-icon">📍</span>
+                <span>21, Ramdev Row-House Shopping, Rajmandir Rd, Surat – 395006</span>
               </div>
-              <div style={{ marginBottom: "8px", color: "#b9ad9f" }}>
-                <strong style={{ color: "#d5c8b6" }}>Address:</strong> Surat, Gujarat – 395006
-                <div style={{ fontSize: "10.5px", color: "#8a7e71", marginTop: "2px" }}>
-                  21, Ramdev Row-House Shopping, Opp. Shivdhara Society, Rajmandir Rd
-                </div>
-              </div>
-              <div className="footer-meta-row">
-                <strong style={{ color: "#c9aa7e", minWidth: "82px" }}>Contact No:</strong>
+              <div className="footer-contact-item">
+                <span className="f-icon">📞</span>
                 <a href="tel:+919662765757">+91 96627 65757</a>
+                <span className="f-sep">·</span>
+                <a href="https://wa.me/919662765757" target="_blank" rel="noreferrer" className="f-wa-link">WhatsApp</a>
               </div>
-              <div className="footer-meta-row">
-                <strong style={{ color: "#c9aa7e", minWidth: "82px" }}>Email:</strong>
+              <div className="footer-contact-item">
+                <span className="f-icon">✉️</span>
                 <a href="mailto:flovexaenterprises@gmail.com">flovexaenterprises@gmail.com</a>
               </div>
-              <div className="footer-meta-row">
-                <strong style={{ color: "#c9aa7e", minWidth: "82px" }}>Instagram:</strong>
-                <a href="https://www.instagram.com/flovexa_perfume" target="_blank" rel="noreferrer">
-                  @flovexa_perfume ↗
-                </a>
+              <div className="footer-contact-item">
+                <span className="f-icon">📦</span>
+                <span>Packed &amp; Marketed by: <strong>FLOVEXA</strong></span>
               </div>
             </div>
           </div>
@@ -395,36 +394,31 @@ export default function Storefront({
             <Link href="/terms">Terms of service</Link>
           </div>
 
-          {/* 4. Instagram VIP QR Card */}
+          {/* 4. Instagram QR Code (Only QR from Image) */}
           <div className="footer-column footer-insta-column">
-            <span>FOLLOW US ON INSTAGRAM</span>
+            <span>CONNECT ON INSTAGRAM</span>
             <a
               href="https://www.instagram.com/flovexa_perfume"
               target="_blank"
               rel="noreferrer"
-              className="footer-insta-card-wrap"
-              title="Scan QR or click to open @flovexa_perfume on Instagram"
+              className="footer-qr-card-wrap"
+              title="Scan QR with your phone camera to follow @flovexa_perfume on Instagram"
             >
               <Image
-                src="/flovexa-brand-card.jpg"
-                alt="Flovexa Parfum - Scents That Stay - Instagram @flovexa_perfume"
-                width={250}
-                height={167}
-                style={{ width: "100%", height: "auto", display: "block" }}
+                src="/flovexa-instagram-qr.png"
+                alt="Instagram QR Code - @flovexa_perfume"
+                width={140}
+                height={182}
+                className="footer-qr-img"
               />
-            </a>
-            <a
-              href="https://www.instagram.com/flovexa_perfume"
-              target="_blank"
-              rel="noreferrer"
-              className="footer-insta-btn"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
-                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
-                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
-              </svg>
-              <span>Follow @flovexa_perfume ↗</span>
+              <div className="footer-insta-btn">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                  <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                </svg>
+                <span>Follow @flovexa_perfume ↗</span>
+              </div>
             </a>
           </div>
         </div>
