@@ -355,7 +355,7 @@ export default function Storefront({
             <div className="footer-contact-list">
               <div className="footer-contact-item">
                 <span className="f-icon">📍</span>
-                <span>21, Ramdev Row-House Shopping, Rajmandir Rd, Surat – 395006</span>
+                <span>21, Ramdev Row-House Shopping, Opp. Shivdhara Society, Rajmandir Rd, Surat – 395011</span>
               </div>
               <div className="footer-contact-item">
                 <span className="f-icon">📞</span>
@@ -408,7 +408,7 @@ export default function Storefront({
                 src="/flovexa-instagram-qr.png"
                 alt="Instagram QR Code - @flovexa_perfume"
                 width={140}
-                height={182}
+                height={154}
                 className="footer-qr-img"
               />
               <div className="footer-insta-btn">
