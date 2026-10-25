@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowDownRight, ArrowRight, Check, ChevronDown, Menu, Minus, Plus, Search, ShoppingBag, Sparkles, Star, X } from "lucide-react";
+import { ArrowDownRight, ArrowRight, Check, ChevronDown, Mail, MapPin, Menu, Minus, Package, Phone, Plus, Search, ShoppingBag, Sparkles, Star, X } from "lucide-react";
 import type { Product } from "@/lib/products";
 import WishlistButton from "@/components/wishlist-button";
 import type { StorefrontSettings } from "@/lib/storefront-content";
@@ -349,22 +349,27 @@ export default function Storefront({
             <div className="footer-tagline">SCENTS THAT STAY</div>
 
             <div className="footer-contact-list">
-              <div className="footer-contact-item">
-                <span className="f-icon">📍</span>
-                <span>21, Ramdev Row-House Shopping, Opp. Shivdhara Society, Rajmandir Rd, Surat – 395011</span>
+              <div className="footer-contact-item f-addr-item">
+                <MapPin size={13} className="f-icon-svg" />
+                <span className="f-addr-text">
+                  21, Ramdev Row-House Shopping, Opp. Shivdhara Society,<br className="f-addr-br" />
+                  Rajmandir Rd, <span className="no-orphan">Surat – 395011</span>
+                </span>
               </div>
               <div className="footer-contact-item">
-                <span className="f-icon">📞</span>
-                <a href="tel:+919662765757">+91 96627 65757</a>
-                <span className="f-sep">·</span>
-                <a href="https://wa.me/919662765757" target="_blank" rel="noreferrer" className="f-wa-link">WhatsApp</a>
+                <Phone size={13} className="f-icon-svg" />
+                <span>
+                  <a href="tel:+919662765757">+91 96627 65757</a>
+                  <span className="f-sep">·</span>
+                  <a href="https://wa.me/919662765757" target="_blank" rel="noreferrer" className="f-wa-link">WhatsApp</a>
+                </span>
               </div>
               <div className="footer-contact-item">
-                <span className="f-icon">✉️</span>
+                <Mail size={13} className="f-icon-svg" />
                 <a href="mailto:flovexaenterprises@gmail.com">flovexaenterprises@gmail.com</a>
               </div>
               <div className="footer-contact-item">
-                <span className="f-icon">📦</span>
+                <Package size={13} className="f-icon-svg" />
                 <span>Packed &amp; Marketed by: <strong>FLOVEXA</strong></span>
               </div>
             </div>
