@@ -394,30 +394,30 @@ export default function Storefront({
             <Link href="/terms">Terms of service</Link>
           </div>
 
-          {/* 4. Instagram QR Code (Only QR from Image) */}
+          {/* 4. Instagram Column - Compact & Refined */}
           <div className="footer-column footer-insta-column">
-            <span>CONNECT ON INSTAGRAM</span>
+            <span>FOLLOW ON INSTAGRAM</span>
             <a
               href="https://www.instagram.com/flovexa_perfume"
               target="_blank"
               rel="noreferrer"
               className="footer-qr-card-wrap"
-              title="Scan QR with your phone camera to follow @flovexa_perfume on Instagram"
+              title="Scan QR or click to open @flovexa_perfume on Instagram"
             >
               <Image
                 src="/flovexa-instagram-qr.png"
                 alt="Instagram QR Code - @flovexa_perfume"
-                width={140}
-                height={154}
+                width={92}
+                height={92}
                 className="footer-qr-img"
               />
               <div className="footer-insta-btn">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
                   <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
                   <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
                 </svg>
-                <span>Follow @flovexa_perfume ↗</span>
+                <span>@flovexa_perfume ↗</span>
               </div>
             </a>
           </div>
@@ -427,7 +427,7 @@ export default function Storefront({
         <div className="footer-bottom">
           <span>© {new Date().getFullYear()} FLOVEXA® PARFUM</span>
           <span className="footer-thankyou">T H A N K &nbsp; Y O U</span>
-          <span>SURAT, GUJARAT · 395006 · INDIA</span>
+          <span>SURAT, GUJARAT · 395011 · INDIA</span>
         </div>
       </footer>
 
