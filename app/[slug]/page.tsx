@@ -58,6 +58,84 @@ export default async function InformationPage({ params }: { params: Promise<{ sl
             All packages are dispatched via <strong>Priority Insured Express Logistics</strong> in tamper-evident packaging. In the rare event of transit damage or shattered glass during shipment, notify our concierge within 24 hours of delivery with photographic parcel proof for an immediate replacement.
           </p>
         </div>
+      ) : slug === "contact" ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: "18px", marginTop: "18px", lineHeight: "1.7", color: "#453c33", fontSize: "13px" }}>
+          <p>
+            Have a question regarding our artisanal fragrance formulations, batch curation, bespoke gifting, or an existing order? Our concierge is at your service.
+          </p>
+
+          <div style={{
+            background: "#fffdf9",
+            border: "1px solid #e8decb",
+            borderRadius: "10px",
+            padding: "20px 24px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "14px"
+          }}>
+            <div>
+              <strong style={{ display: "block", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", color: "#927b68", marginBottom: "4px" }}>
+                Registered Office &amp; Atelier
+              </strong>
+              <div style={{ fontSize: "13.5px", fontWeight: 600, color: "#1f1812" }}>
+                FLOVEXA LUXURY PARFUMS
+              </div>
+              <div style={{ color: "#564b40", marginTop: "2px" }}>
+                21, Ramdev Row-House Shopping, Opp. Shivdhara Society,<br />
+                Rajmandir Road, Surat - 395011, Gujarat, India
+              </div>
+            </div>
+
+            <div style={{ borderTop: "1px solid #f0e6d6", paddingTop: "12px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "12px" }}>
+              <div>
+                <strong style={{ display: "block", fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase", color: "#927b68", marginBottom: "2px" }}>
+                  Customer Helpline / Phone
+                </strong>
+                <a href="tel:+919662765757" style={{ color: "#74512e", fontWeight: 600, textDecoration: "none" }}>
+                  +91 96627 65757
+                </a>
+              </div>
+              <div>
+                <strong style={{ display: "block", fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase", color: "#927b68", marginBottom: "2px" }}>
+                  Official Email
+                </strong>
+                <a href="mailto:flovexaenterprises@gmail.com" style={{ color: "#74512e", fontWeight: 600, textDecoration: "none" }}>
+                  flovexaenterprises@gmail.com
+                </a>
+              </div>
+              <div>
+                <strong style={{ display: "block", fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase", color: "#927b68", marginBottom: "2px" }}>
+                  Concierge Operating Hours
+                </strong>
+                <span style={{ color: "#564b40" }}>
+                  Mon – Sat · 10:00 AM – 7:00 PM IST
+                </span>
+              </div>
+            </div>
+
+            <div style={{ borderTop: "1px solid #f0e6d6", paddingTop: "12px" }}>
+              <a
+                href="https://wa.me/919662765757?text=Hello%20Flovexa%20Concierge,%20I%20have%20an%20inquiry%20regarding%20my%20perfume%20order"
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  background: "#25d366",
+                  color: "#fff",
+                  fontWeight: 600,
+                  fontSize: "12.5px",
+                  padding: "10px 18px",
+                  borderRadius: "6px",
+                  textDecoration: "none"
+                }}
+              >
+                💬 Chat with Concierge on WhatsApp (+91 96627 65757)
+              </a>
+            </div>
+          </div>
+        </div>
       ) : (
         <>
           <p>This information is being prepared for the Flovexa Perfumes launch. Please check back before placing an order.</p>

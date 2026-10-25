@@ -9,7 +9,7 @@ export function getStoreRole(user: User): StoreRole {
   if (role === "owner" || role === "admin") return "admin";
 
   const email = user.email?.trim().toLowerCase();
-  if (email === "janakdungrani69@gmail.com") {
+  if (email === "janakdungrani69@gmail.com" || email === "flovexaenterprises@gmail.com") {
     return "admin";
   }
 

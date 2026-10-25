@@ -737,7 +737,7 @@ export default function CustomerAccount({ email }: { email: string }) {
 
             {/* Quick WhatsApp Concierge Button */}
             <a
-              href="https://wa.me/919876543210?text=Hello%20Flovexa%20Concierge,%20I%20have%20an%20inquiry%20regarding%20my%20perfume%20account"
+              href="https://wa.me/919662765757?text=Hello%20Flovexa%20Concierge,%20I%20have%20an%20inquiry%20regarding%20my%20perfume%20account"
               target="_blank"
               rel="noreferrer"
               className="account-whatsapp-card"
@@ -1558,7 +1558,7 @@ export default function CustomerAccount({ email }: { email: string }) {
 
                 <div className="concierge-contact-cards">
                   <a
-                    href="https://wa.me/919876543210?text=Hello%20Flovexa%20Concierge,%20I%20need%20assistance%20with%20my%20order"
+                    href="https://wa.me/919662765757?text=Hello%20Flovexa%20Concierge,%20I%20need%20assistance%20with%20my%20order"
                     target="_blank"
                     rel="noreferrer"
                     className="concierge-box whatsapp"
@@ -1568,21 +1568,58 @@ export default function CustomerAccount({ email }: { email: string }) {
                     </div>
                     <div className="concierge-box-text">
                       <strong>WhatsApp Fragrance Concierge</strong>
-                      <span>+91 98765 43210 · Instant chat assistance</span>
+                      <span>+91 96627 65757 · Instant chat assistance</span>
                     </div>
                     <ArrowRight size={16} className="concierge-arrow" />
                   </a>
 
-                  <a href="mailto:concierge@flovexa.com" className="concierge-box email">
+                  <a href="mailto:flovexaenterprises@gmail.com" className="concierge-box email">
                     <div className="concierge-box-icon">
                       <HelpCircle size={22} />
                     </div>
                     <div className="concierge-box-text">
                       <strong>Email Support Desk</strong>
-                      <span>concierge@flovexa.com · Replies within 4 hours</span>
+                      <span>flovexaenterprises@gmail.com · Replies within 4 hours</span>
                     </div>
                     <ArrowRight size={16} className="concierge-arrow" />
                   </a>
+                </div>
+
+                {/* Registered Address & Atelier Info */}
+                <div style={{
+                  padding: "16px 20px",
+                  borderRadius: "12px",
+                  border: "1px solid #ebd9c8",
+                  background: "#fffbf7",
+                  marginBottom: "30px",
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: "14px"
+                }}>
+                  <div style={{
+                    width: "38px",
+                    height: "38px",
+                    borderRadius: "50%",
+                    background: "#735338",
+                    color: "#fff",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0
+                  }}>
+                    <MapPin size={18} />
+                  </div>
+                  <div style={{ fontSize: "12.5px", lineHeight: "1.6", color: "#4d4138" }}>
+                    <strong style={{ fontSize: "13.5px", color: "#221a14", display: "block", marginBottom: "3px" }}>
+                      Flovexa Registered Office &amp; Fulfillment Atelier
+                    </strong>
+                    21, Ramdev Row-House Shopping, Opp. Shivdhara Society, Rajmandir Road, Surat - 395011, Gujarat, India
+                    <div style={{ marginTop: "6px", display: "flex", flexWrap: "wrap", gap: "16px", fontSize: "12px", color: "#786555" }}>
+                      <span><strong>Helpline / Phone:</strong> +91 96627 65757</span>
+                      <span><strong>Official Email:</strong> flovexaenterprises@gmail.com</span>
+                      <span><strong>Hours:</strong> Mon – Sat, 10:00 AM – 7:00 PM IST</span>
+                    </div>
+                  </div>
                 </div>
 
                 {/* FAQ Accordion */}

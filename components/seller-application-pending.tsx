@@ -59,7 +59,7 @@ export default function SellerApplicationPending({
           <p className="pending-description">
             {isSuspended
               ? `Access to your seller store "${storeName}" has been temporarily paused by the Flovexa Store Owner.`
-              : `Your seller application for "${storeName}" has been received. In Flovexa, all merchant accounts require direct permission and verification from the Store Owner (businessflovax@gmail.com) before seller access is granted.`}
+              : `Your seller application for "${storeName}" has been received. In Flovexa, all merchant accounts require direct permission and verification from the Store Owner (flovexaenterprises@gmail.com) before seller access is granted.`}
           </p>
 
           <div className="pending-details-box">
@@ -93,7 +93,7 @@ export default function SellerApplicationPending({
 
           <div className="pending-actions-row">
             <a
-              href="https://wa.me/919876543210?text=Hello%20Flovexa%20Owner,%20I%20have%20submitted%20a%20seller%20application%20for%20my%20store%20and%20would%20like%20to%20request%20approval."
+              href="https://wa.me/919662765757?text=Hello%20Flovexa%20Owner,%20I%20have%20submitted%20a%20seller%20application%20for%20my%20store%20and%20would%20like%20to%20request%20approval."
               target="_blank"
               rel="noreferrer"
               className="pending-btn-whatsapp"

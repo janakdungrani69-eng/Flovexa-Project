@@ -325,16 +325,16 @@ export default function ShippingLabelModal({
                 <strong className="thermal-from-name" style={{ fontSize: "13px", letterSpacing: "0.06em", color: "#1f1a14" }}>
                   FLOVEXA LUXURY PARFUMS
                 </strong>
-                <div className="thermal-from-address" style={{ fontSize: "10.5px", lineHeight: "1.4", color: "#333", margin: "4px 0 8px" }}>
-                  Atelier Fulfillment &amp; Packing Vault
+                <div className="thermal-from-address" style={{ fontSize: "10px", lineHeight: "1.35", color: "#333", margin: "4px 0 8px" }}>
+                  21, Ramdev Row-House Shopping
                   <br />
-                  Surat Fragrance Trade Center
+                  Opp. Shivdhara Society, Rajmandir Road
                   <br />
-                  Gujarat - 395011, India
+                  Surat - 395011, Gujarat, India
                   <br />
-                  <strong>Helpline:</strong> +91 99257 57698
+                  <strong>Helpline:</strong> +91 96627 65757
                   <br />
-                  <strong>Email:</strong> concierge@flovexa.in
+                  <strong>Email:</strong> flovexaenterprises@gmail.com
                 </div>
 
                 <div style={{
