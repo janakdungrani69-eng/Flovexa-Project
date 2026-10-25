@@ -338,7 +338,104 @@ export default function Storefront({
         </div>
       </section>
 
-      <footer className="site-footer"><div className="footer-top"><div className="footer-brand-block"><a href="#top" className="wordmark">FLOVEXA<span>PERFUMES</span></a><p>Leave a little of yourself in the air.</p><div style={{ marginTop: "12px", fontSize: "11px", lineHeight: "1.6", color: "#81796e" }}><div>21, Ramdev Row-House Shopping, Rajmandir Rd, Surat - 395011</div><div>Helpline: +91 96627 65757 · flovexaenterprises@gmail.com</div></div></div><div className="footer-column"><span>EXPLORE</span><a href="#collection" onClick={() => setCategory("All scents")}>Shop all</a><a href="#collection" onClick={() => setCategory("Perfume")}>Perfumes</a><a href="#collection" onClick={() => setCategory("Fragrance")}>Fragrance Oils</a></div><div className="footer-column"><span>HELP</span><Link href="/shipping">Shipping & delivery</Link><Link href="/returns">Returns & refunds</Link><Link href="/contact">Contact us</Link><Link href="/account">My account</Link></div><div className="footer-column"><span>THE DETAILS</span><Link href="/privacy">Privacy policy</Link><Link href="/terms">Terms of service</Link><Link href="/about">Our story</Link></div></div><div className="footer-bottom"><span>© {new Date().getFullYear()} FLOVEXA PERFUMES</span><span>CRAFTED WITH INTENTION</span><span>INDIA · INR</span></div></footer>
+      <footer className="site-footer">
+        <div className="footer-top">
+          {/* 1. Official Brand & Manufacturer Block */}
+          <div className="footer-brand-block">
+            <div className="footer-brand-title">
+              <a href="#top" className="wordmark">FLOVEXA<span>PARFUM</span></a>
+              <span className="reg-badge">®</span>
+            </div>
+            <div className="footer-tagline">SCENTS THAT STAY</div>
+            
+            <div className="footer-meta-block">
+              <div style={{ color: "#e5ddcf", fontWeight: 600, marginBottom: "6px" }}>
+                Packed &amp; Marketed by: <span style={{ color: "#c9aa7e" }}>FLOVEXA</span>
+              </div>
+              <div style={{ marginBottom: "8px", color: "#b9ad9f" }}>
+                <strong style={{ color: "#d5c8b6" }}>Address:</strong> Surat, Gujarat – 395006
+                <div style={{ fontSize: "10.5px", color: "#8a7e71", marginTop: "2px" }}>
+                  21, Ramdev Row-House Shopping, Opp. Shivdhara Society, Rajmandir Rd
+                </div>
+              </div>
+              <div className="footer-meta-row">
+                <strong style={{ color: "#c9aa7e", minWidth: "82px" }}>Contact No:</strong>
+                <a href="tel:+919662765757">+91 96627 65757</a>
+              </div>
+              <div className="footer-meta-row">
+                <strong style={{ color: "#c9aa7e", minWidth: "82px" }}>Email:</strong>
+                <a href="mailto:flovexaenterprises@gmail.com">flovexaenterprises@gmail.com</a>
+              </div>
+              <div className="footer-meta-row">
+                <strong style={{ color: "#c9aa7e", minWidth: "82px" }}>Instagram:</strong>
+                <a href="https://www.instagram.com/flovexa_perfume" target="_blank" rel="noreferrer">
+                  @flovexa_perfume ↗
+                </a>
+              </div>
+            </div>
+          </div>
+
+          {/* 2. Collection & Navigation */}
+          <div className="footer-column">
+            <span>COLLECTION</span>
+            <a href="#collection" onClick={() => setCategory("All scents")}>Shop all</a>
+            <a href="#collection" onClick={() => setCategory("Perfume")}>Artisanal Perfumes</a>
+            <a href="#collection" onClick={() => setCategory("Fragrance")}>Fragrance Oils &amp; Attars</a>
+            <Link href="/orders">Track your order</Link>
+            <Link href="/account">Customer account</Link>
+          </div>
+
+          {/* 3. Care & Policies */}
+          <div className="footer-column">
+            <span>HELP &amp; POLICIES</span>
+            <Link href="/shipping">Shipping &amp; delivery</Link>
+            <Link href="/returns">Returns &amp; refunds (24h)</Link>
+            <Link href="/contact">Contact concierge</Link>
+            <Link href="/privacy">Privacy policy</Link>
+            <Link href="/terms">Terms of service</Link>
+          </div>
+
+          {/* 4. Instagram VIP QR Card */}
+          <div className="footer-column footer-insta-column">
+            <span>FOLLOW US ON INSTAGRAM</span>
+            <a
+              href="https://www.instagram.com/flovexa_perfume"
+              target="_blank"
+              rel="noreferrer"
+              className="footer-insta-card-wrap"
+              title="Scan QR or click to open @flovexa_perfume on Instagram"
+            >
+              <Image
+                src="/flovexa-brand-card.jpg"
+                alt="Flovexa Parfum - Scents That Stay - Instagram @flovexa_perfume"
+                width={250}
+                height={167}
+                style={{ width: "100%", height: "auto", display: "block" }}
+              />
+            </a>
+            <a
+              href="https://www.instagram.com/flovexa_perfume"
+              target="_blank"
+              rel="noreferrer"
+              className="footer-insta-btn"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+              </svg>
+              <span>Follow @flovexa_perfume ↗</span>
+            </a>
+          </div>
+        </div>
+
+        {/* Footer Bottom Bar */}
+        <div className="footer-bottom">
+          <span>© {new Date().getFullYear()} FLOVEXA® PARFUM</span>
+          <span className="footer-thankyou">T H A N K &nbsp; Y O U</span>
+          <span>SURAT, GUJARAT · 395006 · INDIA</span>
+        </div>
+      </footer>
 
       <div className={`drawer-scrim${cartOpen ? " is-visible" : ""}`} onClick={() => setCartOpen(false)} />
       <aside className={`cart-drawer${cartOpen ? " is-open" : ""}`} aria-label="Shopping bag" aria-hidden={!cartOpen}>

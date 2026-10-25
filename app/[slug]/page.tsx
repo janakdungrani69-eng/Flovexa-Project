@@ -77,12 +77,18 @@ export default async function InformationPage({ params }: { params: Promise<{ sl
               <strong style={{ display: "block", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", color: "#927b68", marginBottom: "4px" }}>
                 Registered Office &amp; Atelier
               </strong>
-              <div style={{ fontSize: "13.5px", fontWeight: 600, color: "#1f1812" }}>
-                FLOVEXA LUXURY PARFUMS
+              <div style={{ fontSize: "14px", fontWeight: 700, color: "#1f1812", letterSpacing: "0.05em" }}>
+                FLOVEXA® PARFUM
+                <span style={{ display: "block", fontSize: "10.5px", letterSpacing: "0.22em", color: "#aa8050", fontWeight: 600, marginTop: "2px" }}>
+                  SCENTS THAT STAY
+                </span>
               </div>
-              <div style={{ color: "#564b40", marginTop: "2px" }}>
-                21, Ramdev Row-House Shopping, Opp. Shivdhara Society,<br />
-                Rajmandir Road, Surat - 395011, Gujarat, India
+              <div style={{ color: "#564b40", marginTop: "4px" }}>
+                <strong>Packed &amp; Marketed by:</strong> FLOVEXA<br />
+                <strong>Address:</strong> Surat, Gujarat – 395006<br />
+                <span style={{ fontSize: "11px", color: "#7a6e60" }}>
+                  21, Ramdev Row-House Shopping, Opp. Shivdhara Society, Rajmandir Road
+                </span>
               </div>
             </div>
 
@@ -101,6 +107,14 @@ export default async function InformationPage({ params }: { params: Promise<{ sl
                 </strong>
                 <a href="mailto:flovexaenterprises@gmail.com" style={{ color: "#74512e", fontWeight: 600, textDecoration: "none" }}>
                   flovexaenterprises@gmail.com
+                </a>
+              </div>
+              <div>
+                <strong style={{ display: "block", fontSize: "11px", letterSpacing: "0.08em", textTransform: "uppercase", color: "#927b68", marginBottom: "2px" }}>
+                  Official Instagram
+                </strong>
+                <a href="https://www.instagram.com/flovexa_perfume" target="_blank" rel="noreferrer" style={{ color: "#74512e", fontWeight: 600, textDecoration: "none" }}>
+                  @flovexa_perfume ↗
                 </a>
               </div>
               <div>

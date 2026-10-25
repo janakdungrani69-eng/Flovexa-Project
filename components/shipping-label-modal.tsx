@@ -322,15 +322,15 @@ export default function ShippingLabelModal({
                   </span>
                 </div>
 
-                <strong className="thermal-from-name" style={{ fontSize: "13px", letterSpacing: "0.06em", color: "#1f1a14" }}>
-                  FLOVEXA LUXURY PARFUMS
+                <strong className="thermal-from-name" style={{ fontSize: "12.5px", letterSpacing: "0.06em", color: "#1f1a14" }}>
+                  FLOVEXA® PARFUM
                 </strong>
-                <div className="thermal-from-address" style={{ fontSize: "10px", lineHeight: "1.35", color: "#333", margin: "4px 0 8px" }}>
-                  21, Ramdev Row-House Shopping
+                <div className="thermal-from-address" style={{ fontSize: "9.5px", lineHeight: "1.3", color: "#333", margin: "3px 0 6px" }}>
+                  Packed &amp; Marketed by: <strong>FLOVEXA</strong>
                   <br />
-                  Opp. Shivdhara Society, Rajmandir Road
+                  21, Ramdev Row-House, Rajmandir Rd
                   <br />
-                  Surat - 395011, Gujarat, India
+                  Surat, Gujarat - 395006, India
                   <br />
                   <strong>Helpline:</strong> +91 96627 65757
                   <br />

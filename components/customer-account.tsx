@@ -1609,12 +1609,13 @@ export default function CustomerAccount({ email }: { email: string }) {
                   </div>
                   <div style={{ fontSize: "12.5px", lineHeight: "1.6", color: "#4d4138" }}>
                     <strong style={{ fontSize: "13.5px", color: "#221a14", display: "block", marginBottom: "3px" }}>
-                      Flovexa Registered Office &amp; Fulfillment Atelier
+                      Flovexa Registered Office &amp; Fulfillment Atelier (Surat, Gujarat – 395006)
                     </strong>
-                    21, Ramdev Row-House Shopping, Opp. Shivdhara Society, Rajmandir Road, Surat - 395011, Gujarat, India
+                    21, Ramdev Row-House Shopping, Opp. Shivdhara Society, Rajmandir Road, Surat - 395006, Gujarat, India
                     <div style={{ marginTop: "6px", display: "flex", flexWrap: "wrap", gap: "16px", fontSize: "12px", color: "#786555" }}>
                       <span><strong>Helpline / Phone:</strong> +91 96627 65757</span>
                       <span><strong>Official Email:</strong> flovexaenterprises@gmail.com</span>
+                      <span><strong>Instagram:</strong> <a href="https://www.instagram.com/flovexa_perfume" target="_blank" rel="noreferrer" style={{ color: "#aa8050" }}>@flovexa_perfume ↗</a></span>
                       <span><strong>Hours:</strong> Mon – Sat, 10:00 AM – 7:00 PM IST</span>
                     </div>
                   </div>
