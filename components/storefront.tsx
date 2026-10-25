@@ -340,7 +340,7 @@ export default function Storefront({
 
       <footer className="site-footer">
         <div className="footer-top">
-          {/* 1. Official Brand & Atelier Identity */}
+          {/* Left: Official Brand & Atelier Identity */}
           <div className="footer-brand-block">
             <div className="footer-brand-title">
               <a href="#top" className="wordmark">FLOVEXA<span>PARFUM</span></a>
@@ -370,29 +370,9 @@ export default function Storefront({
             </div>
           </div>
 
-          {/* 2. Collection & Navigation */}
-          <div className="footer-column">
-            <span>COLLECTION</span>
-            <a href="#collection" onClick={() => setCategory("All scents")}>Shop all</a>
-            <a href="#collection" onClick={() => setCategory("Perfume")}>Artisanal Perfumes</a>
-            <a href="#collection" onClick={() => setCategory("Fragrance")}>Fragrance Oils &amp; Attars</a>
-            <Link href="/orders">Track your order</Link>
-            <Link href="/account">Customer account</Link>
-          </div>
-
-          {/* 3. Care & Policies */}
-          <div className="footer-column">
-            <span>HELP &amp; POLICIES</span>
-            <Link href="/shipping">Shipping &amp; delivery</Link>
-            <Link href="/returns">Returns &amp; refunds (24h)</Link>
-            <Link href="/contact">Contact concierge</Link>
-            <Link href="/privacy">Privacy policy</Link>
-            <Link href="/terms">Terms of service</Link>
-          </div>
-
-          {/* 4. Instagram Column - Compact & Refined */}
-          <div className="footer-column footer-insta-column">
-            <span>FOLLOW ON INSTAGRAM</span>
+          {/* Right: Instagram QR Card */}
+          <div className="footer-insta-column">
+            <span className="footer-column-label">FOLLOW ON INSTAGRAM</span>
             <a
               href="https://www.instagram.com/flovexa_perfume"
               target="_blank"
@@ -403,12 +383,12 @@ export default function Storefront({
               <Image
                 src="/flovexa-instagram-qr.png"
                 alt="Instagram QR Code - @flovexa_perfume"
-                width={76}
-                height={76}
+                width={84}
+                height={84}
                 className="footer-qr-img"
               />
               <div className="footer-insta-btn">
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
                   <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
                   <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
@@ -419,11 +399,23 @@ export default function Storefront({
           </div>
         </div>
 
-        {/* Footer Bottom Bar */}
+        {/* Footer Bottom Bar with Clean Inline Policy Links */}
         <div className="footer-bottom">
-          <span>© {new Date().getFullYear()} FLOVEXA® PARFUM</span>
+          <div className="footer-bottom-left">
+            <span>© {new Date().getFullYear()} FLOVEXA® PARFUM</span>
+            <span className="f-sep">·</span>
+            <span>SURAT, GUJARAT · 395011</span>
+          </div>
+
+          <div className="footer-policy-links">
+            <Link href="/shipping">Shipping</Link>
+            <Link href="/returns">Returns</Link>
+            <Link href="/contact">Concierge</Link>
+            <Link href="/privacy">Privacy</Link>
+            <Link href="/terms">Terms</Link>
+          </div>
+
           <span className="footer-thankyou">T H A N K &nbsp; Y O U</span>
-          <span>SURAT, GUJARAT · 395011 · INDIA</span>
         </div>
       </footer>
 

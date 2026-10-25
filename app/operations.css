@@ -7734,18 +7734,23 @@
    FLOVEXA LUXURY FOOTER ENHANCEMENTS (ONLY INSTAGRAM QR & CLEAN BRANDING)
    ========================================================================== */
 .site-footer {
-  background: #14110d !important;
+  background: #13100c !important;
   color: #e5ddcf;
   border-top: 1px solid rgba(201, 170, 126, 0.22);
-  padding: 24px max(32px, calc((100vw - var(--page)) / 2)) 0 !important;
+  padding: 24px max(32px, calc((100vw - var(--page)) / 2)) 14px !important;
 }
 
 .footer-top {
-  display: grid;
-  grid-template-columns: 1.8fr 1fr 1.1fr 1fr !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
   gap: 32px !important;
   padding-bottom: 18px !important;
-  align-items: start;
+  border-bottom: 1px solid rgba(201, 170, 126, 0.16) !important;
+}
+
+.footer-brand-block {
+  max-width: 520px;
 }
 
 .footer-brand-title {
@@ -7755,7 +7760,7 @@
 }
 
 .footer-brand-title .wordmark {
-  font-size: 20px !important;
+  font-size: 21px !important;
   letter-spacing: 0.16em !important;
   color: #ffffff !important;
   text-decoration: none;
@@ -7775,7 +7780,7 @@
 
 .footer-tagline {
   font-family: var(--serif, Georgia, serif);
-  font-size: 10px;
+  font-size: 10.5px;
   letter-spacing: 0.26em;
   text-transform: uppercase;
   color: #c9aa7e;
@@ -7824,34 +7829,24 @@
   font-weight: 600;
 }
 
-.footer-column {
+/* Instagram Column */
+.footer-insta-column {
   display: flex;
   flex-direction: column;
-  gap: 6px !important;
+  align-items: center;
+  flex-shrink: 0;
 }
 
-.footer-column > span {
+.footer-column-label {
   display: block;
   font-size: 8.5px;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
   color: #c9aa7e;
   font-weight: 700;
-  margin-bottom: 8px !important;
+  margin-bottom: 8px;
 }
 
-.footer-column a {
-  font-size: 11px !important;
-  color: #d4ccbf !important;
-  line-height: 1.35;
-  transition: color 0.18s ease;
-}
-
-.footer-column a:hover {
-  color: #c9aa7e !important;
-}
-
-/* Instagram QR Box - Ultra Compact Luxury Styling */
 .footer-qr-card-wrap {
   display: inline-flex;
   flex-direction: column;
@@ -7912,11 +7907,44 @@
   box-shadow: 0 2px 6px rgba(190, 149, 95, 0.35);
 }
 
+/* Footer Bottom Bar */
 .footer-bottom {
   min-height: 38px !important;
-  padding: 8px 0 !important;
-  font-size: 8px !important;
-  border-top: 1px solid rgba(201, 170, 126, 0.16) !important;
+  padding-top: 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  font-size: 8.5px !important;
+  color: #8c8275 !important;
+  flex-wrap: wrap !important;
+  gap: 12px !important;
+  border-top: none !important;
+}
+
+.footer-bottom-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  letter-spacing: 0.08em;
+}
+
+.footer-policy-links {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.footer-policy-links a {
+  color: #aba092 !important;
+  text-decoration: none;
+  font-size: 9.5px;
+  letter-spacing: 0.05em;
+  transition: color 0.18s ease;
+}
+
+.footer-policy-links a:hover {
+  color: #c9aa7e !important;
+  text-decoration: underline;
 }
 
 .footer-thankyou {
@@ -7928,23 +7956,22 @@
   text-transform: uppercase;
 }
 
-@media (max-width: 960px) {
+@media (max-width: 768px) {
   .footer-top {
-    grid-template-columns: 1fr 1fr !important;
-    gap: 36px 24px !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 20px !important;
   }
-  .footer-brand-block {
-    grid-column: 1 / -1;
+  .footer-bottom {
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 8px !important;
+    text-align: center;
   }
-  .footer-insta-column {
-    grid-column: 1 / -1;
-  }
-}
-
-@media (max-width: 540px) {
-  .footer-top {
-    grid-template-columns: 1fr !important;
-    gap: 30px !important;
+  .footer-policy-links {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
   }
 }
 
