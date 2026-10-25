@@ -7958,17 +7958,16 @@
     grid-template-columns: 1fr 1fr !important;
     gap: 32px 24px !important;
   }
-}
-
-@media (max-width: 540px) {
-  .footer-top {
-    grid-template-columns: 1fr !important;
-    gap: 28px !important;
+  .footer-brand-block {
+    grid-column: 1 / -1 !important;
   }
-  .footer-bottom {
-    flex-direction: column !important;
-    gap: 8px !important;
-    text-align: center;
+  .footer-insta-column {
+    grid-column: 1 / -1 !important;
+    align-items: center !important;
+    text-align: center !important;
+  }
+  .footer-qr-card-wrap {
+    margin: 0 auto !important;
   }
 }
 
@@ -8137,4 +8136,175 @@
   color: #e5cdab !important;
   font-weight: 600 !important;
 }
+
+/* ==========================================================================
+   FLOVEXA LUXURY MOBILE OPTIMIZATIONS (STOREFRONT & FOOTER)
+   ========================================================================== */
+@media (max-width: 768px) {
+  /* Collection Tools Toolbar (Category Pills & Sort Menu) */
+  .collection-tools {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+    margin: 24px 0 18px !important;
+  }
+
+  .category-tabs {
+    width: 100% !important;
+    max-width: 100% !important;
+    gap: 8px !important;
+    padding: 4px 2px 10px !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+  }
+
+  .category-tabs::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .category-tabs button {
+    padding: 8px 16px !important;
+    font-size: 11px !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+  }
+
+  .sort-dropdown-wrap {
+    align-self: flex-end !important;
+    display: inline-flex !important;
+  }
+
+  .sort-button {
+    padding: 7px 15px !important;
+    font-size: 11px !important;
+    gap: 6px !important;
+  }
+
+  .sort-menu {
+    right: 0 !important;
+    left: auto !important;
+    min-width: 195px !important;
+    max-width: calc(100vw - 32px) !important;
+  }
+
+  /* Storefront Section Heading */
+  .collection-section {
+    padding-top: 48px !important;
+    padding-bottom: 48px !important;
+  }
+
+  .section-heading h2 {
+    font-size: clamp(26px, 7.5vw, 34px) !important;
+    line-height: 1.2 !important;
+  }
+
+  .section-heading > p {
+    font-size: 11.5px !important;
+    line-height: 1.55 !important;
+    margin-top: 8px !important;
+  }
+
+  /* Luxury Dark Footer Mobile */
+  .site-footer {
+    padding: 34px 18px 0 !important;
+  }
+
+  .footer-top {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 22px 14px !important;
+    padding-bottom: 22px !important;
+  }
+
+  .footer-brand-block {
+    grid-column: 1 / -1 !important;
+    border-bottom: 1px solid rgba(201, 170, 126, 0.14) !important;
+    padding-bottom: 20px !important;
+  }
+
+  .footer-brand-title .wordmark {
+    font-size: 19px !important;
+    letter-spacing: 0.14em !important;
+  }
+
+  .footer-tagline {
+    font-size: 9.5px !important;
+    letter-spacing: 0.22em !important;
+    margin: 3px 0 10px !important;
+  }
+
+  .footer-contact-list {
+    gap: 7px !important;
+    font-size: 11px !important;
+  }
+
+  .f-addr-br {
+    display: none !important;
+  }
+
+  .footer-column {
+    gap: 8px !important;
+  }
+
+  .footer-column > span {
+    font-size: 8.5px !important;
+    letter-spacing: 0.18em !important;
+    margin-bottom: 8px !important;
+  }
+
+  .footer-column a {
+    font-size: 11px !important;
+    line-height: 1.4 !important;
+  }
+
+  .footer-insta-column {
+    grid-column: 1 / -1 !important;
+    border-top: 1px solid rgba(201, 170, 126, 0.14) !important;
+    padding-top: 20px !important;
+    align-items: center !important;
+    text-align: center !important;
+  }
+
+  .footer-qr-card-wrap {
+    margin: 0 auto !important;
+  }
+
+  /* Bottom Bar with Centered Thank You */
+  .footer-bottom {
+    min-height: auto !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    padding: 16px 0 28px !important;
+    text-align: center !important;
+    font-size: 8px !important;
+  }
+
+  .footer-thankyou {
+    font-size: 10px !important;
+    letter-spacing: 0.32em !important;
+    margin: 2px 0 !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .footer-top {
+    gap: 18px 10px !important;
+  }
+
+  .footer-column a {
+    font-size: 10.5px !important;
+  }
+
+  .category-tabs {
+    gap: 6px !important;
+  }
+
+  .category-tabs button {
+    padding: 7px 13px !important;
+    font-size: 10.5px !important;
+  }
+}
+
 
