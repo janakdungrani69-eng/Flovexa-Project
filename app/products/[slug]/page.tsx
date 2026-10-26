@@ -6,6 +6,7 @@ import CheckoutBackButton from "@/components/checkout-back-button";
 import ProductPurchasePanel from "@/components/product-purchase-panel";
 import ProductLuxuryDetails from "@/components/product-luxury-details";
 import ProductGallery from "@/components/product-gallery";
+import SiteFooter from "@/components/site-footer";
 import { getProducts } from "@/lib/catalog";
 import { canonicalUrl, metaDescription, noIndexMetadata } from "@/lib/seo";
 import { createAdminSupabase } from "@/lib/supabase/admin";
@@ -126,6 +127,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         relatedProducts={products.filter((item) => item.slug !== product.slug && item.active !== false)}
         verifiedReviews={verifiedReviews}
       />
+
+      <SiteFooter />
     </main>
   );
 }

@@ -699,27 +699,6 @@ export default function ProductLuxuryDetails({ product, relatedProducts, verifie
         </div>
       </section>
 
-      {/* Flovexa Luxe Footer */}
-      <footer className="luxe-product-footer">
-        <div className="footer-top">
-          <Link href="/store" className="footer-brand">
-            FLOVEXA<span>PERFUMES</span>
-          </Link>
-          <p className="footer-tagline">
-            Artisanal Indian Luxury Perfumery · Crafted with pure European extracts.
-          </p>
-        </div>
-        <div className="footer-links-row">
-          <Link href="/store#collection">All Scents</Link>
-          <Link href="/orders">Track Order</Link>
-          <Link href="/account">My Account</Link>
-          <Link href="/about">About Flovexa</Link>
-          <Link href="/contact">Client Support</Link>
-        </div>
-        <div className="footer-copy">
-          © {new Date().getFullYear()} Flovexa Perfumes. 100% Secure Online Payment. All Rights Reserved.
-        </div>
-      </footer>
     </div>
   );
 }
