@@ -3148,6 +3148,11 @@
   color: #b45309;
 }
 
+.order-status-badge.status-pending_payment {
+  background: #fef3c7;
+  color: #b45309;
+}
+
 .order-total-price {
   font-size: 16px;
   font-weight: 800;
@@ -3188,6 +3193,11 @@
   color: #fff;
 }
 
+.stepper-step.pending .stepper-circle {
+  background: #d97706;
+  color: #fff;
+}
+
 .stepper-step span {
   font-size: 10px;
   font-weight: 600;
@@ -3196,6 +3206,10 @@
 
 .stepper-step.completed span {
   color: #15803d;
+}
+
+.stepper-step.pending span {
+  color: #b45309;
 }
 
 .stepper-line {
@@ -4937,33 +4951,44 @@
 .thermal-ship-from-box {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
 }
 
 .thermal-from-name {
+  font-size: 15px;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.thermal-from-phone {
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
+  color: #111111;
 }
 
 .thermal-from-address {
-  font-size: 9.5px;
-  color: #333333;
-  line-height: 1.35;
-  margin: 3px 0 6px;
+  font-size: 11.5px;
+  color: #222222;
+  line-height: 1.4;
+  margin: 4px 0 6px;
 }
 
 .thermal-hub-code {
-  background: #f0ece3;
-  padding: 4px 8px;
-  border: 1px solid #000000;
+  background: #f7f3ed;
+  padding: 6px 12px;
+  border: 2px solid #000000;
   font-size: 10px;
   margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 2px;
 }
 
 .thermal-hub-code strong {
   font-weight: 900;
-  font-size: 12px;
-  margin-left: 4px;
+  font-size: 14px;
+  letter-spacing: 0.08em;
 }
 
 .thermal-manifest-section {
@@ -5173,17 +5198,14 @@
     gap: 6px !important;
   }
 
-  .thermal-recipient-name {
+  .thermal-recipient-name,
+  .thermal-from-name {
     font-size: 12.5px !important;
   }
 
-  .thermal-street-address {
-    font-size: 10px !important;
-    line-height: 1.3 !important;
-  }
-
+  .thermal-street-address,
   .thermal-from-address {
-    font-size: 9px !important;
+    font-size: 10px !important;
     line-height: 1.3 !important;
   }
 
@@ -8819,5 +8841,40 @@ html, body {
   }
 }
 
-
-
+/* Official Flovexa Emblem Brand Header & Footer Links */
+.brand-logo-link {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  text-decoration: none !important;
+  color: inherit !important;
+  transition: opacity 0.2s ease, transform 0.2s ease !important;
+}
+.brand-logo-link:hover {
+  opacity: 0.92;
+  transform: scale(1.02);
+}
+.brand-emblem-img {
+  width: 26px !important;
+  height: 26px !important;
+  object-fit: contain !important;
+  flex-shrink: 0 !important;
+  display: block !important;
+}
+.footer-brand-emblem {
+  width: 28px !important;
+  height: 28px !important;
+  object-fit: contain !important;
+  flex-shrink: 0 !important;
+  display: block !important;
+  filter: drop-shadow(0 2px 8px rgba(201, 170, 126, 0.35)) !important;
+}
+@media (max-width: 760px) {
+  .brand-logo-link {
+    gap: 7px !important;
+  }
+  .brand-emblem-img {
+    width: 22px !important;
+    height: 22px !important;
+  }
+}

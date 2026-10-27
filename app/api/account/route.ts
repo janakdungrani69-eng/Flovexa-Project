@@ -23,7 +23,42 @@ export async function GET() {
       supabase.from("return_requests").select("id, order_id, reason, details, status, created_at").eq("user_id", user.id).order("created_at", { ascending: false }),
       supabase.from("product_reviews").select("id, order_id, product_id, product_name, product_slug, rating, title, comment, created_at").or(`user_id.eq.${user.id},customer_email.eq.${(user.email ?? "").toLowerCase()}`).order("created_at", { ascending: false }).then((res) => res, () => ({ data: [], error: null })),
     ]);
-    const orderIds = (orderResult.data ?? []).map((order) => order.id);
+    const rawOrders = orderResult.data ?? [];
+    const duplicateDraftIdsToCancel: string[] = [];
+    const sanitizedOrders: typeof rawOrders = [];
+    let hasKeptPendingDraft = false;
+
+    for (const order of rawOrders) {
+      if (order.status === "cancelled") {
+        if (order.payment_status === "captured") {
+          sanitizedOrders.push(order);
+        }
+        continue;
+      }
+
+      if (order.status === "pending_payment") {
+        if (hasKeptPendingDraft) {
+          duplicateDraftIdsToCancel.push(order.id);
+          continue;
+        }
+        hasKeptPendingDraft = true;
+      }
+
+      sanitizedOrders.push(order);
+    }
+
+    if (duplicateDraftIdsToCancel.length > 0) {
+      void supabase
+        .from("orders")
+        .update({
+          status: "cancelled",
+          payment_status: "failed",
+          updated_at: new Date().toISOString(),
+        })
+        .in("id", duplicateDraftIdsToCancel);
+    }
+
+    const orderIds = sanitizedOrders.map((order) => order.id);
     const shipmentResult = orderIds.length
       ? await supabase.from("seller_fulfillments").select("order_id, status, tracking_carrier, tracking_number, tracking_url, seller_profiles(store_name)").in("order_id", orderIds)
       : { data: [], error: null };
@@ -70,7 +105,7 @@ export async function GET() {
       },
       addresses: addressResult.data ?? [],
       wishlist,
-      orders: (orderResult.data ?? []).map((order) => ({ ...order, seller_fulfillments: shipmentsByOrder.get(order.id) ?? [] })),
+      orders: sanitizedOrders.map((order) => ({ ...order, seller_fulfillments: shipmentsByOrder.get(order.id) ?? [] })),
       returns: returnsResult.data ?? [],
       reviews: reviewsResult.data ?? [],
     }, { headers: { "Cache-Control": "no-store" } });

@@ -37,6 +37,26 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
 
   let requested = parseCart(items);
   let lines = requested.flatMap((item) => {
+    if (item.productId === "free-10ml-gift") {
+      const freeGiftProduct: any = {
+        id: "free-10ml-gift",
+        name: "Flovexa Complimentary 10ml Perfume (Free Gift)",
+        slug: "flovexa-complimentary-10ml-perfume",
+        category: "Free Gift",
+        size: "10 ml",
+        pricePaise: 0,
+        compareAtPaise: 8000,
+        imageUrl: null,
+        accent: "#d4af37",
+        concentration: "Eau de Parfum",
+        notes: ["Artisanal Scent", "Amber Citrus", "Rare Woody"],
+        description: "Official 10ml complimentary artisanal travel spray flacon.",
+        active: true,
+        featured: false,
+        variants: [{ id: "var-gift", size: "10 ml", pricePaise: 0, stock: 1000 }],
+      };
+      return [{ product: freeGiftProduct, quantity: item.quantity || 1 }];
+    }
     const product = products.find((candidate) => candidate.id === item.productId);
     if (!product) return [];
     const variant = product.variants?.find((v) => (item.variantId && v.id === item.variantId) || (item.size && v.size.toLowerCase() === item.size.toLowerCase()));

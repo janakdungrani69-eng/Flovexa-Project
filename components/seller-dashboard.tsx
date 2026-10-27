@@ -31,6 +31,7 @@ import {
   ShieldCheck,
   ArrowRight,
   CheckCircle2,
+  Copy,
 } from "lucide-react";
 import ShippingLabelModal, { type ShippingLabelOrder } from "@/components/shipping-label-modal";
 import { generateDefaultSku } from "@/lib/products";
@@ -333,9 +334,12 @@ export default function SellerDashboard({
 
       if (orderSearchQuery.trim()) {
         const q = orderSearchQuery.toLowerCase().trim();
-        const matchNum = order.order_number?.toLowerCase().includes(q);
+        const cleanQ = q.replace(/^#/, "");
+        const matchNum =
+          order.order_number?.toLowerCase().includes(cleanQ) ||
+          order.id?.toLowerCase().includes(cleanQ);
         const matchName = order.customer_name?.toLowerCase().includes(q);
-        const matchPhone = order.phone?.includes(q);
+        const matchPhone = order.phone?.includes(cleanQ);
         const matchItem = order.order_items?.some((it) => it.product_name.toLowerCase().includes(q));
         if (!matchNum && !matchName && !matchPhone && !matchItem) return false;
       }
@@ -2226,7 +2230,7 @@ export default function SellerDashboard({
                     <Search size={15} />
                     <input
                       type="search"
-                      placeholder="Search by Order #, Customer Name, or Phone..."
+                      placeholder="Search by Order ID (FLX-...), Customer Name, or Phone..."
                       value={orderSearchQuery}
                       onChange={(e) => setOrderSearchQuery(e.target.value)}
                     />
@@ -2308,9 +2312,47 @@ export default function SellerDashboard({
                       <article className="seller-order" key={order.id}>
                         <div className="seller-order-head">
                           <div>
-                            <b>{order.order_number}</b>
+                            <div style={{ display: "flex", alignItems: "center", gap: "7px", flexWrap: "wrap", marginBottom: "3px" }}>
+                              <span style={{
+                                fontSize: "10px",
+                                fontWeight: 800,
+                                letterSpacing: "0.08em",
+                                background: "#221c16",
+                                color: "#fff",
+                                padding: "2px 7px",
+                                borderRadius: "3px"
+                              }}>
+                                ORDER ID
+                              </span>
+                              <b style={{ fontSize: "14px", letterSpacing: "0.04em", fontFamily: "var(--font-mono, monospace)" }}>
+                                {order.order_number}
+                              </b>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(order.order_number);
+                                  setMessage(`Order ID ${order.order_number} copied!`);
+                                }}
+                                title="Copy Order ID to search easily"
+                                style={{
+                                  background: "#f5eee6",
+                                  border: "1px solid #d8cbbe",
+                                  borderRadius: "4px",
+                                  padding: "2px 7px",
+                                  fontSize: "11px",
+                                  cursor: "pointer",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "3px",
+                                  color: "#6b5847",
+                                  fontWeight: 600
+                                }}
+                              >
+                                <Copy size={11} /> Copy
+                              </button>
+                            </div>
                             <small>
-                              {new Date(order.created_at).toLocaleString("en-IN", {
+                              Placed {new Date(order.created_at).toLocaleString("en-IN", {
                                 dateStyle: "medium",
                                 timeStyle: "short",
                               })}

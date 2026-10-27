@@ -42,10 +42,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "You can only cancel your own orders." }, { status: 403 });
     }
 
-    // STRICT 24-HOUR CANCELLATION WINDOW
+    // STRICT 24-HOUR CANCELLATION WINDOW (Applies only to confirmed paid orders)
+    const isPendingPayment = order.status === "pending_payment";
     const placedTime = new Date(order.created_at).getTime();
     const hoursElapsed = (Date.now() - placedTime) / (1000 * 60 * 60);
-    if (hoursElapsed > 24) {
+    if (!isPendingPayment && hoursElapsed > 24) {
       return NextResponse.json(
         { error: "Cancellation window has expired. Orders can only be cancelled within 24 hours of placement." },
         { status: 400 }
@@ -93,7 +94,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      message: `Order #${order.order_number} has been cancelled successfully. Your payment will be refunded within 3-5 business days.`,
+      message: isPendingPayment
+        ? `Draft Order #${order.order_number} has been discarded.`
+        : `Order #${order.order_number} has been cancelled successfully. Your payment will be refunded within 3-5 business days.`,
       status: "cancelled",
     });
   } catch (err: any) {

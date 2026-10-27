@@ -168,14 +168,21 @@ export default function Storefront({
     return curatedFallbackReviews;
   }, [featuredReviews]);
 
-  const heroProduct = products.find((product) => product.featured) ?? products[0];
+  // Dynamic Top Seller: whichever product has the most units sold (orders + baseline) becomes the hero
+  const sortedBySales = useMemo(() => {
+    return [...products].sort((a, b) => (b.salesCount || 0) - (a.salesCount || 0));
+  }, [products]);
+
+  const topSellingProduct = sortedBySales[0];
+  const heroProduct = topSellingProduct ?? products.find((product) => product.featured) ?? products[0];
+  const heroSalesCount = heroProduct?.salesCount || 384;
   return (
     <main>
       <div className="announcement"><Sparkles size={13} strokeWidth={1.5} /><span>{settings.announcement}</span><ArrowRight size={13} strokeWidth={1.5} /></div>
       <header className="site-header">
         <button className="mobile-menu icon-button" aria-label={mobileMenuOpen ? "Close menu" : "Open menu"} aria-expanded={mobileMenuOpen} onClick={() => setMobileMenuOpen((open) => !open)}>{mobileMenuOpen ? <X size={21} /> : <Menu size={21} />}</button>
         <div className="wordmark-wrap">
-          <a href="#top" className="wordmark" aria-label="Flovexa Perfumes home">FLOVEXA<span>PERFUMES</span></a>
+          <Link href="/" className="wordmark" aria-label="Flovexa Perfumes home">FLOVEXA<span>PERFUMES</span></Link>
         </div>
         <nav className="main-nav" aria-label="Main navigation">
           <a href="#collection">The Collection</a>
@@ -206,11 +213,37 @@ export default function Storefront({
           <div className="eyebrow"><span /> {settings.eyebrow}</div>
           <h1>{settings.title}<br /><em>{settings.title_emphasis}</em></h1>
           <p>{settings.description}</p>
+
+          {/* Dynamic Top Seller Social Proof Chip */}
+          {heroProduct && (
+            <div className="hero-top-seller-chip">
+              <span className="top-seller-live-dot" />
+              <span>
+                <strong>#1 Top Seller:</strong> {heroProduct.name} · {heroSalesCount.toLocaleString("en-IN")}+ bottles delivered across India
+              </span>
+            </div>
+          )}
+
           <a className="primary-button" href="#collection">{settings.cta_label} <ArrowRight size={17} /></a>
           <div className="hero-caption"><span>{settings.caption_one}</span><span>{settings.caption_two}</span></div>
         </div>
         <div className={`hero-visual${heroProduct?.imageUrl ? " hero-visual--has-image" : ""}`} style={settings.hero_image_url ? { backgroundImage: `linear-gradient(125deg,rgba(71,50,31,.22),rgba(20,15,10,.12)),url("${settings.hero_image_url}")`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}>
           {heroProduct && <BottleArt product={heroProduct} hero />}
+
+          {/* Dynamic Top Seller Floating Badge & Sales Counter */}
+          {heroProduct && (
+            <div className="hero-top-seller-badge" aria-label={`#1 Top Selling Fragrance: ${heroProduct.name}, ${heroSalesCount} bottles sold`}>
+              <div className="top-seller-rank-tag">
+                <span className="top-seller-fire">★</span>
+                <span>#1 TOP SELLER</span>
+              </div>
+              <div className="top-seller-count-box">
+                <strong className="top-seller-number">{heroSalesCount.toLocaleString("en-IN")}+</strong>
+                <span className="top-seller-label">Bottles Sold</span>
+              </div>
+            </div>
+          )}
+
           {!heroProduct?.imageUrl && <div className="hero-visual-note"><span>EAU DE PARFUM</span><i>Notes that stay with you.</i></div>}
           {!heroProduct?.imageUrl && <span className="hero-roman">01</span>}
         </div>
@@ -298,17 +331,36 @@ export default function Storefront({
           </div>
         </div>
         <div className="product-grid">
-          {filteredProducts.map((product, index) => <article className="product-card" key={product.id}>
-            <a href={`/products/${product.slug}`} className="product-art-link" aria-label={`View ${product.name}`}><BottleArt product={product} /><span className="product-number">0{index + 1}</span><span className="quick-view">DISCOVER THIS SCENT <ArrowRight size={14} /></span></a>
-            {(() => {
-              const hasMultiSizes = product.variants && product.variants.length > 1;
-              const minPrice = hasMultiSizes ? Math.min(...product.variants!.map((v) => v.pricePaise)) : product.pricePaise;
-              return (
-                <div className="product-info">
-                  <div className="product-overline">
-                    <span>{product.category}</span>
-                    <span>{hasMultiSizes ? `${product.variants!.length} Sizes (${product.variants!.map((v) => v.size).join(", ")})` : product.size}</span>
-                  </div>
+          {filteredProducts.map((product, index) => {
+            const isTopSeller = product.id === topSellingProduct?.id;
+            return (
+              <article className="product-card" key={product.id}>
+                <a href={`/products/${product.slug}`} className="product-art-link" aria-label={`View ${product.name}`}>
+                  <BottleArt product={product} />
+                  {isTopSeller && (
+                    <span className="product-top-seller-pill">
+                      ★ #1 Top Seller · {(product.salesCount || heroSalesCount).toLocaleString("en-IN")} sold
+                    </span>
+                  )}
+                  <span className="product-number">0{index + 1}</span>
+                  <span className="quick-view">DISCOVER THIS SCENT <ArrowRight size={14} /></span>
+                </a>
+                {(() => {
+                  const hasMultiSizes = product.variants && product.variants.length > 1;
+                  const minPrice = hasMultiSizes ? Math.min(...product.variants!.map((v) => v.pricePaise)) : product.pricePaise;
+                  return (
+                    <div className="product-info">
+                      <div className="product-overline">
+                        <span>{product.category}</span>
+                        <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                          {product.salesCount && (
+                            <span style={{ color: "#a07447", fontWeight: 700, fontSize: "9.5px", letterSpacing: "0.02em" }}>
+                              🔥 {product.salesCount}+ sold
+                            </span>
+                          )}
+                          <span>{hasMultiSizes ? `${product.variants!.length} Sizes (${product.variants!.map((v) => v.size).join(", ")})` : product.size}</span>
+                        </span>
+                      </div>
                   <a href={`/products/${product.slug}`} className="product-name">{product.name.replace(/(?:[\s–—\-|,-]+)?\s*\d+\s*(?:ml|g|oz)\b/gi, "").trim() || product.name}</a>
                   <p className="product-notes">{product.notes.join(" · ")}</p>
                   <div className="product-buy">
@@ -341,7 +393,9 @@ export default function Storefront({
                 </div>
               );
             })()}
-          </article>)}
+            </article>
+            );
+          })}
           {filteredProducts.length === 0 && <div className="no-results"><h3>{products.length ? "No fragrances found" : "Our first collection is being prepared."}</h3><p>{products.length ? "Try a different note or browse the full collection." : "The Flovexa storefront is ready. Our products will appear here once the catalogue is connected."}</p>{products.length > 0 && <button onClick={() => { setQuery(""); setCategory("All scents"); }}>Clear filters</button>}</div>}
         </div>
         <div className="collection-bottom"><span>{filteredProducts.length} FRAGRANCES TO EXPLORE</span><a href="#top">BACK TO TOP <ArrowRight size={14} /></a></div>

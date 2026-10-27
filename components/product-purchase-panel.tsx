@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, ChevronLeft, ChevronRight } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Gift, Sparkles } from "lucide-react";
 import type { Product } from "@/lib/products";
 
 export function parseProductTitle(rawName: string, defaultConcentration?: string) {
@@ -93,6 +93,22 @@ export default function ProductPurchasePanel({ product }: { product: Product }) 
     return variants.find((v) => v.id === selectedVariantId) || variants[0];
   }, [variants, selectedVariantId]);
 
+  // Sync selected variant with gallery & details components in real-time
+  useEffect(() => {
+    if (selectedVariant?.size) {
+      window.dispatchEvent(
+        new CustomEvent("flovexa-select-variant", {
+          detail: {
+            variantId: selectedVariant.id,
+            size: selectedVariant.size,
+            imageUrl: selectedVariant.imageUrl,
+            images: selectedVariant.images,
+          },
+        })
+      );
+    }
+  }, [selectedVariant]);
+
   const [quantity, setQuantity] = useState(1);
   const [addPodChecked, setAddPodChecked] = useState(false);
   const [addedNotice, setAddedNotice] = useState(false);
@@ -134,14 +150,16 @@ export default function ProductPurchasePanel({ product }: { product: Product }) 
         ? cart.map((item: any) => (item === existing ? { ...item, quantity: item.quantity + quantity } : item))
         : [...cart, { productId: product.id, variantId: selectedVariant.id, size: selectedVariant.size, quantity }];
 
-      // If pod add-on is checked, add demo pod or add-on product
+      // If free 10ml gift is selected, add complimentary 10ml flacon
       if (addPodChecked) {
-        const podExisting = nextCart.find((item) => item.productId === "addon-travel-pod");
-        if (podExisting) {
-          podExisting.quantity += 1;
-        } else {
-          nextCart.push({ productId: "addon-travel-pod", quantity: 1 });
+        const giftExisting = nextCart.find((item: any) => item.productId === "free-10ml-gift");
+        if (!giftExisting) {
+          nextCart.push({ productId: "free-10ml-gift", size: "10 ml", quantity: 1, isGift: true });
         }
+      } else {
+        const filtered = nextCart.filter((item: any) => item.productId !== "free-10ml-gift");
+        nextCart.length = 0;
+        nextCart.push(...filtered);
       }
 
       localStorage.setItem("flovexa-cart", JSON.stringify(nextCart));
@@ -161,7 +179,7 @@ export default function ProductPurchasePanel({ product }: { product: Product }) 
         { productId: product.id, variantId: selectedVariant.id, size: selectedVariant.size, quantity },
       ];
       if (addPodChecked) {
-        checkoutItems.push({ productId: "addon-travel-pod", quantity: 1 });
+        checkoutItems.push({ productId: "free-10ml-gift", size: "10 ml", quantity: 1, isGift: true } as any);
       }
 
       // Also save to cart
@@ -210,64 +228,99 @@ export default function ProductPurchasePanel({ product }: { product: Product }) 
       </div>
 
       {/* 4. Dynamic Size Variations */}
-      <div className="purchase-size-section">
-        <div className="purchase-size-label" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span>Choose Bottle Size:</span>
-          <strong style={{ color: "var(--accent, #aa8050)", fontSize: "14px" }}>{selectedVariant.size}</strong>
-        </div>
-        <div className="purchase-size-options" style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginTop: "10px" }}>
-          {variants.map((v) => {
-            const isSelected = v.id === selectedVariant.id;
-            const isOut = false;
-            const discount = v.compareAtPaise && v.compareAtPaise > v.pricePaise
-              ? Math.round(((v.compareAtPaise - v.pricePaise) / v.compareAtPaise) * 100)
-              : 0;
+      {variants.length > 1 ? (
+        <div className="purchase-size-section">
+          <div className="purchase-size-label" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span>Choose Bottle Size:</span>
+            <strong style={{ color: "var(--accent, #aa8050)", fontSize: "14px" }}>{selectedVariant.size}</strong>
+          </div>
+          <div className="purchase-size-options" style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginTop: "10px" }}>
+            {variants.map((v) => {
+              const isSelected = v.id === selectedVariant.id;
+              const isOut = false;
+              const discount = v.compareAtPaise && v.compareAtPaise > v.pricePaise
+                ? Math.round(((v.compareAtPaise - v.pricePaise) / v.compareAtPaise) * 100)
+                : 0;
 
-            return (
-              <button
-                key={v.id}
-                type="button"
-                className={`purchase-size-btn ${isSelected ? "is-selected" : ""} ${isOut ? "is-out" : ""}`}
-                onClick={() => {
-                  setSelectedVariantId(v.id);
-                  if (v.imageUrl) {
-                    window.dispatchEvent(new CustomEvent("flovexa-select-image", { detail: { imageUrl: v.imageUrl } }));
-                  }
-                }}
-                style={{
-                  position: "relative",
-                  padding: "10px 18px",
-                  border: isSelected ? "2px solid #aa8050" : "1px solid #e0d7cb",
-                  background: isSelected ? "#fcf9f4" : "#fff",
-                  borderRadius: "6px",
-                  cursor: isOut ? "not-allowed" : "pointer",
-                  opacity: isOut ? 0.5 : 1,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  minWidth: "100px",
-                  transition: "all 0.15s ease",
-                }}
-              >
-                {discount > 0 && (
-                  <span style={{ position: "absolute", top: "-8px", right: "-4px", background: "#3d6435", color: "#fff", fontSize: "9px", fontWeight: 700, padding: "2px 6px", borderRadius: "100px" }}>
-                    {discount}% OFF
+              return (
+                <button
+                  key={v.id}
+                  type="button"
+                  className={`purchase-size-btn ${isSelected ? "is-selected" : ""} ${isOut ? "is-out" : ""}`}
+                  onClick={() => {
+                    setSelectedVariantId(v.id);
+                    window.dispatchEvent(
+                      new CustomEvent("flovexa-select-variant", {
+                        detail: {
+                          variantId: v.id,
+                          size: v.size,
+                          imageUrl: v.imageUrl,
+                          images: v.images,
+                        },
+                      })
+                    );
+                    if (v.imageUrl) {
+                      window.dispatchEvent(new CustomEvent("flovexa-select-image", { detail: { imageUrl: v.imageUrl } }));
+                    }
+                  }}
+                  style={{
+                    position: "relative",
+                    padding: "10px 18px",
+                    border: isSelected ? "2px solid #aa8050" : "1px solid #e0d7cb",
+                    background: isSelected ? "#fcf9f4" : "#fff",
+                    borderRadius: "6px",
+                    cursor: isOut ? "not-allowed" : "pointer",
+                    opacity: isOut ? 0.5 : 1,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    minWidth: "100px",
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  {discount > 0 && (
+                    <span style={{ position: "absolute", top: "-8px", right: "-4px", background: "#3d6435", color: "#fff", fontSize: "9px", fontWeight: 700, padding: "2px 6px", borderRadius: "100px" }}>
+                      {discount}% OFF
+                    </span>
+                  )}
+                  <strong style={{ fontSize: "14px", color: isSelected ? "#1d1a16" : "#4a4237" }}>{v.size}</strong>
+                  <span style={{ fontSize: "12px", color: "#8a663b", fontWeight: 600, marginTop: "2px" }}>
+                    ₹{Math.round(v.pricePaise / 100)}
                   </span>
-                )}
-                <strong style={{ fontSize: "14px", color: isSelected ? "#1d1a16" : "#4a4237" }}>{v.size}</strong>
-                <span style={{ fontSize: "12px", color: "#8a663b", fontWeight: 600, marginTop: "2px" }}>
-                  ₹{Math.round(v.pricePaise / 100)}
-                </span>
-                {v.compareAtPaise && v.compareAtPaise > v.pricePaise && (
-                  <del style={{ fontSize: "10px", color: "#a59c90" }}>
-                    ₹{Math.round(v.compareAtPaise / 100)}
-                  </del>
-                )}
-              </button>
-            );
-          })}
+                  {v.compareAtPaise && v.compareAtPaise > v.pricePaise && (
+                    <del style={{ fontSize: "10px", color: "#a59c90" }}>
+                      ₹{Math.round(v.compareAtPaise / 100)}
+                    </del>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="purchase-size-section" style={{ margin: "14px 0 6px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <span style={{ fontSize: "13px", color: "#6b5d4f", fontWeight: 600 }}>Bottle Size:</span>
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                padding: "4px 14px",
+                borderRadius: "4px",
+                background: "#fcf9f4",
+                border: "1px solid #ebd9bf",
+                color: "#aa8050",
+                fontSize: "13px",
+                fontWeight: 700,
+                letterSpacing: "0.02em",
+              }}
+            >
+              {selectedVariant.size || product.size || "50 ml"}
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* 5. Main Price & Strikethrough MRP */}
       <div className="purchase-main-price-row" style={{ display: "flex", alignItems: "baseline", gap: "12px", margin: "16px 0 10px" }}>
@@ -292,10 +345,16 @@ export default function ProductPurchasePanel({ product }: { product: Product }) 
         </div>
       </div>
 
-      {/* 7. Customer Also Add (Cross-sell Addon) */}
+      {/* 7. Exclusive Complimentary 10ml Perfume Gift Offer */}
       <div className="purchase-cross-sell">
-        <h3 className="purchase-cross-sell-title">Customer Also Add</h3>
-        <label className="purchase-cross-sell-card">
+        <div className="purchase-gift-header">
+          <h4 className="purchase-cross-sell-title">Claim Free 10ml Luxury Perfume</h4>
+          <span className="purchase-gift-badge">
+            <Gift size={11} /> FREE ATELIER GIFT
+          </span>
+        </div>
+
+        <label className={`purchase-cross-sell-card purchase-free-gift-card${addPodChecked ? " is-claimed" : ""}`}>
           <input
             type="checkbox"
             className="purchase-addon-checkbox"
@@ -303,39 +362,45 @@ export default function ProductPurchasePanel({ product }: { product: Product }) 
             onChange={(e) => setAddPodChecked(e.target.checked)}
           />
 
-          {/* Travel pod thumbnail */}
+          {/* Miniature 10ml luxury perfume flacon thumbnail */}
           <div className="purchase-addon-thumb">
             <svg viewBox="0 0 40 80" className="travel-pod-svg" aria-hidden="true">
               <defs>
-                <linearGradient id="podGold" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stopColor="#815b34" />
-                  <stop offset="50%" stopColor="#ead5ae" />
-                  <stop offset="100%" stopColor="#a27c4b" />
+                <linearGradient id="flaconGold" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stopColor="#8c6838" />
+                  <stop offset="50%" stopColor="#f4e3c3" />
+                  <stop offset="100%" stopColor="#aa8050" />
                 </linearGradient>
-                <linearGradient id="podBody" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stopColor="#1d1a16" />
-                  <stop offset="50%" stopColor="#352e26" />
-                  <stop offset="100%" stopColor="#1a1714" />
+                <linearGradient id="juiceGold" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#f2c879" />
+                  <stop offset="100%" stopColor="#c58938" />
                 </linearGradient>
               </defs>
-              {/* Outer matte espresso case with gold trim */}
-              <rect x="10" y="8" width="20" height="64" rx="10" fill="url(#podBody)" stroke="rgba(170,128,80,0.4)" strokeWidth="1" />
-              {/* Gold cap */}
-              <rect x="12" y="4" width="16" height="8" rx="2" fill="url(#podGold)" />
-              <rect x="14" y="2" width="12" height="3" rx="1" fill="#7d5830" />
-              {/* Clear viewing window */}
-              <rect x="16" y="26" width="8" height="26" rx="4" fill="#faf2e3" stroke="rgba(170,128,80,0.5)" strokeWidth="0.8" />
-              {/* Amber fragrance juice inside */}
-              <rect x="17" y="32" width="6" height="19" rx="3" fill="#ad7045" opacity="0.9" />
+              <rect x="17" y="6" width="6" height="6" fill="#8c6838" rx="1" />
+              <rect x="15" y="10" width="10" height="4" fill="url(#flaconGold)" rx="1" />
+              <rect x="13" y="14" width="14" height="14" fill="url(#flaconGold)" rx="2" stroke="#8c6838" strokeWidth="0.5" />
+              <rect x="10" y="28" width="20" height="46" rx="4" fill="#faf6f0" stroke="#bfa37e" strokeWidth="1" />
+              <rect x="12" y="38" width="16" height="34" rx="3" fill="url(#juiceGold)" opacity="0.95" />
+              <text x="20" y="58" fontSize="6.5" fontWeight="900" textAnchor="middle" fill="#ffffff" fontFamily="sans-serif" letterSpacing="0.5">10 ML</text>
             </svg>
           </div>
 
           <div className="purchase-addon-info">
-            <h4>Perfume Pod – Refillable Travel Perfume Spray Bottle</h4>
-            <p>Refill anywhere. Carry it in your pocket or bag.</p>
-            <span className="purchase-addon-price">
-              Add for <strong>Rs. 599.00</strong>
-            </span>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap", marginBottom: "2px" }}>
+              <h4>Flovexa 10ml Luxury Perfume</h4>
+              <span className="free-gift-pill">
+                🎁 100% FREE
+              </span>
+            </div>
+            <p>Complimentary 10ml artisanal travel spray flacon added to your parcel.</p>
+            <div className="purchase-addon-price">
+              <span style={{ textDecoration: "line-through", color: "#8a7e72", marginRight: "6px", fontSize: "11.5px" }}>
+                Rs. 80.00
+              </span>
+              <strong style={{ color: "#257a3e", fontSize: "13px", fontWeight: 800 }}>
+                {addPodChecked ? "✓ CLAIMED · FREE (₹0.00)" : "FREE WITH ORDER (₹0)"}
+              </strong>
+            </div>
           </div>
         </label>
       </div>
@@ -384,33 +449,51 @@ export default function ProductPurchasePanel({ product }: { product: Product }) 
         </button>
       </div>
 
-      {/* 9. Buy It Now (With UPI Logos) */}
+      {/* 9. Buy It Now (With Authentic Official UPI Badges) */}
       <button
         type="button"
         className="purchase-buy-now-btn"
         onClick={handleBuyItNow}
       >
-        <span>Buy it Now</span>
-        <div className="purchase-upi-icons" aria-hidden="true">
-          {/* Paytm */}
-          <span className="upi-icon paytm-icon">
-            <svg viewBox="0 0 24 24" width="16" height="16">
-              <circle cx="12" cy="12" r="11" fill="#002e6e" />
-              <text x="12" y="16" fontSize="10" fontWeight="900" textAnchor="middle" fill="#00b9f5" fontFamily="Arial">P</text>
+        <span className="buy-now-label">Buy it Now</span>
+        <div className="purchase-upi-capsule" aria-label="Accepted payments: Google Pay, PhonePe, Paytm, UPI">
+          {/* 1. Official Google Pay (GPay 4-Color) */}
+          <span className="purchase-upi-badge" title="Google Pay">
+            <svg viewBox="0 0 24 24" width="22" height="22">
+              <circle cx="12" cy="12" r="11" fill="#ffffff" stroke="#e2ded6" strokeWidth="0.8"/>
+              <path d="M18.8 12.25c0-.66-.06-1.3-.17-1.91H12v3.62h3.82c-.16.89-.67 1.64-1.42 2.15v1.79h2.3c1.35-1.24 2.1-3.07 2.1-5.65z" fill="#4285F4"/>
+              <path d="M12 19.2c1.94 0 3.58-.65 4.77-1.75l-2.3-1.79c-.65.43-1.47.69-2.47.69-1.9 0-3.51-1.28-4.08-3.01H5.53v1.85C6.72 17.61 9.17 19.2 12 19.2z" fill="#34A853"/>
+              <path d="M7.92 13.34c-.15-.43-.23-.89-.23-1.34s.08-.91.23-1.34V8.81H5.53C5.04 9.77 4.77 10.86 4.77 12s.27 2.23.76 3.19l2.39-1.85z" fill="#FBBC05"/>
+              <path d="M12 6.77c1.06 0 2.01.36 2.76 1.08l2.07-2.07C15.58 4.6 13.94 4 12 4 9.17 4 6.72 5.59 5.53 8.01l2.39 1.85c.57-1.73 2.18-3.09 4.08-3.09z" fill="#EA4335"/>
             </svg>
           </span>
-          {/* PhonePe */}
-          <span className="upi-icon phonepe-icon">
-            <svg viewBox="0 0 24 24" width="16" height="16">
-              <circle cx="12" cy="12" r="11" fill="#5f259f" />
-              <text x="12" y="16" fontSize="11" fontWeight="bold" textAnchor="middle" fill="#ffffff" fontFamily="Arial">पे</text>
+
+          {/* 2. Official PhonePe (Royal Purple with Authentic 'पे') */}
+          <span className="purchase-upi-badge" title="PhonePe">
+            <svg viewBox="0 0 24 24" width="22" height="22">
+              <circle cx="12" cy="12" r="11" fill="#5f259f"/>
+              <rect x="6.2" y="7.2" width="11.6" height="1.8" rx="0.9" fill="#ffffff"/>
+              <rect x="14" y="7.2" width="1.8" height="9.8" rx="0.9" fill="#ffffff"/>
+              <path d="M8.2 8.2v3.8c0 1.6 1.3 2.9 2.9 2.9h2.9v-1.8h-2.9c-.6 0-1.1-.5-1.1-1.1V8.2H8.2z" fill="#ffffff"/>
+              <path d="M14.2 7.6c-.3-1.6-1.5-3-3.2-3.8-.4-.2-.8 0-1 .4-.2.4 0 .8.4 1 1.2.6 2 1.6 2.2 2.6l1.6-.2z" fill="#ffffff"/>
             </svg>
           </span>
-          {/* Google Pay */}
-          <span className="upi-icon gpay-icon">
-            <svg viewBox="0 0 24 24" width="16" height="16">
-              <circle cx="12" cy="12" r="11" fill="#ffffff" stroke="#e0e0e0" strokeWidth="1" />
-              <text x="12" y="16" fontSize="11" fontWeight="bold" textAnchor="middle" fill="#4285F4" fontFamily="Arial">G</text>
+
+          {/* 3. Official Paytm (Navy Circle with White Pay & Cyan tm) */}
+          <span className="purchase-upi-badge" title="Paytm">
+            <svg viewBox="0 0 24 24" width="22" height="22">
+              <circle cx="12" cy="12" r="11" fill="#002970"/>
+              <text x="4.8" y="14.2" fontFamily="-apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif" fontWeight="900" fontSize="7.5" fill="#ffffff" letterSpacing="-0.2">Pay</text>
+              <text x="13.8" y="14.2" fontFamily="-apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif" fontWeight="900" fontSize="7.5" fill="#00baf2" letterSpacing="-0.2">tm</text>
+            </svg>
+          </span>
+
+          {/* 4. Official NPCI UPI Chevron */}
+          <span className="purchase-upi-badge" title="Instant UPI">
+            <svg viewBox="0 0 24 24" width="22" height="22">
+              <circle cx="12" cy="12" r="11" fill="#ffffff" stroke="#e2ded6" strokeWidth="0.8"/>
+              <polygon points="9.5,8 14.5,12 9.5,16" fill="#097939"/>
+              <polygon points="12.5,8 17.5,12 12.5,16" fill="#ed5e29"/>
             </svg>
           </span>
         </div>

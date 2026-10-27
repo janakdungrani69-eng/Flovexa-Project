@@ -81,7 +81,35 @@ export default function CheckoutExperience({ items, lines, subtotalPaise, pricin
           </p>
         </div>
       )}
-      {lines.length ? <div className="summary-lines">{lines.map(({ product, quantity }) => <div className="summary-product" key={product.id}><div className="summary-product-visual" style={{ "--juice": product.accent } as React.CSSProperties}><span>F</span></div><div><b>{product.name}</b><small>{product.size} · Qty {quantity}</small></div><strong>{money(product.pricePaise * quantity)}</strong></div>)}</div> : <div className="summary-empty">Your bag is empty. <Link href="/#collection">Explore fragrances</Link></div>}
+      {lines.length ? (
+        <div className="summary-lines">
+          {lines.map(({ product, quantity }) => (
+            <div className="summary-product" key={product.id}>
+              <div className="summary-product-visual" style={{ "--juice": product.accent } as React.CSSProperties}>
+                <span>{product.id === "free-10ml-gift" ? "🎁" : "F"}</span>
+              </div>
+              <div>
+                <b>{product.name}</b>
+                <small>
+                  {product.size} · Qty {quantity}
+                  {product.pricePaise === 0 && (
+                    <span style={{ marginLeft: 6, color: "#257a3e", fontWeight: 700, fontSize: "10px" }}>
+                      · COMPLIMENTARY
+                    </span>
+                  )}
+                </small>
+              </div>
+              {product.pricePaise === 0 ? (
+                <strong style={{ color: "#257a3e", fontWeight: 800 }}>FREE</strong>
+              ) : (
+                <strong>{money(product.pricePaise * quantity)}</strong>
+              )}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="summary-empty">Your bag is empty. <Link href="/#collection">Explore fragrances</Link></div>
+      )}
       <form className="coupon-entry" onSubmit={applyCoupon}>
         <label htmlFor="checkout-coupon">Discount code</label>
         <div><input id="checkout-coupon" value={couponCode} disabled={!enabled || checkingCoupon} onChange={(event) => { setCouponCode(event.target.value.toUpperCase()); setCoupon(null); setCouponError(""); }} placeholder="Enter code" maxLength={32} /><button type="submit" disabled={!enabled || checkingCoupon || !couponCode.trim()}>{checkingCoupon ? "Checking…" : "Apply"}</button></div>

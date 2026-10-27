@@ -43,8 +43,11 @@ export async function POST(request: Request) {
 
     const { client, keyId } = createRazorpay();
 
-    // 1. Fetch products from database
-    const productIds = parsed.data.items.map((i) => i.id);
+    // 1. Fetch products from database (and handle free gift addon if selected)
+    const hasFreeGift = parsed.data.items.some((i) => i.id === "free-10ml-gift");
+    const regularItems = parsed.data.items.filter((i) => i.id !== "free-10ml-gift");
+
+    const productIds = regularItems.map((i) => i.id);
     const { data: dbProducts, error: prodErr } = await supabase
       .from("products")
       .select("id, name, slug, price_paise, size, stock, active")
@@ -58,7 +61,7 @@ export async function POST(request: Request) {
     const productMap = new Map(dbProducts.map((p) => [p.id, p]));
     const cartLines: Array<{ product: typeof dbProducts[0]; quantity: number }> = [];
 
-    for (const item of parsed.data.items) {
+    for (const item of regularItems) {
       const prod = productMap.get(item.id);
       if (!prod || prod.active === false) {
         return NextResponse.json({ error: "A fragrance in your bag is no longer active. Please refresh." }, { status: 409 });
@@ -116,40 +119,84 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Minimum order value is ₹1.00." }, { status: 400 });
     }
 
-    // 5. Generate unique Order ID & Order Number
-    localOrderId = randomUUID();
-    const dateStr = new Date().toISOString().slice(2, 10).replace(/-/g, "");
-    const randHex = randomBytes(4).toString("hex").toUpperCase();
-    const orderNumber = `FLX-${dateStr}-${randHex}`;
+    // 5. Check if customer already has a pending draft in the last 15 minutes to avoid duplicate order generation
+    const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+    const { data: existingDraft } = await supabase
+      .from("orders")
+      .select("id, order_number")
+      .eq("email", parsed.data.customer.email.toLowerCase())
+      .eq("status", "pending_payment")
+      .eq("total_paise", totalPaise)
+      .gt("created_at", fifteenMinutesAgo)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-    // 6. Insert Order into Supabase
-    const { error: orderInsertError } = await supabase.from("orders").insert({
-      id: localOrderId,
-      order_number: orderNumber,
-      customer_name: parsed.data.customer.name,
-      email: parsed.data.customer.email.toLowerCase(),
-      phone: parsed.data.customer.phone,
-      shipping_address: {
-        ...parsed.data.customer.address,
-        coupon_code: couponRow?.code || null,
-        discount_paise: discountPaise,
-      },
-      subtotal_paise: subtotalPaise,
-      shipping_paise: shippingPaise,
-      tax_paise: taxPaise,
-      tax_included: pricing.taxMode === "inclusive",
-      total_paise: totalPaise,
-      status: "pending_payment",
-      payment_status: "created",
-      inventory_reserved_until: new Date(Date.now() + 20 * 60 * 1000).toISOString(),
-    });
+    let orderNumber: string;
+    if (existingDraft) {
+      localOrderId = existingDraft.id;
+      orderNumber = existingDraft.order_number;
+      await supabase.from("orders").update({
+        customer_name: parsed.data.customer.name,
+        phone: parsed.data.customer.phone,
+        shipping_address: {
+          ...parsed.data.customer.address,
+          coupon_code: couponRow?.code || null,
+          discount_paise: discountPaise,
+        },
+        subtotal_paise: subtotalPaise,
+        shipping_paise: shippingPaise,
+        tax_paise: taxPaise,
+        tax_included: pricing.taxMode === "inclusive",
+        total_paise: totalPaise,
+        inventory_reserved_until: new Date(Date.now() + 20 * 60 * 1000).toISOString(),
+        updated_at: new Date().toISOString(),
+      }).eq("id", localOrderId);
 
-    if (orderInsertError) {
-      console.error("Order creation failed in database:", orderInsertError);
-      throw new Error("Could not initialize your order. Please try again.");
+      // Clean old order_items before re-inserting
+      await supabase.from("order_items").delete().eq("order_id", localOrderId);
+    } else {
+      localOrderId = randomUUID();
+      const dateStr = new Date().toISOString().slice(2, 10).replace(/-/g, "");
+      const randHex = randomBytes(4).toString("hex").toUpperCase();
+      orderNumber = `FLX-${dateStr}-${randHex}`;
+
+      const { error: orderInsertError } = await supabase.from("orders").insert({
+        id: localOrderId,
+        order_number: orderNumber,
+        customer_name: parsed.data.customer.name,
+        email: parsed.data.customer.email.toLowerCase(),
+        phone: parsed.data.customer.phone,
+        shipping_address: {
+          ...parsed.data.customer.address,
+          coupon_code: couponRow?.code || null,
+          discount_paise: discountPaise,
+        },
+        subtotal_paise: subtotalPaise,
+        shipping_paise: shippingPaise,
+        tax_paise: taxPaise,
+        tax_included: pricing.taxMode === "inclusive",
+        total_paise: totalPaise,
+        status: "pending_payment",
+        payment_status: "created",
+        inventory_reserved_until: new Date(Date.now() + 20 * 60 * 1000).toISOString(),
+      });
+
+      if (orderInsertError) {
+        console.error("Order creation failed in database:", orderInsertError);
+        throw new Error("Could not initialize your order. Please try again.");
+      }
     }
 
-    // 7. Insert Order Items
+    // Auto-cancel any older abandoned pending draft orders for this customer
+    void supabase
+      .from("orders")
+      .update({ status: "cancelled", payment_status: "failed", updated_at: new Date().toISOString() })
+      .eq("email", parsed.data.customer.email.toLowerCase())
+      .eq("status", "pending_payment")
+      .neq("id", localOrderId);
+
+    // 7. Insert Order Items (Including Free 10ml Gift if claimed)
     const itemsToInsert = cartLines.map((line) => ({
       order_id: localOrderId,
       product_id: line.product.id,
@@ -160,6 +207,19 @@ export async function POST(request: Request) {
       quantity: line.quantity,
       line_total_paise: line.product.price_paise * line.quantity,
     }));
+
+    if (hasFreeGift) {
+      itemsToInsert.push({
+        order_id: localOrderId,
+        product_id: "free-10ml-gift",
+        product_name: "Flovexa Complimentary Perfume (Free Gift)",
+        product_slug: "flovexa-free-10ml-gift",
+        size: "10 ml",
+        unit_price_paise: 0,
+        quantity: 1,
+        line_total_paise: 0,
+      });
+    }
 
     const { error: itemsError } = await supabase.from("order_items").insert(itemsToInsert);
     if (itemsError) {
@@ -189,7 +249,7 @@ export async function POST(request: Request) {
       amount: totalPaise,
       currency: "INR",
       receipt: orderNumber,
-      notes: { local_order_id: localOrderId },
+      notes: { local_order_id: localOrderId! },
     });
 
     // 10. Attach Razorpay Order ID

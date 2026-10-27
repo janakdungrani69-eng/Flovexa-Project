@@ -7,8 +7,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const publicProducts = products.filter((product) => product.active && !product.id.startsWith("demo-"));
 
   return [
-    { url: canonicalUrl("/store"), changeFrequency: "daily", priority: 1 },
-    { url: canonicalUrl("/"), changeFrequency: "daily", priority: 1 },
+    { url: canonicalUrl("/"), changeFrequency: "daily", priority: 1.0 },
+    { url: canonicalUrl("/store"), changeFrequency: "daily", priority: 0.9 },
     { url: canonicalUrl("/seller"), changeFrequency: "weekly", priority: 0.8 },
     ...publicProducts.map((product) => ({
       url: canonicalUrl(`/products/${product.slug}`),

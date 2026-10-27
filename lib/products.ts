@@ -27,6 +27,7 @@ export type Product = {
   featured: boolean;
   active: boolean;
   stock?: number;
+  salesCount?: number;
   variants?: ProductVariant[];
 };
 
@@ -84,7 +85,17 @@ export function extractProductVariants(
     try {
       const parsed = JSON.parse(rawJson);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        variants = parsed.map((item, idx) => {
+        // Filter out legacy dummy mock variants (e.g. 20ml/10ml dummy presets from earlier dev)
+        const validItems = parsed.filter((item) => {
+          const s = String(item?.size || "").trim().toLowerCase();
+          const p = Number(item?.pricePaise || 0) || Math.round(Number(item?.price || 0) * 100);
+          if (["20 ml", "10 ml"].includes(s) && (p === 29900 || p === 14900)) {
+            return false;
+          }
+          return true;
+        });
+
+        variants = validItems.map((item, idx) => {
           const sizeStr = String(item.size || "").trim();
           const skuVal = item.sku ? String(item.sku).trim().toUpperCase() : generateDefaultSku(baseProduct?.name, sizeStr, idx);
           return {

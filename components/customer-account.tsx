@@ -8,6 +8,7 @@ import {
   Award,
   Check,
   ChevronRight,
+  Clock,
   ExternalLink,
   FileText,
   Heart,
@@ -201,7 +202,11 @@ export default function CustomerAccount({ email }: { email: string }) {
   const [deliveredThankYouOrder, setDeliveredThankYouOrder] = useState<Order | null>(null);
 
   async function handleCancelOrder(order: Order) {
-    if (!confirm(`Are you sure you want to cancel Order #${order.order_number}? Orders can only be cancelled within 24 hours of placement.`)) {
+    const isPendingPayment = order.status === "pending_payment";
+    const confirmMessage = isPendingPayment
+      ? `Are you sure you want to discard unpaid draft Order #${order.order_number}?`
+      : `Are you sure you want to cancel Order #${order.order_number}? Orders can only be cancelled within 24 hours of placement.`;
+    if (!confirm(confirmMessage)) {
       return;
     }
     setCancellingOrderId(order.id);
@@ -219,7 +224,9 @@ export default function CustomerAccount({ email }: { email: string }) {
         if (!prev) return prev;
         return {
           ...prev,
-          orders: prev.orders.map((o) => (o.id === order.id ? { ...o, status: "cancelled" } : o)),
+          orders: isPendingPayment
+            ? prev.orders.filter((o) => o.id !== order.id)
+            : prev.orders.map((o) => (o.id === order.id ? { ...o, status: "cancelled" } : o)),
         };
       });
       setNotice(result.message || `Order #${order.order_number} cancelled successfully.`);
@@ -820,14 +827,15 @@ export default function CustomerAccount({ email }: { email: string }) {
                         year: "numeric",
                       });
 
+                      const isPendingPayment = order.status === "pending_payment";
                       const isDelivered = order.status === "delivered";
                       const isShipped = ["shipped", "out_for_delivery"].includes(order.status) || isDelivered;
                       const isPacked = ["confirmed", "processing", "packed"].includes(order.status) || isShipped;
-                      const isConfirmed = isPacked;
+                      const isConfirmed = isPacked && !isPendingPayment;
 
                       const placedAtMs = new Date(order.created_at).getTime();
                       const hoursSincePlaced = (Date.now() - placedAtMs) / (1000 * 60 * 60);
-                      const canCancelOrder = hoursSincePlaced < 24 && !["shipped", "delivered", "cancelled"].includes(order.status);
+                      const canCancelOrder = (isPendingPayment || hoursSincePlaced < 24) && !["shipped", "delivered", "cancelled"].includes(order.status);
 
                       const totalBottles = order.order_items.reduce((sum, item) => sum + (item.quantity || 1), 0);
                       const isCombo = totalBottles > 1 || order.order_items.length > 1;
@@ -854,9 +862,14 @@ export default function CustomerAccount({ email }: { email: string }) {
 
                           {/* 4-Step Visual Delivery Progress */}
                           <div className="order-progress-stepper">
-                            <div className="stepper-step completed">
-                              <div className="stepper-circle">✓</div>
-                              <span>Placed</span>
+                            <div className={`stepper-step ${isPendingPayment ? "pending" : "completed"}`}>
+                              <div
+                                className="stepper-circle"
+                                style={isPendingPayment ? { background: "#d97706", color: "#fff", borderColor: "#d97706" } : undefined}
+                              >
+                                {isPendingPayment ? "⏳" : "✓"}
+                              </div>
+                              <span>{isPendingPayment ? "Payment Pending" : "Placed"}</span>
                             </div>
                             <div className={`stepper-line ${isConfirmed ? "active" : ""}`} />
                             <div className={`stepper-step ${isConfirmed ? "completed" : ""}`}>
@@ -968,24 +981,54 @@ export default function CustomerAccount({ email }: { email: string }) {
                                   <ExternalLink size={13} />
                                   <span>Track Courier Package</span>
                                 </a>
+                              ) : isPendingPayment ? (
+                                <span className="order-dispatch-text" style={{ color: "#b45309" }}>
+                                  <Clock size={14} /> Awaiting payment confirmation
+                                </span>
                               ) : (
                                 <span className="order-dispatch-text">
                                   <Truck size={14} /> Being carefully packed at our fragrance atelier
                                 </span>
                               )}
 
-                              <button
-                                type="button"
-                                className="order-btn-view-label"
-                                onClick={() => setSelectedLabelOrder(order)}
-                                title="View consolidated parcel shipping label & packing manifest"
-                              >
-                                <Tag size={13} />
-                                <span>{isCombo ? `View Combo Shipping Label (${totalBottles} in 1 Box)` : "View Shipping Label"}</span>
-                              </button>
+                              {!isPendingPayment && (
+                                <button
+                                  type="button"
+                                  className="order-btn-view-label"
+                                  onClick={() => setSelectedLabelOrder(order)}
+                                  title="View consolidated parcel shipping label & packing manifest"
+                                >
+                                  <Tag size={13} />
+                                  <span>{isCombo ? `View Combo Shipping Label (${totalBottles} in 1 Box)` : "View Shipping Label"}</span>
+                                </button>
+                              )}
                             </div>
 
                             <div className="order-support-actions" style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+                              {/* Complete Payment Button for pending payment draft */}
+                              {isPendingPayment && (
+                                <Link
+                                  href="/checkout"
+                                  className="order-cancel-btn"
+                                  style={{
+                                    background: "#aa8050",
+                                    color: "#fff",
+                                    textDecoration: "none",
+                                    border: "none",
+                                    padding: "6px 14px",
+                                    borderRadius: "3px",
+                                    fontSize: "11px",
+                                    fontWeight: 700,
+                                    cursor: "pointer",
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: "6px",
+                                  }}
+                                >
+                                  <ShoppingBag size={13} /> Complete Checkout
+                                </Link>
+                              )}
+
                               {/* Delivered Order Thank You & Review Action */}
                               {isDelivered && (
                                 <button
@@ -1011,19 +1054,35 @@ export default function CustomerAccount({ email }: { email: string }) {
                                 </button>
                               )}
 
-                              {/* 24-Hour Order Cancellation */}
+                              {/* 24-Hour Order Cancellation / Discard Draft */}
                               {canCancelOrder ? (
                                 <button
                                   type="button"
                                   className="order-cancel-btn"
-                                  style={{ background: "#7a2b2b", color: "#fff", border: "none", padding: "6px 14px", borderRadius: "3px", fontSize: "11px", fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "6px" }}
+                                  style={{
+                                    background: isPendingPayment ? "#6b7280" : "#7a2b2b",
+                                    color: "#fff",
+                                    border: "none",
+                                    padding: "6px 14px",
+                                    borderRadius: "3px",
+                                    fontSize: "11px",
+                                    fontWeight: 700,
+                                    cursor: "pointer",
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: "6px",
+                                  }}
                                   onClick={() => void handleCancelOrder(order)}
                                   disabled={cancellingOrderId === order.id}
                                 >
                                   <X size={13} />
-                                  {cancellingOrderId === order.id ? "Cancelling…" : `Cancel Order (${Math.max(1, Math.round(24 - hoursSincePlaced))}h remaining)`}
+                                  {cancellingOrderId === order.id
+                                    ? "Cancelling…"
+                                    : isPendingPayment
+                                    ? "Discard Unpaid Order"
+                                    : `Cancel Order (${Math.max(1, Math.round(24 - hoursSincePlaced))}h remaining)`}
                                 </button>
-                              ) : !["shipped", "delivered", "cancelled"].includes(order.status) ? (
+                              ) : !["shipped", "delivered", "cancelled"].includes(order.status) && !isPendingPayment ? (
                                 <span style={{ fontSize: "11px", color: "#8a7e72", background: "#f0ece7", padding: "4px 8px", borderRadius: "3px" }}>
                                   Cancellation closed (24h window passed)
                                 </span>
@@ -1057,13 +1116,15 @@ export default function CustomerAccount({ email }: { email: string }) {
                             </div>
                           )}
 
-                          {/* Strict No-Return Policy Notice */}
-                          <div style={{ marginTop: "10px", padding: "9px 12px", background: "#fdfbf7", border: "1px solid #ebd9bf", borderRadius: "4px", fontSize: "11px", color: "#6e5d4e", display: "flex", alignItems: "center", gap: "8px" }}>
-                            <ShieldAlert size={14} color="#aa8050" style={{ flexShrink: 0 }} />
-                            <span>
-                              <strong>Strict No-Return Policy:</strong> Due to artisanal fragrance hygiene &amp; bottle seal safety, perfume orders are final sale once dispatched. Cancellations are only permitted within 24 hours of placement before courier handover.
-                            </span>
-                          </div>
+                          {/* Strict No-Return Policy Notice (Only for confirmed/paid orders) */}
+                          {!isPendingPayment && (
+                            <div style={{ marginTop: "10px", padding: "9px 12px", background: "#fdfbf7", border: "1px solid #ebd9bf", borderRadius: "4px", fontSize: "11px", color: "#6e5d4e", display: "flex", alignItems: "center", gap: "8px" }}>
+                              <ShieldAlert size={14} color="#aa8050" style={{ flexShrink: 0 }} />
+                              <span>
+                                <strong>Strict No-Return Policy:</strong> Due to artisanal fragrance hygiene &amp; bottle seal safety, perfume orders are final sale once dispatched. Cancellations are only permitted within 24 hours of placement before courier handover.
+                              </span>
+                            </div>
+                          )}
                         </div>
                       );
                     })}

@@ -116,6 +116,24 @@ function getProductReviews(product: Product) {
 
 export default function ProductLuxuryDetails({ product, relatedProducts, verifiedReviews }: LuxuryDetailsProps) {
   const [activeFaq, setActiveFaq] = useState<number | null>(0);
+  const [selectedSize, setSelectedSize] = useState<string>(
+    product.variants?.[0]?.size || product.size || "50 ml"
+  );
+
+  useEffect(() => {
+    setSelectedSize(product.variants?.[0]?.size || product.size || "50 ml");
+  }, [product.size, product.variants]);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const custom = e as CustomEvent<{ size?: string }>;
+      if (custom.detail?.size) {
+        setSelectedSize(custom.detail.size);
+      }
+    };
+    window.addEventListener("flovexa-select-variant", handler);
+    return () => window.removeEventListener("flovexa-select-variant", handler);
+  }, []);
 
   const isFragrance = product.category === "Fragrance" || product.concentration.includes("Oil");
   const notesPyramid = getProductPyramid(product);
@@ -138,6 +156,18 @@ export default function ProductLuxuryDetails({ product, relatedProducts, verifie
     }
     return [...userReviews, ...defaultReviews];
   }, [userReviews, verifiedReviews, defaultReviews]);
+
+  const [reviewsFilter, setReviewsFilter] = useState<"all" | number>("all");
+  const [visibleReviewsCount, setVisibleReviewsCount] = useState<number>(3);
+
+  const filteredReviews = useMemo(() => {
+    if (reviewsFilter === "all") return reviews;
+    return reviews.filter((r) => r.rating === reviewsFilter);
+  }, [reviews, reviewsFilter]);
+
+  const displayedReviews = useMemo(() => {
+    return filteredReviews.slice(0, visibleReviewsCount);
+  }, [filteredReviews, visibleReviewsCount]);
 
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [rating, setRating] = useState(5);
@@ -248,7 +278,7 @@ export default function ProductLuxuryDetails({ product, relatedProducts, verifie
             <div className="story-meta-row">
               <span>{product.name.toUpperCase()}</span>
               <span className="story-meta-bullet">·</span>
-              <span>{product.size}</span>
+              <span>{selectedSize}</span>
               <span className="story-meta-bullet">·</span>
               <span>{product.concentration.toUpperCase()}</span>
               <span className="story-meta-bullet">·</span>
@@ -434,8 +464,44 @@ export default function ProductLuxuryDetails({ product, relatedProducts, verifie
           </div>
         </div>
 
+        {/* Rating Filter Pills */}
+        <div className="reviews-filter-pills">
+          <button
+            type="button"
+            className={`review-pill ${reviewsFilter === "all" ? "active" : ""}`}
+            onClick={() => {
+              setReviewsFilter("all");
+              setVisibleReviewsCount(3);
+            }}
+          >
+            All Reviews ({reviews.length})
+          </button>
+          <button
+            type="button"
+            className={`review-pill ${reviewsFilter === 5 ? "active" : ""}`}
+            onClick={() => {
+              setReviewsFilter(5);
+              setVisibleReviewsCount(3);
+            }}
+          >
+            5 Stars ({reviews.filter((r) => r.rating === 5).length})
+          </button>
+          {reviews.filter((r) => r.rating === 4).length > 0 && (
+            <button
+              type="button"
+              className={`review-pill ${reviewsFilter === 4 ? "active" : ""}`}
+              onClick={() => {
+                setReviewsFilter(4);
+                setVisibleReviewsCount(3);
+              }}
+            >
+              4 Stars ({reviews.filter((r) => r.rating === 4).length})
+            </button>
+          )}
+        </div>
+
         <div className="luxe-reviews-grid">
-          {reviews.map((rev, index) => (
+          {displayedReviews.map((rev, index) => (
             <div key={index} className="luxe-review-card">
               <div className="review-top">
                 <div className="review-stars">
@@ -459,6 +525,29 @@ export default function ProductLuxuryDetails({ product, relatedProducts, verifie
             </div>
           ))}
         </div>
+
+        {/* View More / Show Less Accordion Button */}
+        {filteredReviews.length > 3 && (
+          <div className="luxe-reviews-actions-bar">
+            {visibleReviewsCount < filteredReviews.length ? (
+              <button
+                type="button"
+                className="luxe-view-more-reviews-btn"
+                onClick={() => setVisibleReviewsCount(filteredReviews.length)}
+              >
+                View All {filteredReviews.length} Reviews ({filteredReviews.length - 3} More) <ChevronDown size={15} />
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="luxe-view-more-reviews-btn"
+                onClick={() => setVisibleReviewsCount(3)}
+              >
+                Show Less <ChevronUp size={15} />
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Write a Review Modal */}
         {showReviewModal && (

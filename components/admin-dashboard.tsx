@@ -255,12 +255,14 @@ export default function AdminDashboard({
     return orders.filter((order) => {
       if (orderFilter !== "all" && order.status !== orderFilter) return false;
       if (orderSearch.trim()) {
-        const q = orderSearch.toLowerCase();
+        const q = orderSearch.toLowerCase().trim();
+        const cleanQ = q.replace(/^#/, "");
         const matches =
-          order.order_number.toLowerCase().includes(q) ||
+          order.order_number.toLowerCase().includes(cleanQ) ||
+          order.id.toLowerCase().includes(cleanQ) ||
           order.customer_name.toLowerCase().includes(q) ||
           order.email.toLowerCase().includes(q) ||
-          order.phone.includes(q);
+          order.phone.includes(cleanQ);
         if (!matches) return false;
       }
       return true;
@@ -1083,7 +1085,7 @@ export default function AdminDashboard({
                   <input
                     value={orderSearch}
                     onChange={(event) => setOrderSearch(event.target.value)}
-                    placeholder="Search by Order #, name, phone…"
+                    placeholder="Search by Order ID (FLX-...), name, phone…"
                     style={{ minWidth: 200 }}
                   />
                   {orderSearch && (
@@ -1128,9 +1130,14 @@ export default function AdminDashboard({
                     <article className="order-card" key={order.id}>
                       <div className="order-card-head">
                         <div>
-                          <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: ".04em" }}>
-                            {order.order_number}
-                          </span>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+                            <span style={{ fontSize: 9.5, fontWeight: 800, background: "#000", color: "#fff", padding: "1px 6px", borderRadius: 2 }}>
+                              ORDER ID
+                            </span>
+                            <span style={{ fontSize: 13.5, fontWeight: 800, letterSpacing: ".04em", fontFamily: "var(--font-mono, monospace)" }}>
+                              {order.order_number}
+                            </span>
+                          </div>
                           <small>
                             Placed {new Date(order.created_at).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}
                           </small>

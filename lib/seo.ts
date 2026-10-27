@@ -1,12 +1,19 @@
 import type { Metadata } from "next";
 
-const configuredSiteUrl = process.env.NEXT_PUBLIC_SITE_URL;
-export const siteUrl = configuredSiteUrl && URL.canParse(configuredSiteUrl)
-  ? new URL(configuredSiteUrl).origin
-  : "http://localhost:3000";
+const configuredSiteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : undefined);
+
+export const siteUrl =
+  configuredSiteUrl && URL.canParse(configuredSiteUrl)
+    ? new URL(configuredSiteUrl).origin
+    : process.env.NODE_ENV === "production"
+    ? "https://flovexa.in"
+    : "http://localhost:3000";
 
 export function canonicalUrl(path = "/") {
-  return new URL(path, `${siteUrl}/`).toString();
+  const cleanPath = path.startsWith("/") ? path : `/${path}`;
+  return new URL(cleanPath, `${siteUrl}/`).toString();
 }
 
 export function metaDescription(value: string, maxLength = 160) {

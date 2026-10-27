@@ -1,0 +1,28 @@
+{
+  "name": "Flovexa Perfumes",
+  "short_name": "Flovexa",
+  "description": "Artisanal Indian Luxury Perfumery crafted with pure European extracts.",
+  "icons": [
+    {
+      "src": "/favicon-48x48.png",
+      "sizes": "48x48",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "theme_color": "#14110d",
+  "background_color": "#14110d",
+  "display": "standalone",
+  "start_url": "/"
+}
+

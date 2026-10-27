@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     "Eau de Parfum India",
     "Pure fragrance oils India",
   ],
-  alternates: { canonical: canonicalUrl("/store") },
+  alternates: { canonical: canonicalUrl("/") },
   openGraph: {
     title: "Flovexa Perfumes — Official Customer Store",
     description: "Shop official Flovexa luxury Eau de Parfums and concentrated fragrance oils. 100% authentic long-lasting scents.",
@@ -72,16 +72,17 @@ export default async function StorePage() {
           "@graph": [
             {
               "@type": "WebSite",
-              name: "Flovexa Perfumes - Customer Store",
-              alternateName: ["Flovexa", "Flovexa Official Store", "Flovexa Store", "Flovexa Fragrance"],
-              url: canonicalUrl("/store"),
+              name: "Flovexa",
+              alternateName: ["Flovexa Perfumes", "Flovexa Official Store", "Flovexa Store", "Flovexa Fragrance"],
+              url: canonicalUrl("/"),
               description: "Flovexa official luxury fragrance and customer shopping destination in India.",
             },
             {
               "@type": "Organization",
-              name: "Flovexa Perfumes",
-              url: canonicalUrl("/store"),
-              logo: canonicalUrl("/products/flovexa-luxury-box.jpg"),
+              name: "Flovexa",
+              legalName: "Flovexa Perfumes",
+              url: canonicalUrl("/"),
+              logo: canonicalUrl("/icon.png"),
             },
           ],
         }}

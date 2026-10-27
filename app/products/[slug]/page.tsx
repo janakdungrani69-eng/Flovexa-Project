@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import JsonLd from "@/components/json-ld";
 import CheckoutBackButton from "@/components/checkout-back-button";
@@ -108,7 +109,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
       <header className="checkout-header detail-header">
         <CheckoutBackButton label="Go back" fallback="/store#collection" />
-        <Link href="/store" className="wordmark">
+        <Link href="/" className="wordmark">
           FLOVEXA<span>PERFUMES</span>
         </Link>
         <span aria-hidden="true" />

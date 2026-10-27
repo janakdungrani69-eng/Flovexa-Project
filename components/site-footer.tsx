@@ -15,7 +15,7 @@ export default function SiteFooter({
         {/* 1. Official Brand & Atelier Identity */}
         <div className="footer-brand-block">
           <div className="footer-brand-title">
-            <Link href="/store" className="wordmark">
+            <Link href="/" className="wordmark">
               FLOVEXA<span>PARFUM</span>
             </Link>
             <span className="reg-badge">®</span>

@@ -56,3 +56,130 @@ nextjs-portal, [data-nextjs-dev-tools-button], [data-nextjs-toast], div[data-nex
 @media(max-width:760px){.home-reviews-section{padding:0 18px;margin-bottom:50px}.home-reviews-header{flex-direction:column;align-items:flex-start;gap:16px}.home-rating-trust-box{width:100%;justify-content:space-between}.home-reviews-grid{grid-template-columns:1fr;gap:14px}}
 
 .product-name, .product-overline, .product-card, .purchase-title, h1, h2, h3{font-variant-numeric:lining-nums tabular-nums;font-feature-settings:"lnum" 1}
+
+/* ==========================================================================
+   FLOVEXA DYNAMIC TOP SELLER BADGE & SALES COUNTER
+   ========================================================================== */
+.hero-top-seller-badge {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  z-index: 10;
+  background: rgba(27, 22, 17, 0.94);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1.5px solid rgba(213, 180, 130, 0.5);
+  border-radius: 10px;
+  padding: 9px 16px;
+  color: #ffffff;
+  box-shadow: 0 14px 30px rgba(18, 14, 10, 0.28), 0 0 20px rgba(213, 180, 130, 0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-items: flex-end;
+  pointer-events: none;
+  animation: heroBadgeFloat 3.5s ease-in-out infinite alternate;
+}
+
+@keyframes heroBadgeFloat {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-4px); }
+}
+
+.top-seller-rank-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 9.5px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  color: #dfb987;
+  text-transform: uppercase;
+}
+
+.top-seller-fire {
+  color: #e5b367;
+  font-size: 11px;
+}
+
+.top-seller-count-box {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.top-seller-number {
+  font-family: var(--serif, 'Playfair Display', serif);
+  font-size: 20px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+.top-seller-label {
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  color: #d1c3b2;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.hero-top-seller-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #eee5d8;
+  border: 1px solid #d9cbba;
+  padding: 5px 14px;
+  border-radius: 20px;
+  font-size: 11.5px;
+  color: #4a3d31;
+  margin-top: 14px;
+  margin-bottom: 2px;
+  width: fit-content;
+}
+
+.top-seller-live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #1b8a47;
+  box-shadow: 0 0 0 3px rgba(27, 138, 71, 0.2);
+  display: inline-block;
+}
+
+.product-top-seller-pill {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 5;
+  background: #1f1913;
+  color: #dfb987;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid rgba(223, 185, 135, 0.35);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+@media (max-width: 768px) {
+  .hero-top-seller-badge {
+    top: 14px;
+    right: 14px;
+    padding: 6px 11px;
+  }
+  .top-seller-number {
+    font-size: 16px;
+  }
+  .top-seller-rank-tag {
+    font-size: 8.5px;
+  }
+  .top-seller-label {
+    font-size: 8.5px;
+  }
+}
+

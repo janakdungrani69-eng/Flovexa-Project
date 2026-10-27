@@ -102,14 +102,12 @@ export default function ShippingLabelModal({
               <Sparkles size={13} /> {isCombo ? "Consolidated Fragrance Combo Label" : "Official Parcel Shipping Label"}
             </span>
             <h3 className="shipping-label-modal-title">
-              {isCombo
-                ? `1 Single Label for All ${totalBottles} Perfumes`
-                : `Shipping Label · Order #${order.order_number}`}
+              Shipping Label · Order ID: #{order.order_number}
             </h3>
             <p className="shipping-label-modal-sub">
               {isCombo
-                ? "All fragrances in this order are bundled together in 1 master luxury box under this single label for the delivery address."
-                : "Official courier parcel label with routing barcode and atelier manifest."}
+                ? `Consolidated single shipping label for all ${totalBottles} fragrances in Order #${order.order_number}.`
+                : `Official courier parcel label with routing barcode and atelier manifest for Order #${order.order_number}.`}
             </p>
           </div>
 
@@ -165,7 +163,7 @@ export default function ShippingLabelModal({
             {/* 2. Parcel Reference & Barcode Section */}
             <div className="thermal-barcode-strip">
               <div className="thermal-carrier-row">
-                <span>PARCEL REF: <strong>#{order.order_number}</strong></span>
+                <span>ORDER ID: <strong style={{ letterSpacing: "0.04em" }}>#{order.order_number}</strong></span>
                 <span>COURIER: <strong>{courierPartner}</strong></span>
                 <span>DATE: <strong>{orderDateFormatted}</strong></span>
               </div>
@@ -224,18 +222,40 @@ export default function ShippingLabelModal({
                 </svg>
               </div>
 
-              <div className="thermal-awb-num">
-                <span>ORDER / MANIFEST NO:</span>
-                <strong>#{order.order_number}</strong>
-                {hasTrackingNumber ? (
-                  <span style={{ marginLeft: "10px", paddingLeft: "10px", borderLeft: "2px solid #000" }}>
-                    AWB: <strong>{order.tracking_number}</strong>
+              <div className="thermal-awb-num" style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "6px 12px",
+                background: "#f7f3ed",
+                border: "2px solid #000",
+                borderRadius: "3px",
+                marginTop: "6px",
+                gap: "8px"
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", whiteSpace: "nowrap" }}>
+                  <span style={{ fontSize: "10px", fontWeight: 900, letterSpacing: "0.08em", background: "#000", color: "#fff", padding: "2px 7px", borderRadius: "2px" }}>
+                    ORDER ID
                   </span>
-                ) : (
-                  <span style={{ marginLeft: "10px", fontSize: "10px", color: "#555", fontWeight: 700 }}>
-                    [ MAHAVIR EXPRESS AWB AFFIXED ON DISPATCH ]
-                  </span>
-                )}
+                  <strong style={{ fontSize: "14.5px", fontWeight: 900, letterSpacing: "0.06em", fontFamily: "var(--font-mono, monospace)", color: "#000", whiteSpace: "nowrap" }}>
+                    #{order.order_number}
+                  </strong>
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", whiteSpace: "nowrap" }}>
+                  {hasTrackingNumber ? (
+                    <>
+                      <span style={{ fontSize: "10px", fontWeight: 800, color: "#333" }}>AWB:</span>
+                      <strong style={{ fontSize: "13px", fontWeight: 900, color: "#000", fontFamily: "var(--font-mono, monospace)" }}>
+                        {order.tracking_number}
+                      </strong>
+                    </>
+                  ) : (
+                    <span style={{ fontSize: "9.5px", color: "#555", fontWeight: 800, letterSpacing: "0.04em" }}>
+                      [ MAHAVIR EXPRESS AWB ON DISPATCH ]
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -312,44 +332,51 @@ export default function ShippingLabelModal({
               </div>
 
               {/* SHIP FROM (ORIGIN ATELIER) */}
-              <div className="thermal-ship-from-box">
+              <div className="thermal-ship-from-box" style={{ display: "flex", flexDirection: "column", height: "100%" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "2px solid #000", paddingBottom: "4px", marginBottom: "8px" }}>
-                  <span style={{ background: "#332a22", color: "#fff", padding: "3px 8px", fontSize: "10px", fontWeight: 900, letterSpacing: "0.1em", borderRadius: "2px" }}>
+                  <span style={{ background: "#000", color: "#fff", padding: "3px 8px", fontSize: "10px", fontWeight: 900, letterSpacing: "0.1em", borderRadius: "2px" }}>
                     SHIP FROM · ORIGIN ATELIER
                   </span>
-                  <span style={{ fontSize: "9px", fontWeight: 800, color: "#555" }}>
-                    AUTHENTIC
+                  <span style={{ fontSize: "9.5px", fontWeight: 800, color: "#111", letterSpacing: "0.04em" }}>
+                    VERIFIED ATELIER
                   </span>
                 </div>
 
-                <strong className="thermal-from-name" style={{ fontSize: "12.5px", letterSpacing: "0.06em", color: "#1f1a14" }}>
+                <strong className="thermal-from-name" style={{ fontSize: "16px", textTransform: "uppercase", letterSpacing: "0.04em", color: "#000" }}>
                   FLOVEXA® PARFUM
                 </strong>
-                <div className="thermal-from-address" style={{ fontSize: "9.5px", lineHeight: "1.3", color: "#333", margin: "3px 0 6px" }}>
-                  Packed &amp; Marketed by: <strong>FLOVEXA</strong>
-                  <br />
-                  21, Ramdev Row-House, Rajmandir Rd
-                  <br />
-                  Surat, Gujarat - 395006, India
-                  <br />
-                  <strong>Helpline:</strong> +91 96627 65757
-                  <br />
-                  <strong>Email:</strong> flovexaenterprises@gmail.com
+                <span className="thermal-from-phone" style={{ fontSize: "12px", background: "#f2ece4", padding: "2px 8px", borderRadius: "3px", width: "fit-content", margin: "3px 0 6px", fontWeight: 700, color: "#111" }}>
+                  HELPLINE: +91 96627 65757
+                </span>
+
+                <div className="thermal-from-address" style={{ fontSize: "12px", lineHeight: "1.45", color: "#111" }}>
+                  <div style={{ fontSize: "11px", color: "#444", marginBottom: "2px" }}>
+                    <span style={{ fontWeight: 700, color: "#000" }}>Packed &amp; Marketed by:</span> FLOVEXA
+                  </div>
+                  <div style={{ fontWeight: 600 }}>
+                    21, Ramdev Row-House Shopping, Opp. Shivdhara Society, Rajmandir Rd
+                  </div>
+                  <div style={{ fontWeight: 800, marginTop: "3px", textTransform: "uppercase" }}>
+                    Surat, Gujarat – 395006, India
+                  </div>
+                  <div style={{ fontSize: "11px", color: "#555", marginTop: "3px", fontWeight: 600 }}>
+                    EMAIL: flovexaenterprises@gmail.com
+                  </div>
                 </div>
 
                 <div style={{
                   marginTop: "auto",
-                  border: "1.5px solid #000",
+                  border: "2px solid #000",
                   background: "#f7f3ed",
-                  padding: "5px 10px",
+                  padding: "6px 12px",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
                   borderRadius: "2px"
                 }}>
-                  <span style={{ fontSize: "9px", fontWeight: 800, color: "#444" }}>SORT HUB:</span>
-                  <strong style={{ fontSize: "12px", fontWeight: 900, color: "#000", letterSpacing: "0.05em" }}>
-                    STV-W01 · {address.city?.substring(0, 3).toUpperCase() || "DEL"}
+                  <span style={{ fontSize: "10px", fontWeight: 800, letterSpacing: "0.08em", color: "#444" }}>ORIGIN SORT HUB</span>
+                  <strong style={{ fontSize: "14px", fontWeight: 900, color: "#000", letterSpacing: "0.08em" }}>
+                    STV-W01 · SURAT
                   </strong>
                 </div>
               </div>
@@ -393,8 +420,8 @@ export default function ShippingLabelModal({
                       </td>
                       <td style={{ textAlign: "center" }}>{item.size}</td>
                       <td style={{ textAlign: "center", fontWeight: 800 }}>×{item.quantity}</td>
-                      <td style={{ textAlign: "right", fontSize: "10px", color: "#444" }}>
-                        Velvet Gift Bed
+                      <td style={{ textAlign: "right", fontSize: "10px", color: item.product_name.includes("Free Gift") || item.product_name.includes("Complimentary") ? "#1a7035" : "#444", fontWeight: item.product_name.includes("Free Gift") || item.product_name.includes("Complimentary") ? 700 : 400 }}>
+                        {item.product_name.includes("Free Gift") || item.product_name.includes("Complimentary") ? "🎁 Free Gift Flacon" : "Velvet Gift Bed"}
                       </td>
                     </tr>
                   ))}
@@ -403,6 +430,10 @@ export default function ShippingLabelModal({
 
               {/* Total & Commercial Value Bar */}
               <div className="thermal-manifest-summary">
+                <div>
+                  <span>ORDER ID:</span>
+                  <strong style={{ fontFamily: "monospace", letterSpacing: "0.04em" }}>#{order.order_number}</strong>
+                </div>
                 <div>
                   <span>TOTAL PIECES:</span>
                   <strong>{totalBottles} BOTTLE{totalBottles > 1 ? "S" : ""}</strong>
