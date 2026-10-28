@@ -52,7 +52,7 @@ export default function RazorpayTestPage() {
 
       // STEP 2: Open Razorpay Checkout Modal
       const options = {
-        key: key_id || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_TrjBPlrR7USoQs",
+        key: key_id || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_live_TtQFGzbYvWgZ83",
         amount,
         currency,
         name: "Flovexa Perfumes",
@@ -270,7 +270,7 @@ export default function RazorpayTestPage() {
             <div style={{ display: "flex", alignItems: "center", gap: 6, color: "#aa8050", fontWeight: 600, marginBottom: 4 }}>
               <ShieldCheck size={14} /> Active Credentials
             </div>
-            <div>Key ID: <code>rzp_test_TrjBPlrR7USoQs</code></div>
+            <div>Key ID: <code>rzp_live_TtQFGzbYvWgZ83</code></div>
             <div>Webhook &amp; Verification: HMAC-SHA256 Active</div>
           </div>
 

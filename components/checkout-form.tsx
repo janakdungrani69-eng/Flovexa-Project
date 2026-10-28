@@ -127,7 +127,7 @@ export default function CheckoutForm({ items, enabled, initialCustomer, couponCo
         });
       }
       if (!window.Razorpay) throw new Error("Secure payment is unavailable in this browser. Please refresh and try again.");
-      const razorpayKey = order.keyId || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_TrjBPlrR7USoQs";
+      const razorpayKey = order.keyId || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_live_TtQFGzbYvWgZ83";
       const checkout = new window.Razorpay({
         key: razorpayKey, amount: order.amountPaise, currency: order.currency, name: "FLOVEXA PERFUMES",
         description: `Order ${order.orderNumber}`, order_id: order.razorpayOrderId,
