@@ -145,3 +145,9 @@
   .pay-button{min-height:50px !important;font-size:12px !important;border-radius:8px !important}
   .checkout-footer{gap:13px;font-size:7px}
 }
+
+/* Master Lining Numbers for Checkout */
+.checkout-price, .order-summary-price, .summary-total, .summary-subtotal, .shipping-price, b, strong, .badge, [class*="price"], [class*="total"], [class*="qty"] {
+  font-variant-numeric: lining-nums tabular-nums !important;
+  font-feature-settings: "lnum" 1, "tnum" 1, "onum" 0 !important;
+}

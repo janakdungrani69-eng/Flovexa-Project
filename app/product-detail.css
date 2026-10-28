@@ -736,13 +736,15 @@
   box-shadow: 0 4px 14px rgba(45, 34, 22, 0.03);
 }
 .step-number {
-  font-family: var(--serif, 'Playfair Display', Georgia, serif);
-  font-size: 40px;
+  font-family: var(--sans), 'DM Sans', -apple-system, sans-serif !important;
+  font-size: 38px;
   font-weight: 700;
   line-height: 1;
   color: var(--gold, #aa8050);
   margin-bottom: 12px;
   opacity: 0.9;
+  font-variant-numeric: lining-nums tabular-nums !important;
+  font-feature-settings: "lnum" 1, "tnum" 1, "onum" 0 !important;
 }
 .ritual-step-card h4 {
   font-size: 18px;
@@ -1546,3 +1548,9 @@
 
 
 
+
+/* Master Lining Numbers for Product Detail */
+.step-number, .rating-score-big span, .purchase-main-price, .purchase-qty-number, .current-price, .old-price, .cta-price, .purchase-addon-price strong, .discount-badge {
+  font-variant-numeric: lining-nums tabular-nums !important;
+  font-feature-settings: "lnum" 1, "tnum" 1, "onum" 0 !important;
+}

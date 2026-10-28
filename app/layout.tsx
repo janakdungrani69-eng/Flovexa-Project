@@ -41,7 +41,7 @@ export const metadata: Metadata = {
   },
   manifest: "/site.webmanifest",
   verification: {
-    google: "LwmiJLqerPJvkf9ceFsTzovdSgqr19EaSwFlHtPXoMc",
+    google: "LwmiJLqerPJvkf9ceFsTzovdSgqr19EaSwFIHtPXoMc",
   },
   openGraph: {
     title: "Flovexa — Luxury Perfumes & Pure Fragrance Oils",
