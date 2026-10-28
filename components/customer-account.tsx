@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import {
   ArrowRight,
   Award,
@@ -202,10 +202,7 @@ export default function CustomerAccount({ email }: { email: string }) {
   const [deliveredThankYouOrder, setDeliveredThankYouOrder] = useState<Order | null>(null);
 
   async function handleCancelOrder(order: Order) {
-    const isPendingPayment = order.status === "pending_payment";
-    const confirmMessage = isPendingPayment
-      ? `Are you sure you want to discard unpaid draft Order #${order.order_number}?`
-      : `Are you sure you want to cancel Order #${order.order_number}? Orders can only be cancelled within 24 hours of placement.`;
+    const confirmMessage = `Are you sure you want to cancel Order #${order.order_number}? Orders can only be cancelled within 24 hours of placement.`;
     if (!confirm(confirmMessage)) {
       return;
     }
@@ -224,9 +221,7 @@ export default function CustomerAccount({ email }: { email: string }) {
         if (!prev) return prev;
         return {
           ...prev,
-          orders: isPendingPayment
-            ? prev.orders.filter((o) => o.id !== order.id)
-            : prev.orders.map((o) => (o.id === order.id ? { ...o, status: "cancelled" } : o)),
+          orders: prev.orders.map((o) => (o.id === order.id ? { ...o, status: "cancelled" } : o)),
         };
       });
       setNotice(result.message || `Order #${order.order_number} cancelled successfully.`);
@@ -503,22 +498,35 @@ export default function CustomerAccount({ email }: { email: string }) {
     }
   }
 
-  // Derive counts & metadata
-  const ordersCount = data?.orders?.length ?? 0;
+  // Derive counts & metadata (strictly confirmed/paid orders - unpaid drafts never appear in My Orders)
+  const confirmedPaidOrders = useMemo(() => {
+    return (data?.orders || []).filter(
+      (o) =>
+        o.status !== "pending_payment" &&
+        (o.payment_status === "captured" ||
+          ["paid", "confirmed", "processing", "packed", "shipped", "out_for_delivery", "delivered", "cancelled"].includes(
+            o.status
+          ))
+    );
+  }, [data?.orders]);
+
+  const ordersCount = confirmedPaidOrders.length;
   const wishlistCount = data?.wishlist?.length ?? 0;
   const addressesCount = data?.addresses?.length ?? 0;
   const displayName = profile.fullName.trim() || email.split("@")[0] || "Customer";
   const avatarLetter = (displayName[0] || "F").toUpperCase();
 
-  const filteredOrders = (data?.orders || []).filter((o) => {
-    if (orderFilter === "in_transit") {
-      return ["processing", "packed", "shipped", "out_for_delivery"].includes(o.status);
-    }
-    if (orderFilter === "delivered") {
-      return o.status === "delivered";
-    }
-    return true;
-  });
+  const filteredOrders = useMemo(() => {
+    return confirmedPaidOrders.filter((o) => {
+      if (orderFilter === "in_transit") {
+        return ["paid", "confirmed", "processing", "packed", "shipped", "out_for_delivery"].includes(o.status);
+      }
+      if (orderFilter === "delivered") {
+        return o.status === "delivered";
+      }
+      return true;
+    });
+  }, [confirmedPaidOrders, orderFilter]);
 
   const faqs = [
     {
@@ -827,15 +835,13 @@ export default function CustomerAccount({ email }: { email: string }) {
                         year: "numeric",
                       });
 
-                      const isPendingPayment = order.status === "pending_payment";
                       const isDelivered = order.status === "delivered";
                       const isShipped = ["shipped", "out_for_delivery"].includes(order.status) || isDelivered;
                       const isPacked = ["confirmed", "processing", "packed"].includes(order.status) || isShipped;
-                      const isConfirmed = isPacked && !isPendingPayment;
 
                       const placedAtMs = new Date(order.created_at).getTime();
                       const hoursSincePlaced = (Date.now() - placedAtMs) / (1000 * 60 * 60);
-                      const canCancelOrder = (isPendingPayment || hoursSincePlaced < 24) && !["shipped", "delivered", "cancelled"].includes(order.status);
+                      const canCancelOrder = hoursSincePlaced < 24 && !["shipped", "delivered", "cancelled"].includes(order.status);
 
                       const totalBottles = order.order_items.reduce((sum, item) => sum + (item.quantity || 1), 0);
                       const isCombo = totalBottles > 1 || order.order_items.length > 1;
@@ -862,18 +868,13 @@ export default function CustomerAccount({ email }: { email: string }) {
 
                           {/* 4-Step Visual Delivery Progress */}
                           <div className="order-progress-stepper">
-                            <div className={`stepper-step ${isPendingPayment ? "pending" : "completed"}`}>
-                              <div
-                                className="stepper-circle"
-                                style={isPendingPayment ? { background: "#d97706", color: "#fff", borderColor: "#d97706" } : undefined}
-                              >
-                                {isPendingPayment ? "⏳" : "✓"}
-                              </div>
-                              <span>{isPendingPayment ? "Payment Pending" : "Placed"}</span>
+                            <div className="stepper-step completed">
+                              <div className="stepper-circle">✓</div>
+                              <span>Placed</span>
                             </div>
-                            <div className={`stepper-line ${isConfirmed ? "active" : ""}`} />
-                            <div className={`stepper-step ${isConfirmed ? "completed" : ""}`}>
-                              <div className="stepper-circle">{isConfirmed ? "✓" : "2"}</div>
+                            <div className={`stepper-line ${isPacked ? "active" : ""}`} />
+                            <div className={`stepper-step ${isPacked ? "completed" : ""}`}>
+                              <div className="stepper-circle">{isPacked ? "✓" : "2"}</div>
                               <span>Order Packed</span>
                             </div>
                             <div className={`stepper-line ${isShipped ? "active" : ""}`} />
@@ -981,54 +982,24 @@ export default function CustomerAccount({ email }: { email: string }) {
                                   <ExternalLink size={13} />
                                   <span>Track Courier Package</span>
                                 </a>
-                              ) : isPendingPayment ? (
-                                <span className="order-dispatch-text" style={{ color: "#b45309" }}>
-                                  <Clock size={14} /> Awaiting payment confirmation
-                                </span>
                               ) : (
                                 <span className="order-dispatch-text">
                                   <Truck size={14} /> Being carefully packed at our fragrance atelier
                                 </span>
                               )}
 
-                              {!isPendingPayment && (
-                                <button
-                                  type="button"
-                                  className="order-btn-view-label"
-                                  onClick={() => setSelectedLabelOrder(order)}
-                                  title="View consolidated parcel shipping label & packing manifest"
-                                >
-                                  <Tag size={13} />
-                                  <span>{isCombo ? `View Combo Shipping Label (${totalBottles} in 1 Box)` : "View Shipping Label"}</span>
-                                </button>
-                              )}
+                              <button
+                                type="button"
+                                className="order-btn-view-label"
+                                onClick={() => setSelectedLabelOrder(order)}
+                                title="View consolidated parcel shipping label & packing manifest"
+                              >
+                                <Tag size={13} />
+                                <span>{isCombo ? `View Combo Shipping Label (${totalBottles} in 1 Box)` : "View Shipping Label"}</span>
+                              </button>
                             </div>
 
                             <div className="order-support-actions" style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
-                              {/* Complete Payment Button for pending payment draft */}
-                              {isPendingPayment && (
-                                <Link
-                                  href="/checkout"
-                                  className="order-cancel-btn"
-                                  style={{
-                                    background: "#aa8050",
-                                    color: "#fff",
-                                    textDecoration: "none",
-                                    border: "none",
-                                    padding: "6px 14px",
-                                    borderRadius: "3px",
-                                    fontSize: "11px",
-                                    fontWeight: 700,
-                                    cursor: "pointer",
-                                    display: "inline-flex",
-                                    alignItems: "center",
-                                    gap: "6px",
-                                  }}
-                                >
-                                  <ShoppingBag size={13} /> Complete Checkout
-                                </Link>
-                              )}
-
                               {/* Delivered Order Thank You & Review Action */}
                               {isDelivered && (
                                 <button
@@ -1054,13 +1025,13 @@ export default function CustomerAccount({ email }: { email: string }) {
                                 </button>
                               )}
 
-                              {/* 24-Hour Order Cancellation / Discard Draft */}
+                              {/* 24-Hour Order Cancellation */}
                               {canCancelOrder ? (
                                 <button
                                   type="button"
                                   className="order-cancel-btn"
                                   style={{
-                                    background: isPendingPayment ? "#6b7280" : "#7a2b2b",
+                                    background: "#7a2b2b",
                                     color: "#fff",
                                     border: "none",
                                     padding: "6px 14px",
@@ -1078,11 +1049,9 @@ export default function CustomerAccount({ email }: { email: string }) {
                                   <X size={13} />
                                   {cancellingOrderId === order.id
                                     ? "Cancelling…"
-                                    : isPendingPayment
-                                    ? "Discard Unpaid Order"
                                     : `Cancel Order (${Math.max(1, Math.round(24 - hoursSincePlaced))}h remaining)`}
                                 </button>
-                              ) : !["shipped", "delivered", "cancelled"].includes(order.status) && !isPendingPayment ? (
+                              ) : !["shipped", "delivered", "cancelled"].includes(order.status) ? (
                                 <span style={{ fontSize: "11px", color: "#8a7e72", background: "#f0ece7", padding: "4px 8px", borderRadius: "3px" }}>
                                   Cancellation closed (24h window passed)
                                 </span>
@@ -1116,15 +1085,13 @@ export default function CustomerAccount({ email }: { email: string }) {
                             </div>
                           )}
 
-                          {/* Strict No-Return Policy Notice (Only for confirmed/paid orders) */}
-                          {!isPendingPayment && (
-                            <div style={{ marginTop: "10px", padding: "9px 12px", background: "#fdfbf7", border: "1px solid #ebd9bf", borderRadius: "4px", fontSize: "11px", color: "#6e5d4e", display: "flex", alignItems: "center", gap: "8px" }}>
-                              <ShieldAlert size={14} color="#aa8050" style={{ flexShrink: 0 }} />
-                              <span>
-                                <strong>Strict No-Return Policy:</strong> Due to artisanal fragrance hygiene &amp; bottle seal safety, perfume orders are final sale once dispatched. Cancellations are only permitted within 24 hours of placement before courier handover.
-                              </span>
-                            </div>
-                          )}
+                          {/* Strict No-Return Policy Notice */}
+                          <div style={{ marginTop: "10px", padding: "9px 12px", background: "#fdfbf7", border: "1px solid #ebd9bf", borderRadius: "4px", fontSize: "11px", color: "#6e5d4e", display: "flex", alignItems: "center", gap: "8px" }}>
+                            <ShieldAlert size={14} color="#aa8050" style={{ flexShrink: 0 }} />
+                            <span>
+                              <strong>Strict No-Return Policy:</strong> Due to artisanal fragrance hygiene &amp; bottle seal safety, perfume orders are final sale once dispatched. Cancellations are only permitted within 24 hours of placement before courier handover.
+                            </span>
+                          </div>
                         </div>
                       );
                     })}

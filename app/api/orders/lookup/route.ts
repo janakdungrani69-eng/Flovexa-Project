@@ -25,7 +25,9 @@ export async function POST(request: Request) {
       .select("id, order_number, email, status, payment_status, total_paise, shipping_address, created_at, tracking_carrier, tracking_number, tracking_url, order_items(product_name, size, quantity)")
       .eq("order_number", parsed.data.orderNumber).eq("email", parsed.data.email.toLowerCase()).maybeSingle();
     if (error) throw error;
-    if (!order) return NextResponse.json({ error: "We could not find an order with those details. Please check your confirmation email." }, { status: 404 });
+    if (!order || order.status === "pending_payment" || order.payment_status === "created") {
+      return NextResponse.json({ error: "We could not find a confirmed order with those details. Please check your confirmation email." }, { status: 404 });
+    }
     const { data: shipments, error: shipmentError } = await supabase.from("seller_fulfillments")
       .select("status, tracking_carrier, tracking_number, tracking_url, seller_profiles(store_name)")
       .eq("order_id", order.id);

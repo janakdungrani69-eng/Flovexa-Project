@@ -2296,13 +2296,15 @@
 }
 
 .customer-portal-topbar {
-  background: #1a1613;
+  background: #1a1613 !important;
   color: #f4efe6;
   padding: 0 32px;
   border-bottom: 1px solid rgba(210, 183, 129, 0.25);
-  position: sticky;
-  top: 0;
-  z-index: 50;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 1000 !important;
+  width: 100% !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.28);
 }
 
 .customer-portal-topbar-inner {
@@ -8163,7 +8165,7 @@
    FLOVEXA LUXURY MOBILE OPTIMIZATIONS (COMPREHENSIVE FULL-SITE MOBILE SETUP)
    ========================================================================== */
 html, body {
-  overflow-x: hidden !important;
+  overflow-x: clip !important;
   max-width: 100vw !important;
   -webkit-text-size-adjust: 100% !important;
   touch-action: manipulation;

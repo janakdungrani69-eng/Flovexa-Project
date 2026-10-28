@@ -1,4 +1,4 @@
-export const DEFAULT_CATEGORIES = ["Perfume", "Fragrance"];
+export const DEFAULT_CATEGORIES = ["Scents", "Fragrance Oils"];
 
 export type StorefrontSettings = {
   hero_image_url: string;

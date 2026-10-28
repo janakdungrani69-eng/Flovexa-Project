@@ -62,13 +62,13 @@ export default function SiteFooter({
           </Link>
           <Link
             href="/store#collection"
-            onClick={() => onSelectCategory?.("Perfume")}
+            onClick={() => onSelectCategory?.("Scents")}
           >
-            Artisanal Perfumes
+            Artisanal Perfumes &amp; Scents
           </Link>
           <Link
             href="/store#collection"
-            onClick={() => onSelectCategory?.("Fragrance")}
+            onClick={() => onSelectCategory?.("Fragrance Oils")}
           >
             Fragrance Oils &amp; Attars
           </Link>

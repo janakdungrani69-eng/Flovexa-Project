@@ -42,6 +42,7 @@ export default async function AdminPage() {
         supabase
           .from("orders")
           .select("id, order_number, customer_name, email, phone, shipping_address, total_paise, status, payment_status, tracking_carrier, tracking_number, tracking_url, created_at, order_items(id, product_id, product_name, size, quantity, line_total_paise, seller_id)")
+          .neq("status", "pending_payment")
           .order("created_at", { ascending: false })
           .limit(100),
         supabase
@@ -52,6 +53,7 @@ export default async function AdminPage() {
         supabase
           .from("orders")
           .select("email, total_paise, payment_status, created_at")
+          .neq("status", "pending_payment")
           .order("created_at", { ascending: false })
           .limit(1000),
         supabase.auth.admin.listUsers({ page: 1, perPage: 1000 }),

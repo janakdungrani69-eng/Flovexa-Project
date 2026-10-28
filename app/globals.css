@@ -109,11 +109,24 @@ nextjs-portal, [data-nextjs-dev-tools-button], [data-nextjs-toast], div[data-nex
 }
 
 .top-seller-number {
-  font-family: var(--serif, 'Playfair Display', serif);
+  font-family: var(--sans, 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
   font-size: 20px;
-  font-weight: 700;
+  font-weight: 800;
   color: #ffffff;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  font-variant-numeric: lining-nums tabular-nums;
+  -webkit-font-feature-settings: "lnum" 1, "tnum" 1;
+  font-feature-settings: "lnum" 1, "tnum" 1;
+  display: inline-flex;
+  align-items: baseline;
+}
+
+.top-seller-plus {
+  color: #dfb987;
+  font-weight: 700;
+  font-size: 16px;
+  margin-left: 2px;
   line-height: 1;
 }
 

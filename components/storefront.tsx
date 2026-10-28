@@ -65,8 +65,24 @@ export default function Storefront({
   const [sortOpen, setSortOpen] = useState(false);
   const filteredProducts = useMemo(() => {
     const list = products.filter((product) => {
-      const matchesCategory = category === "All scents" || product.category === category;
-      const words = `${product.name} ${product.category} ${product.notes.join(" ")}`.toLowerCase();
+      const isOil =
+        product.category?.toLowerCase() === "fragrance" ||
+        product.category?.toLowerCase() === "oil" ||
+        product.category?.toLowerCase() === "fragrance oils" ||
+        product.category?.toLowerCase() === "attar" ||
+        product.concentration?.toLowerCase().includes("oil") ||
+        product.name?.toLowerCase().includes("oil");
+
+      let matchesCategory = true;
+      if (category === "Scents" || category === "Perfume" || category === "Perfumes") {
+        matchesCategory = !isOil;
+      } else if (category === "Fragrance Oils" || category === "Oils" || category === "Oil" || category === "Fragrance") {
+        matchesCategory = isOil;
+      } else {
+        matchesCategory = true;
+      }
+
+      const words = `${product.name} ${product.category} ${product.concentration} ${product.notes.join(" ")}`.toLowerCase();
       return matchesCategory && words.includes(query.trim().toLowerCase());
     });
 
@@ -238,7 +254,9 @@ export default function Storefront({
                 <span>#1 TOP SELLER</span>
               </div>
               <div className="top-seller-count-box">
-                <strong className="top-seller-number">{heroSalesCount.toLocaleString("en-IN")}+</strong>
+                <strong className="top-seller-number">
+                  {heroSalesCount.toLocaleString("en-IN")}<span className="top-seller-plus">+</span>
+                </strong>
                 <span className="top-seller-label">Bottles Sold</span>
               </div>
             </div>

@@ -26,36 +26,44 @@ export async function GET() {
     const rawOrders = orderResult.data ?? [];
     const duplicateDraftIdsToCancel: string[] = [];
     const sanitizedOrders: typeof rawOrders = [];
-    let hasKeptPendingDraft = false;
 
     for (const order of rawOrders) {
+      // 1. Strictly discard all unpaid pending_payment drafts - customer must only see orders once payment is completed!
+      if (order.status === "pending_payment" || order.payment_status === "created") {
+        duplicateDraftIdsToCancel.push(order.id);
+        continue;
+      }
+
+      // 2. Discard cancelled orders unless they were paid/captured (or refunded)
       if (order.status === "cancelled") {
-        if (order.payment_status === "captured") {
+        if (order.payment_status === "captured" || order.payment_status === "refunded") {
           sanitizedOrders.push(order);
         }
         continue;
       }
 
-      if (order.status === "pending_payment") {
-        if (hasKeptPendingDraft) {
-          duplicateDraftIdsToCancel.push(order.id);
-          continue;
-        }
-        hasKeptPendingDraft = true;
+      // 3. Genuine confirmed/paid orders
+      if (
+        order.payment_status === "captured" ||
+        ["paid", "confirmed", "processing", "packed", "shipped", "out_for_delivery", "delivered"].includes(order.status)
+      ) {
+        sanitizedOrders.push(order);
       }
-
-      sanitizedOrders.push(order);
     }
 
     if (duplicateDraftIdsToCancel.length > 0) {
-      void supabase
-        .from("orders")
-        .update({
-          status: "cancelled",
-          payment_status: "failed",
-          updated_at: new Date().toISOString(),
-        })
-        .in("id", duplicateDraftIdsToCancel);
+      try {
+        await supabase
+          .from("orders")
+          .update({
+            status: "cancelled",
+            payment_status: "failed",
+            updated_at: new Date().toISOString(),
+          })
+          .in("id", duplicateDraftIdsToCancel);
+      } catch (cancelErr) {
+        console.warn("Background draft cancellation note:", cancelErr);
+      }
     }
 
     const orderIds = sanitizedOrders.map((order) => order.id);

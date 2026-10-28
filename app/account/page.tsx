@@ -11,7 +11,7 @@ export default async function AccountPage() {
   if (!user) redirect("/signup?next=/account");
 
   return (
-    <main className="customer-portal-page">
+    <div className="customer-portal-page">
       <header className="customer-portal-topbar">
         <div className="customer-portal-topbar-inner">
           <Link href="/store" className="wordmark" aria-label="Flovexa Perfumes Home">
@@ -31,14 +31,14 @@ export default async function AccountPage() {
         </div>
       </header>
 
-      <div className="customer-portal-content-wrap">
+      <main className="customer-portal-content-wrap">
         <CustomerAccount email={user.email ?? ""} />
-      </div>
+      </main>
 
       <footer className="checkout-footer">
         <Link href="/store">Return to Storefront</Link>
         <Link href="/contact">Help & Support</Link>
       </footer>
-    </main>
+    </div>
   );
 }
