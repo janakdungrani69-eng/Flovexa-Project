@@ -40,6 +40,9 @@ export const metadata: Metadata = {
     shortcut: ["/favicon.ico"],
   },
   manifest: "/site.webmanifest",
+  verification: {
+    google: "LwmiJLqerPJvkf9ceFsTzovdSgqr19EaSwFlHtPXoMc",
+  },
   openGraph: {
     title: "Flovexa — Luxury Perfumes & Pure Fragrance Oils",
     description:
