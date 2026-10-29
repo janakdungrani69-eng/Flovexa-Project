@@ -1284,7 +1284,27 @@ export default function SellerDashboard({
                                 </div>
 
                                 <div className="seller-var-row-actions">
-                                  <span className="seller-var-sku-tag">SKU: <code>{v.sku || autoSku}</code></span>
+                                  <div className="seller-var-sku-input-wrap" title="Enter manual SKU code or click Auto">
+                                    <label htmlFor={`var-sku-${idx}`} className="seller-var-sku-label">SKU:</label>
+                                    <input
+                                      id={`var-sku-${idx}`}
+                                      type="text"
+                                      className="seller-var-sku-input"
+                                      value={v.sku}
+                                      onChange={(e) => handleUpdateVariant(idx, { sku: e.target.value.toUpperCase() })}
+                                      placeholder={autoSku}
+                                      title="Type custom SKU manually (e.g. FLX-AQ-30ML)"
+                                    />
+                                    <button
+                                      type="button"
+                                      className="seller-var-auto-sku-pill"
+                                      onClick={() => handleUpdateVariant(idx, { sku: autoSku })}
+                                      title="Auto-fill recommended standard SKU"
+                                    >
+                                      <Sparkles size={11} />
+                                      <span>Auto</span>
+                                    </button>
+                                  </div>
                                   {form.variants.length > 1 && (
                                     <button
                                       type="button"

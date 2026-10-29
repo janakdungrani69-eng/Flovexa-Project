@@ -778,6 +778,71 @@
   gap: 10px;
 }
 
+.seller-var-sku-input-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #fbf9f5;
+  border: 1px solid #ded4c5;
+  border-radius: 7px;
+  padding: 3px 6px 3px 9px;
+  transition: all 0.15s ease;
+}
+
+.seller-var-sku-input-wrap:focus-within {
+  border-color: #ad7045;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(173, 112, 69, 0.12);
+}
+
+.seller-var-sku-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #7b6f60;
+  letter-spacing: 0.04em;
+  user-select: none;
+}
+
+.seller-var-sku-input {
+  border: none !important;
+  outline: none !important;
+  background: transparent !important;
+  font-family: var(--font-mono, 'Courier New', monospace) !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: #231f19 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  width: 140px;
+  padding: 2px 4px !important;
+}
+
+.seller-var-sku-input::placeholder {
+  color: #a89d8f !important;
+  font-weight: 500 !important;
+}
+
+.seller-var-auto-sku-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 5px;
+  border: 1px solid #e2d7c7;
+  background: #ffffff;
+  color: #7b6750;
+  font-size: 10.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.seller-var-auto-sku-pill:hover {
+  background: #ad7045;
+  border-color: #ad7045;
+  color: #ffffff;
+}
+
 .seller-var-sku-tag {
   font-size: 11px;
   color: #7b6f60;
