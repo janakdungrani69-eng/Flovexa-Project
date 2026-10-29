@@ -1594,7 +1594,8 @@ export default function SellerDashboard({
                       {(() => {
                         const previewVar = form.variants[previewVariantIndex] || form.variants[0];
                         const coverPhoto = previewVar?.imageUrl || form.imageUrl || form.images[0] || "";
-                        const p = Number(previewVar?.price) || 0;
+                        const fallbackPrice = form.variants.find((v) => Number(v.price) > 0)?.price || "";
+                        const p = Number(previewVar?.price) || Number(fallbackPrice) || 0;
                         const mrp = Number(previewVar?.compareAtPrice) || 0;
                         const discount = mrp > p && p > 0 ? Math.round(((mrp - p) / mrp) * 100) : 0;
                         const notesList = form.notes.split(",").map((n) => n.trim()).filter(Boolean);
@@ -1637,16 +1638,18 @@ export default function SellerDashboard({
                                     title={`Preview size ${v.size || i + 1}`}
                                   >
                                     <span>{v.size || `Size #${i + 1}`}</span>
-                                    {v.price && <b>₹{v.price}</b>}
+                                    {v.price && <b>₹{Number(v.price).toLocaleString("en-IN")}</b>}
                                   </button>
                                 ))}
                               </div>
 
                               {/* Pricing Block */}
                               <div className="seller-live-price-wrap">
-                                <span className="seller-live-price">₹{previewVar?.price || "—"}</span>
+                                <span className="seller-live-price">
+                                  ₹{p > 0 ? p.toLocaleString("en-IN") : (previewVar?.price || fallbackPrice || "0")}
+                                </span>
                                 {mrp > p && p > 0 && (
-                                  <span className="seller-live-mrp">₹{previewVar?.compareAtPrice}</span>
+                                  <span className="seller-live-mrp">₹{mrp.toLocaleString("en-IN")}</span>
                                 )}
                                 {discount > 0 && <span className="seller-live-savings">Save {discount}%</span>}
                               </div>

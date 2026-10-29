@@ -409,25 +409,47 @@
   display: grid;
   grid-template-columns: minmax(0, 1.45fr) minmax(360px, 420px);
   gap: 28px;
-  align-items: start;
+  align-items: stretch !important;
 }
 
 .seller-studio-main-col {
   display: flex;
   flex-direction: column;
   gap: 24px;
+  min-width: 0;
 }
 
 .seller-studio-preview-col {
-  position: relative;
+  position: relative !important;
+  align-self: stretch !important;
+  height: 100% !important;
+  min-width: 0;
 }
 
 .seller-sticky-preview-box {
-  position: sticky;
-  top: 88px;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
+  position: sticky !important;
+  top: 90px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 18px !important;
+  max-height: calc(100vh - 105px) !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  scrollbar-width: thin !important;
+  padding-right: 2px;
+}
+
+.seller-sticky-preview-box::-webkit-scrollbar {
+  width: 5px;
+}
+
+.seller-sticky-preview-box::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.seller-sticky-preview-box::-webkit-scrollbar-thumb {
+  background: #d8c8b4;
+  border-radius: 4px;
 }
 
 /* Card Section Styles */
@@ -1326,38 +1348,44 @@
 }
 
 .seller-live-size-pills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding: 6px 0;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 6px 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: hidden !important;
 }
 
 .seller-live-size-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 11px;
-  border-radius: 7px;
-  border: 1px solid #ded4c5;
-  background: #fbf9f4;
-  font-size: 11.5px;
-  color: #4b3e30;
-  cursor: pointer;
-  transition: all 0.15s ease;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  padding: 5px 10px !important;
+  border-radius: 7px !important;
+  border: 1px solid #ded4c5 !important;
+  background: #fbf9f4 !important;
+  font-size: 11.5px !important;
+  color: #4b3e30 !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  flex: 0 0 auto !important;
+  transition: all 0.15s ease !important;
 }
 
 .seller-live-size-pill:hover {
-  border-color: #ad7045;
+  border-color: #ad7045 !important;
 }
 
 .seller-live-size-pill.selected {
-  background: #231f19;
-  color: #ffffff;
-  border-color: #231f19;
+  background: #231f19 !important;
+  color: #ffffff !important;
+  border-color: #231f19 !important;
 }
 
 .seller-live-size-pill.selected b {
-  color: #f7d287;
+  color: #f7d287 !important;
 }
 
 .seller-live-price-wrap {
