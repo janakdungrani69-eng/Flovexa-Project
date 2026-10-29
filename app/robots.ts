@@ -6,12 +6,12 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: "*",
-        allow: "/",
+        allow: ["/", "/api/google-verify", "/google*.html"],
         disallow: ["/api/"],
       },
       {
         userAgent: "Googlebot",
-        allow: "/",
+        allow: ["/", "/api/google-verify", "/google*.html"],
         disallow: ["/api/"],
       },
       {

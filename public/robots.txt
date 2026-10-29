@@ -3,11 +3,15 @@
 
 User-agent: *
 Allow: /
+Allow: /api/google-verify
+Allow: /google*.html
 Disallow: /api/
 
 # Explicitly allow Googlebot & Googlebot-Image to crawl icons and assets
 User-agent: Googlebot
 Allow: /
+Allow: /api/google-verify
+Allow: /google*.html
 Disallow: /api/
 
 User-agent: Googlebot-Image
