@@ -1364,7 +1364,7 @@ export default function SellerDashboard({
                                 {/* MRP Price & Discount */}
                                 <div className="seller-form-group">
                                   <div className="seller-label-inline-action">
-                                    <label>MRP (₹) <small className="opt">(Optional)</small></label>
+                                    <label>MRP (₹) <small className="opt">(Opt)</small></label>
                                     {discount > 0 && <span className="seller-variant-discount-badge">{discount}% OFF</span>}
                                   </div>
                                   <div className="seller-input-prefix">
@@ -1383,22 +1383,24 @@ export default function SellerDashboard({
                                 {/* Available Stock */}
                                 <div className="seller-form-group">
                                   <div className="seller-label-inline-action">
-                                    <label>Stock Bottles <span className="req">*</span></label>
+                                    <label>Stock <span className="req">*</span></label>
                                     {stockNum > 0 ? (
                                       <span className="seller-stock-pill-micro ok">In Stock</span>
                                     ) : (
                                       <span className="seller-stock-pill-micro out">Out</span>
                                     )}
                                   </div>
-                                  <input
-                                    required
-                                    type="number"
-                                    min="0"
-                                    step="1"
-                                    value={v.stock}
-                                    onChange={(e) => handleUpdateVariant(idx, { stock: e.target.value })}
-                                    placeholder="10"
-                                  />
+                                  <div className="seller-input-plain">
+                                    <input
+                                      required
+                                      type="number"
+                                      min="0"
+                                      step="1"
+                                      value={v.stock}
+                                      onChange={(e) => handleUpdateVariant(idx, { stock: e.target.value })}
+                                      placeholder="10"
+                                    />
+                                  </div>
                                 </div>
                               </div>
 

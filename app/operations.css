@@ -879,14 +879,88 @@
 }
 
 .seller-var-row-fields {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 14px;
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+  align-items: end !important;
+}
+
+.seller-var-row-fields .seller-form-group {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-end !important;
+  gap: 7px !important;
+  min-width: 0 !important;
+}
+
+.seller-var-row-fields .seller-form-group > label,
+.seller-var-row-fields .seller-label-inline-action {
+  height: 22px !important;
+  min-height: 22px !important;
+  max-height: 22px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  white-space: nowrap !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+}
+
+.seller-var-row-fields .seller-form-group > label {
+  justify-content: flex-start !important;
+}
+
+.seller-var-row-fields .seller-form-group label {
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: #2e261c !important;
+  white-space: nowrap !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  line-height: 1 !important;
+  margin: 0 !important;
+}
+
+.seller-var-row-fields .seller-input-suffix,
+.seller-var-row-fields .seller-input-prefix,
+.seller-var-row-fields .seller-input-plain {
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  width: 100% !important;
+  height: 44px !important;
+  min-height: 44px !important;
+  max-height: 44px !important;
+}
+
+.seller-var-row-fields input {
+  height: 44px !important;
+  min-height: 44px !important;
+  max-height: 44px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  border-radius: 9px !important;
+  border: 1px solid #dcd1c2 !important;
+  background: #fdfcf9 !important;
+  color: #231f19 !important;
+  font-size: 13.5px !important;
+  padding: 0 14px !important;
+}
+
+.seller-var-row-fields .seller-input-prefix input {
+  padding-left: 28px !important;
+}
+
+.seller-var-row-fields .seller-input-suffix input {
+  padding-right: 44px !important;
 }
 
 @media (max-width: 768px) {
   .seller-var-row-fields {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr !important;
   }
 }
 
@@ -897,6 +971,8 @@
   background: #dcfce7;
   padding: 2px 6px;
   border-radius: 4px;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
 }
 
 .seller-stock-pill-micro {
@@ -906,6 +982,8 @@
   border-radius: 4px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
 }
 
 .seller-stock-pill-micro.ok {
