@@ -1703,7 +1703,7 @@ export default function SellerDashboard({
                             {/* Bottle Stage */}
                             <div className="seller-live-stage">
                               {coverPhoto ? (
-                                <Image src={coverPhoto} alt={form.name || "Perfume"} width={200} height={200} unoptimized className="seller-live-img" />
+                                <Image src={coverPhoto} alt={form.name || "Perfume"} width={400} height={400} unoptimized className="seller-live-img" />
                               ) : (
                                 <div className="seller-live-empty-stage">
                                   <Sparkles size={32} />
