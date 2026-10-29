@@ -1631,26 +1631,7 @@ export default function SellerDashboard({
                           placeholder="e.g. Bergamot, Kashmiri Saffron, Mysore Sandalwood, Warm Amber"
                           onChange={(e) => setForm((cur) => ({ ...cur, notes: e.target.value }))}
                         />
-
-                        {/* Clickable Quick Note Chips */}
-                        <div className="seller-notes-suggest-wrap">
-                          <span className="seller-notes-suggest-label">✦ Click to add popular luxury notes:</span>
-                          <div className="seller-notes-suggest-chips">
-                            {SUGGESTED_NOTES.map((note) => {
-                              const isSelected = form.notes.toLowerCase().includes(note.toLowerCase());
-                              return (
-                                <button
-                                  key={note}
-                                  type="button"
-                                  className={`seller-notes-suggest-chip ${isSelected ? "selected" : ""}`}
-                                  onClick={() => handleToggleNote(note)}
-                                >
-                                  {isSelected ? `✓ ${note}` : `+ ${note}`}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
+                        <small>Enter fragrance opening, heart, and base notes separated by commas</small>
                       </div>
 
                       <div className="seller-form-group" style={{ marginTop: 16 }}>
@@ -2122,42 +2103,31 @@ export default function SellerDashboard({
                                   <ExternalLink size={11} /> View in Store
                                 </Link>
                               </div>
-                              <div className="seller-product-meta">
-                                <span>{product.category}</span>
-                                <span>·</span>
-                                <span>{product.size}</span>
-                                <span>·</span>
-                                <span>{product.concentration}</span>
+                              <div className="seller-product-meta-row">
+                                <span className="seller-prod-badge cat">{product.category}</span>
+                                <span className="seller-prod-badge conc">{product.concentration}</span>
+                                {product.variants && product.variants.length > 1 ? (
+                                  <span className="seller-prod-badge sizes">
+                                    ✨ {product.variants.length} Sizes ({product.variants[0]?.size} – {product.variants[product.variants.length - 1]?.size})
+                                  </span>
+                                ) : (
+                                  <span className="seller-prod-badge sizes">{product.size}</span>
+                                )}
                               </div>
-                              {/* SKU Badges */}
-                              {product.variants && product.variants.length > 0 ? (
-                                <div className="seller-sku-row">
-                                  {product.variants.map((v) => (
-                                    <span key={v.id || v.size} className="seller-sku-pill" title={`SKU for ${product.name} (${v.size})`}>
-                                      <span className="seller-sku-label">SKU</span> {v.sku || generateDefaultSku(product.name, v.size, 0)}
+
+                              <div className="seller-product-submeta">
+                                <span className="seller-submeta-sku">
+                                  <strong>SKU:</strong> <code>{product.variants?.[0]?.sku || product.sku || "FLX-PERF"}</code>
+                                  {product.variants && product.variants.length > 1 && (
+                                    <span className="seller-sku-more-badge" title={product.variants.map((v) => `${v.size}: ${v.sku}`).join(" | ")}>
+                                      +{product.variants.length - 1} sizes
                                     </span>
-                                  ))}
-                                </div>
-                              ) : (
-                                <div className="seller-sku-row">
-                                  <span className="seller-sku-pill" title={`SKU for ${product.name}`}>
-                                    <span className="seller-sku-label">SKU</span> {product.sku || generateDefaultSku(product.name, product.size, 0)}
+                                  )}
+                                </span>
+                                {product.notes.length > 0 && (
+                                  <span className="seller-submeta-scent" title={product.notes.join(", ")}>
+                                    ✦ {product.notes.slice(0, 3).join(", ")}
                                   </span>
-                                </div>
-                              )}
-                              {product.variants && product.variants.length > 1 && (
-                                <div className="seller-variants-badge">
-                                  ✨ {product.variants.length} Sizes: {product.variants.map((v) => v.size).join(" · ")}
-                                </div>
-                              )}
-                              <div className="seller-notes-chips">
-                                {product.notes.slice(0, 3).map((n) => (
-                                  <span key={n} className="seller-note-tag">
-                                    {n}
-                                  </span>
-                                ))}
-                                {product.notes.length > 3 && (
-                                  <span className="seller-note-more">+{product.notes.length - 3}</span>
                                 )}
                               </div>
                             </div>
@@ -2250,8 +2220,8 @@ export default function SellerDashboard({
                               )}
                             </span>
                             {product.variants && product.variants.length > 1 && (
-                              <small className="seller-stock-breakdown">
-                                {product.variants.map((v) => `${v.size}: ${v.stock}`).join(" | ")}
+                              <small className="seller-stock-breakdown" title={product.variants.map((v) => `${v.size}: ${v.stock} pcs`).join(" | ")}>
+                                Across {product.variants.length} bottle sizes
                               </small>
                             )}
                           </div>
