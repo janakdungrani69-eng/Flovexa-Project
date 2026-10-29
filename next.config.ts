@@ -17,14 +17,6 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  async rewrites() {
-    return [
-      {
-        source: "/google:hash([a-zA-Z0-9_-]+)\\.html",
-        destination: "/api/google-verify?hash=:hash",
-      },
-    ];
-  },
 };
 
 export default nextConfig;
