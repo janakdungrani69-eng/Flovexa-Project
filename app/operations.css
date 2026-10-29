@@ -1081,6 +1081,123 @@
   color: #928371;
 }
 
+/* Variant Photo Mode Banner & Inherit Controls */
+.seller-variant-photo-mode-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  background: #fbf7ee;
+  border: 1px solid #ebdcc5;
+  border-radius: 9px;
+  flex-wrap: wrap;
+}
+
+.seller-variant-photo-mode-info {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  color: #5a4b3b;
+}
+
+.seller-variant-photo-mode-info strong {
+  color: #231f19;
+  font-weight: 700;
+}
+
+.seller-variant-photo-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.seller-variant-action-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid #d4c2a9;
+  background: #ffffff;
+  color: #3b2e21;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.seller-variant-action-pill:hover {
+  background: #ad7045;
+  border-color: #ad7045;
+  color: #ffffff;
+}
+
+.seller-variant-action-pill.muted {
+  background: transparent;
+  border-color: #ded1be;
+  color: #7b6a57;
+}
+
+.seller-variant-action-pill.muted:hover {
+  background: #ede4d6;
+  color: #231f19;
+}
+
+.seller-var-photo-inherit-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.seller-var-inherit-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 7px 2px 4px;
+  border-radius: 6px;
+  background: #f4ecdf;
+  border: 1px solid #e5d8c5;
+  font-size: 11px;
+  font-weight: 600;
+  color: #5e4f3f;
+}
+
+.seller-var-inherit-badge img {
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.seller-var-photo-tag-custom {
+  font-size: 9.5px;
+  font-weight: 800;
+  color: #15803d;
+  background: #dcfce7;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.03em;
+}
+
+.seller-var-pick-gallery-select {
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid #dcd1c2;
+  background: #ffffff;
+  font-size: 11px;
+  color: #5a4b3b;
+  outline: none;
+  cursor: pointer;
+}
+
+.seller-var-pick-gallery-select:hover {
+  border-color: #ad7045;
+}
+
 .seller-var-auto-sku-btn {
   display: inline-flex;
   align-items: center;

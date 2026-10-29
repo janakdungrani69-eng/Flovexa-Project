@@ -58,7 +58,11 @@ export default function ProductGallery({ product }: ProductGalleryProps) {
         const found = galleryImages.findIndex((img) => img.url === custom.detail?.imageUrl);
         if (found !== -1) {
           selectImage(found);
+        } else {
+          selectImage(0);
         }
+      } else {
+        selectImage(0);
       }
     };
 
@@ -71,7 +75,11 @@ export default function ProductGallery({ product }: ProductGalleryProps) {
         const found = galleryImages.findIndex((img) => img.url === custom.detail?.imageUrl);
         if (found !== -1) {
           selectImage(found);
+        } else {
+          selectImage(0);
         }
+      } else {
+        selectImage(0);
       }
     };
 

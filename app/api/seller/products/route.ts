@@ -110,8 +110,10 @@ function validationMessage(value: z.infer<typeof fields>) {
   let finalDescription = value.description;
 
   if (value.variants && value.variants.length > 0) {
+    const defaultCover = allImages[0] || value.imageUrl || undefined;
     const formattedVariants: ProductVariant[] = value.variants.map((v, i) => {
       const cleanSku = v.sku?.trim().toUpperCase() || generateDefaultSku(value.name, v.size, i);
+      const variantImage = v.imageUrl?.trim() || defaultCover;
       return {
         id: v.id || `var-${Date.now()}-${i + 1}`,
         sku: cleanSku,
@@ -119,8 +121,8 @@ function validationMessage(value: z.infer<typeof fields>) {
         pricePaise: Math.round(v.price * 100),
         compareAtPaise: v.compareAtPrice ? Math.round(v.compareAtPrice * 100) : undefined,
         stock: v.stock,
-        imageUrl: v.imageUrl || undefined,
-        images: v.images || (v.imageUrl ? [v.imageUrl] : []),
+        imageUrl: variantImage,
+        images: v.images && v.images.length > 0 ? v.images : variantImage ? [variantImage] : [],
       };
     });
 

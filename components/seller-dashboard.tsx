@@ -32,6 +32,8 @@ import {
   ArrowRight,
   CheckCircle2,
   Copy,
+  RefreshCw,
+  ImageIcon,
 } from "lucide-react";
 import ShippingLabelModal, { type ShippingLabelOrder } from "@/components/shipping-label-modal";
 import { generateDefaultSku } from "@/lib/products";
@@ -771,7 +773,7 @@ export default function SellerDashboard({
         .map((v) => v.imageUrl?.trim())
         .filter((url): url is string => Boolean(url));
       const combinedImages = Array.from(new Set([...variantPhotos, ...form.images.filter(Boolean)]));
-      const primaryImage = variantPhotos[0] || combinedImages[0] || form.imageUrl.trim() || undefined;
+      const primaryImage = form.imageUrl.trim() || form.images[0] || variantPhotos[0] || undefined;
       const finalImages = combinedImages.length > 0 ? combinedImages : primaryImage ? [primaryImage] : [];
 
       const primaryVar = form.variants[0];
@@ -796,7 +798,7 @@ export default function SellerDashboard({
           price: Number(v.price),
           compareAtPrice: v.compareAtPrice ? Number(v.compareAtPrice) : null,
           stock: Number(v.stock) || 0,
-          imageUrl: v.imageUrl.trim() || null,
+          imageUrl: v.imageUrl.trim() || primaryImage || null,
         })),
       };
       const response = await fetch("/api/seller/products", {
@@ -1250,7 +1252,7 @@ export default function SellerDashboard({
                       <div className="seller-quick-sizes-bar">
                         <span className="seller-quick-sizes-label">⚡ 1-Click Add Common Sizes:</span>
                         <div className="seller-quick-sizes-chips">
-                          {["10 ml", "20 ml", "30 ml", "50 ml", "100 ml", "200 ml", "500 ml", "1000 ml"].map((size) => (
+                          {["10 ml", "20 ml", "30 ml", "50 ml", "100 ml", "250 ml", "500 ml", "1000 ml"].map((size) => (
                             <button
                               key={size}
                               type="button"
@@ -1260,6 +1262,50 @@ export default function SellerDashboard({
                               + {size}
                             </button>
                           ))}
+                        </div>
+                      </div>
+
+                      {/* Variant Photo Mode Banner & 1-Click Actions */}
+                      <div className="seller-variant-photo-mode-strip">
+                        <div className="seller-variant-photo-mode-info">
+                          <ImageIcon size={14} />
+                          <strong>Bottle Photo Mode:</strong>
+                          <span>Same photo for all sizes OR specific photo per size</span>
+                        </div>
+                        <div className="seller-variant-photo-actions">
+                          <button
+                            type="button"
+                            className="seller-variant-action-pill"
+                            onClick={() => {
+                              const mainImg = form.imageUrl || form.images[0] || "";
+                              if (!mainImg) {
+                                setErrorMessage("Pehle niche Card 3 me main bottle photo upload karein.");
+                                return;
+                              }
+                              setForm((cur) => ({
+                                ...cur,
+                                variants: cur.variants.map((v) => ({ ...v, imageUrl: mainImg })),
+                              }));
+                              setMessage("Sabhi bottle sizes me main photo apply kar di gayi hai!");
+                            }}
+                            title="Make all sizes use the main cover photo"
+                          >
+                            <Sparkles size={11} /> Apply Main Photo to All Sizes
+                          </button>
+                          <button
+                            type="button"
+                            className="seller-variant-action-pill muted"
+                            onClick={() => {
+                              setForm((cur) => ({
+                                ...cur,
+                                variants: cur.variants.map((v) => ({ ...v, imageUrl: "" })),
+                              }));
+                              setMessage("Sabhi sizes automatically main photo inherit karenge.");
+                            }}
+                            title="Reset all sizes to auto-inherit the main cover photo"
+                          >
+                            <RefreshCw size={11} /> Auto-Inherit Main Cover
+                          </button>
                         </div>
                       </div>
 
@@ -1407,36 +1453,60 @@ export default function SellerDashboard({
                               {/* Row Bottom: Photo uploader for this size */}
                               <div className="seller-var-row-bottom">
                                 <div className="seller-var-photo-mini-zone">
-                                  <span className="seller-var-photo-label">Size Bottle Photo:</span>
+                                  <span className="seller-var-photo-label">Size Photo:</span>
                                   {v.imageUrl ? (
                                     <div className="seller-var-photo-preview-item">
                                       <Image src={v.imageUrl} alt="" width={32} height={32} unoptimized />
+                                      <span className="seller-var-photo-tag-custom">Custom Photo</span>
                                       <button
                                         type="button"
                                         onClick={() => handleUpdateVariant(idx, { imageUrl: "" })}
                                         className="seller-var-photo-remove"
-                                        title="Remove custom photo (use main cover)"
+                                        title="Remove custom photo (use main cover instead)"
                                       >
                                         ✕
                                       </button>
                                     </div>
                                   ) : (
-                                    <label className="seller-var-photo-upload-btn">
-                                      <input
-                                        type="file"
-                                        accept="image/jpeg,image/png,image/webp"
-                                        disabled={uploadingVariantIndex === idx || busy}
-                                        onChange={(e) => {
-                                          void uploadVariantPhoto(idx, e.currentTarget.files);
-                                          e.currentTarget.value = "";
-                                        }}
-                                      />
-                                      <UploadCloud size={12} />
-                                      <span>{uploadingVariantIndex === idx ? "Uploading…" : "+ Upload Size Photo"}</span>
-                                    </label>
+                                    <div className="seller-var-photo-inherit-wrap">
+                                      {(form.imageUrl || form.images[0]) ? (
+                                        <div className="seller-var-inherit-badge" title="This size uses the main product cover photo">
+                                          <Image src={form.imageUrl || form.images[0]} alt="" width={22} height={22} unoptimized />
+                                          <span>Same as Main Photo</span>
+                                        </div>
+                                      ) : null}
+                                      <label className="seller-var-photo-upload-btn">
+                                        <input
+                                          type="file"
+                                          accept="image/jpeg,image/png,image/webp"
+                                          disabled={uploadingVariantIndex === idx || busy}
+                                          onChange={(e) => {
+                                            void uploadVariantPhoto(idx, e.currentTarget.files);
+                                            e.currentTarget.value = "";
+                                          }}
+                                        />
+                                        <UploadCloud size={12} />
+                                        <span>{uploadingVariantIndex === idx ? "Uploading…" : "+ Different Photo for this Size"}</span>
+                                      </label>
+                                      {form.images.length > 1 && (
+                                        <select
+                                          className="seller-var-pick-gallery-select"
+                                          value=""
+                                          onChange={(e) => {
+                                            if (e.target.value) handleUpdateVariant(idx, { imageUrl: e.target.value });
+                                          }}
+                                          title="Pick from gallery photos"
+                                        >
+                                          <option value="">Gallery photo chunein…</option>
+                                          {form.images.map((img, i) => (
+                                            <option key={img} value={img}>Photo #{i + 1}</option>
+                                          ))}
+                                        </select>
+                                      )}
+                                    </div>
                                   )}
                                   <small className="seller-var-photo-hint">
-                                    {v.imageUrl ? "Custom photo will display when customer chooses this size" : "(Optional: Flovexa will use main cover if empty)"}
+                                    {v.imageUrl ? "Yeh size select karne par yeh specific photo dikhegi" : "(Agar alag photo nahi dali, to main photo hi dikhegi)"}
                                   </small>
                                 </div>
 

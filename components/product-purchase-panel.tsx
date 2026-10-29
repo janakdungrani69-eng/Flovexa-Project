@@ -96,18 +96,19 @@ export default function ProductPurchasePanel({ product }: { product: Product }) 
   // Sync selected variant with gallery & details components in real-time
   useEffect(() => {
     if (selectedVariant?.size) {
+      const activeImg = selectedVariant.imageUrl || product.imageUrl || product.images?.[0];
       window.dispatchEvent(
         new CustomEvent("flovexa-select-variant", {
           detail: {
             variantId: selectedVariant.id,
             size: selectedVariant.size,
-            imageUrl: selectedVariant.imageUrl,
+            imageUrl: activeImg,
             images: selectedVariant.images,
           },
         })
       );
     }
-  }, [selectedVariant]);
+  }, [selectedVariant, product]);
 
   const [quantity, setQuantity] = useState(1);
   const [addPodChecked, setAddPodChecked] = useState(false);
@@ -249,18 +250,19 @@ export default function ProductPurchasePanel({ product }: { product: Product }) 
                   className={`purchase-size-btn ${isSelected ? "is-selected" : ""} ${isOut ? "is-out" : ""}`}
                   onClick={() => {
                     setSelectedVariantId(v.id);
+                    const activeImg = v.imageUrl || product.imageUrl || product.images?.[0];
                     window.dispatchEvent(
                       new CustomEvent("flovexa-select-variant", {
                         detail: {
                           variantId: v.id,
                           size: v.size,
-                          imageUrl: v.imageUrl,
+                          imageUrl: activeImg,
                           images: v.images,
                         },
                       })
                     );
-                    if (v.imageUrl) {
-                      window.dispatchEvent(new CustomEvent("flovexa-select-image", { detail: { imageUrl: v.imageUrl } }));
+                    if (activeImg) {
+                      window.dispatchEvent(new CustomEvent("flovexa-select-image", { detail: { imageUrl: activeImg } }));
                     }
                   }}
                   style={{
