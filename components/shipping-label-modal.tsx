@@ -497,6 +497,7 @@ export default function ShippingLabelModal({
   onClose: () => void;
 }) {
   const [downloading, setDownloading] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
   const totalBottles = order.order_items.reduce((sum, item) => sum + (item.quantity || 1), 0);
   const isCombo = totalBottles > 1 || order.order_items.length > 1;
 
@@ -529,6 +530,44 @@ export default function ShippingLabelModal({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
+
+  // DIRECT DOWNLOAD 4x6 PDF FILE TO PC
+  async function handleDownloadPdf() {
+    setDownloadingPdf(true);
+    try {
+      const element = document.getElementById(`shipping-label-printable-${order.order_number}`);
+      if (!element) {
+        handlePrint4x6();
+        return;
+      }
+
+      const html2canvas = (await import("html2canvas")).default;
+      const { jsPDF } = await import("jspdf");
+
+      const canvas = await html2canvas(element, {
+        scale: 3, // 300 DPI ultra-sharp resolution for barcode scanners
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        logging: false,
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "in",
+        format: [4, 6],
+      });
+
+      pdf.addImage(imgData, "PNG", 0, 0, 4, 6, undefined, "FAST");
+      pdf.save(`Shipping_Label_FLX_${order.order_number}_4x6.pdf`);
+    } catch (err) {
+      console.error("PDF generation error:", err);
+      // Fallback: open clean print window
+      handlePrint4x6();
+    } finally {
+      setDownloadingPdf(false);
+    }
+  }
 
   // DIRECT 4x6 THERMAL PRINT (Zero blank pages, formats for TSC Printer)
   function handlePrint4x6() {
@@ -616,12 +655,13 @@ export default function ShippingLabelModal({
           </div>
 
           <div className="shipping-label-modal-actions">
-            {/* Primary Print Button for TSC Printer */}
+            {/* 1. Primary Direct Download 4x6 PDF Button */}
             <button
               type="button"
               className="shipping-label-print-btn"
-              onClick={handlePrint4x6}
-              title="Print directly to TSC Thermal Printer (4x6 in / 100x150 mm)"
+              onClick={handleDownloadPdf}
+              disabled={downloadingPdf}
+              title="Save exact 4x6 shipping label PDF file directly to your PC"
               style={{
                 background: "#10b981",
                 color: "#ffffff",
@@ -630,24 +670,25 @@ export default function ShippingLabelModal({
                 boxShadow: "0 2px 8px rgba(16, 185, 129, 0.35)",
               }}
             >
-              <Printer size={15} />
-              <span>Print 4×6 (TSC Printer)</span>
+              <Download size={15} />
+              <span>{downloadingPdf ? "Saving PDF…" : "Download 4×6 PDF"}</span>
             </button>
 
-            {/* Direct Download File Button */}
+            {/* 2. Direct Print Button for TSC Thermal Printer */}
             <button
               type="button"
               className="shipping-label-print-btn"
-              onClick={handleDownloadFile}
-              title="Download print-ready 4x6 label file to your PC"
+              onClick={handlePrint4x6}
+              title="Print directly to TSC Thermal Printer (4x6 in / 100x150 mm)"
               style={{
                 background: "#ffffff",
                 color: "#231f19",
                 border: "1px solid #d5cbba",
+                fontWeight: 700,
               }}
             >
-              <Download size={15} />
-              <span>{downloading ? "Saving…" : "Download 4×6 Label"}</span>
+              <Printer size={15} />
+              <span>Print 4×6 (TSC)</span>
             </button>
 
             {/* Close Button */}
@@ -664,15 +705,19 @@ export default function ShippingLabelModal({
 
         {/* Printable Label Container */}
         <div className="shipping-label-scroll-wrap">
-          <div className="shipping-thermal-label printable-shipping-label" style={{
-            width: "100%",
-            maxWidth: "460px",
-            margin: "0 auto",
-            border: "2px solid #000000",
-            padding: "8px 10px",
-            background: "#ffffff",
-            color: "#000000",
-          }}>
+          <div
+            id={`shipping-label-printable-${order.order_number}`}
+            className="shipping-thermal-label printable-shipping-label"
+            style={{
+              width: "100%",
+              maxWidth: "460px",
+              margin: "0 auto",
+              border: "2px solid #000000",
+              padding: "8px 10px",
+              background: "#ffffff",
+              color: "#000000",
+            }}
+          >
             {/* 1. Label Top Header */}
             <div className="thermal-header-grid" style={{
               display: "flex",
