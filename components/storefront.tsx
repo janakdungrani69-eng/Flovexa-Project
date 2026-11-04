@@ -197,20 +197,54 @@ export default function Storefront({
       <div className="announcement"><Sparkles size={13} strokeWidth={1.5} /><span>{settings.announcement}</span><ArrowRight size={13} strokeWidth={1.5} /></div>
       <header className="site-header">
         <button className="mobile-menu icon-button" aria-label={mobileMenuOpen ? "Close menu" : "Open menu"} aria-expanded={mobileMenuOpen} onClick={() => setMobileMenuOpen((open) => !open)}>{mobileMenuOpen ? <X size={21} /> : <Menu size={21} />}</button>
-        <div className="wordmark-wrap">
+
+        {/* Left Group: Logo & Main Navigation Links (shifted left with space before search) */}
+        <div className="header-left-group">
           <Link href="/" className="wordmark" aria-label="Flovexa Perfumes home">FLOVEXA<span>PERFUMES</span></Link>
+          <nav className="main-nav" aria-label="Main navigation">
+            <a href="#collection">The Collection</a>
+            <a href="#ritual">The Ritual</a>
+            <a href="#reviews">Reviews</a>
+            <Link href="/about">Our Story</Link>
+            <Link href="/orders">Track Order</Link>
+          </nav>
         </div>
-        <nav className="main-nav" aria-label="Main navigation">
-          <a href="#collection">The Collection</a>
-          <a href="#ritual">The Ritual</a>
-          <a href="#reviews">Reviews</a>
-          <Link href="/about">Our Story</Link>
-          <Link href="/orders">Track Order</Link>
-        </nav>
-        <div className="header-actions">
-          <label className="header-search"><Search size={17} strokeWidth={1.6} /><input aria-label="Search fragrances" placeholder="Search scents" value={query} onChange={(event) => { setQuery(event.target.value); document.getElementById("collection")?.scrollIntoView({ behavior: "smooth" }); }} /></label>
-          <Link className="icon-button account-link" href="/account" aria-label="Open your account"><span>My account</span></Link>
-          <button className="bag-button" onClick={() => setCartOpen(true)} aria-label={`Open bag, ${cartQuantity} items`}><ShoppingBag size={19} strokeWidth={1.6} /><span>Bag</span><b>{cartQuantity}</b></button>
+
+        {/* Right Group: Search Bar + Account + Bag */}
+        <div className="header-right-group">
+          <div className="header-search-bar">
+            <Search size={15} strokeWidth={1.8} className="header-search-icon" />
+            <input
+              type="text"
+              aria-label="Search fragrances"
+              placeholder="Search scents..."
+              value={query}
+              onChange={(event) => {
+                setQuery(event.target.value);
+                document.getElementById("collection")?.scrollIntoView({ behavior: "smooth" });
+              }}
+            />
+            {query && (
+              <button
+                type="button"
+                className="header-search-clear"
+                onClick={() => setQuery("")}
+                aria-label="Clear search"
+              >
+                <X size={13} />
+              </button>
+            )}
+          </div>
+
+          <Link className="header-action-link account-link" href="/account" aria-label="Open your account">
+            <span>My account</span>
+          </Link>
+
+          <button className="bag-button" onClick={() => setCartOpen(true)} aria-label={`Open bag, ${cartQuantity} items`}>
+            <ShoppingBag size={18} strokeWidth={1.6} />
+            <span>Bag</span>
+            <b>{cartQuantity}</b>
+          </button>
         </div>
       </header>
       {mobileMenuOpen && (
@@ -290,6 +324,28 @@ export default function Storefront({
               </button>
             ))}
           </div>
+
+          <div className="collection-search-wrap">
+            <Search size={15} strokeWidth={1.8} className="collection-search-icon" />
+            <input
+              type="text"
+              aria-label="Filter collection"
+              placeholder="Search by perfume name or note..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+            {query && (
+              <button
+                type="button"
+                className="collection-search-clear"
+                onClick={() => setQuery("")}
+                aria-label="Clear search"
+              >
+                <X size={13} />
+              </button>
+            )}
+          </div>
+
           <div className="sort-dropdown-wrap">
             <button
               className={`sort-button${sortOpen ? " is-active" : ""}`}
