@@ -1550,9 +1550,9 @@
 .seller-live-stage {
   position: relative !important;
   width: 100% !important;
-  height: 290px !important;
-  min-height: 270px !important;
-  max-height: 320px !important;
+  height: 220px !important;
+  min-height: 200px !important;
+  max-height: 240px !important;
   flex-shrink: 0 !important;
   background: radial-gradient(circle at center, #ffffff 45%, #f6f0e6 100%) !important;
   display: flex !important;
@@ -1565,9 +1565,9 @@
 .seller-live-img {
   width: 100% !important;
   height: 100% !important;
-  max-height: 270px !important;
+  max-height: 200px !important;
   object-fit: contain !important;
-  padding: 14px !important;
+  padding: 10px !important;
   transition: transform 0.3s ease !important;
 }
 
@@ -5388,100 +5388,72 @@
   font-weight: 700;
 }
 
-/* 6. Print Styles: Strictly 1-Page Isolated Clean Label Print */
+/* 6. Print Styles: Strictly 4x6 Thermal Label Print (TSC / Zebra / Meesho / Amazon Standard) */
 @page {
-  size: portrait;
-  margin: 4mm 6mm;
+  size: 4in 6in;
+  margin: 0;
 }
 
 @media print {
   @page {
-    size: portrait;
-    margin: 4mm 6mm;
+    size: 4in 6in;
+    margin: 0;
   }
 
   html,
   body {
+    width: 4in !important;
+    height: 6in !important;
+    max-width: 4in !important;
+    max-height: 6in !important;
     margin: 0 !important;
     padding: 0 !important;
-    height: auto !important;
-    min-height: 0 !important;
-    max-height: 100% !important;
-    overflow: hidden !important;
     background: #ffffff !important;
     color: #000000 !important;
+    overflow: hidden !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
 
-  /* Completely collapse and remove non-label content from print layout */
-  body > *:not(.shipping-label-modal-backdrop),
-  header,
-  footer,
-  nav,
-  main,
-  .no-print,
-  .checkout-page,
-  .checkout-container,
-  .seller-shell,
-  .admin-shell,
-  [role="dialog"] > *:not(.shipping-label-modal-dialog) {
-    display: none !important;
-    height: 0 !important;
-    max-height: 0 !important;
-    overflow: hidden !important;
+  /* Make entire document tree invisible to print */
+  body * {
+    visibility: hidden !important;
   }
 
-  .shipping-label-modal-backdrop {
-    position: static !important;
-    inset: auto !important;
-    display: block !important;
-    background: transparent !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    width: 100% !important;
-    height: auto !important;
-    min-height: 0 !important;
-    overflow: visible !important;
-    z-index: auto !important;
+  /* Make ONLY the printable shipping label and its contents visible */
+  .printable-shipping-label,
+  .printable-shipping-label * {
+    visibility: visible !important;
   }
 
-  .shipping-label-modal-dialog {
-    position: static !important;
-    box-shadow: none !important;
-    max-width: 100% !important;
-    width: 100% !important;
-    border: none !important;
-    padding: 0 !important;
-    margin: 0 auto !important;
-    background: #ffffff !important;
-    overflow: visible !important;
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
-  }
-
-  .shipping-label-scroll-wrap {
-    overflow: visible !important;
-    max-height: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
-  }
-
+  /* Lock the shipping label exactly at (0, 0) of the 4x6 inch paper */
   .printable-shipping-label {
-    position: relative !important;
-    left: auto !important;
-    top: auto !important;
-    width: 100% !important;
-    max-width: 490px !important;
-    margin: 0 auto !important;
-    padding: 8px 12px !important;
-    box-shadow: none !important;
-    border: 2px solid #000000 !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 4in !important;
+    height: 6in !important;
+    max-width: 4in !important;
+    max-height: 6in !important;
+    margin: 0 !important;
+    padding: 6px 8px !important;
     box-sizing: border-box !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    z-index: 2147483647 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    border: 2px solid #000000 !important;
+    overflow: hidden !important;
     page-break-inside: avoid !important;
     page-break-after: avoid !important;
-    break-inside: avoid !important;
-    break-after: avoid !important;
+  }
+
+  .shipping-label-modal-header,
+  .no-print {
+    display: none !important;
+    visibility: hidden !important;
   }
 
   .thermal-header-grid {

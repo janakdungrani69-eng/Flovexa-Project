@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
-import { Check, Package, Printer, Sparkles, X, ShieldAlert } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Check, Download, FileText, Printer, Sparkles, X, ShieldAlert } from "lucide-react";
 import { generateDefaultSku } from "@/lib/products";
 
 export type ShippingLabelOrder = {
@@ -41,6 +41,450 @@ const money = (paise: number) =>
     maximumFractionDigits: 0,
   }).format(paise / 100);
 
+function buildThermal4x6Html(params: {
+  order: ShippingLabelOrder;
+  recipientName: string;
+  recipientPhone: string;
+  address: {
+    line1: string;
+    line2?: string;
+    city: string;
+    state: string;
+    pincode: string;
+    country?: string;
+  };
+  isCombo: boolean;
+  totalBottles: number;
+  courierPartner: string;
+  orderDateFormatted: string;
+  autoPrint?: boolean;
+}): string {
+  const { order, recipientName, recipientPhone, address, isCombo, totalBottles, courierPartner, orderDateFormatted, autoPrint } = params;
+  const hasTrackingNumber = Boolean(order.tracking_number && order.tracking_number.trim());
+  const awbNumber = order.tracking_number?.trim() || `ME-${order.order_number.replace(/\D/g, "") || Date.now().toString().slice(-8)}`;
+
+  const itemsRows = order.order_items
+    .map((item, idx) => {
+      const sku = item.sku || generateDefaultSku(item.product_name, item.size, idx);
+      const isGift = item.product_name.includes("Free Gift") || item.product_name.includes("Complimentary");
+      return `
+        <tr>
+          <td style="text-align:center;font-weight:700;padding:3px 4px;border-bottom:1px dotted #555;">${idx + 1}</td>
+          <td style="padding:3px 4px;border-bottom:1px dotted #555;">
+            <strong style="font-size:10.5px;">${item.product_name}</strong>
+          </td>
+          <td style="padding:3px 4px;border-bottom:1px dotted #555;font-family:monospace;font-size:9.5px;font-weight:700;">${sku}</td>
+          <td style="text-align:center;padding:3px 4px;border-bottom:1px dotted #555;font-size:10px;">${item.size}</td>
+          <td style="text-align:center;padding:3px 4px;border-bottom:1px dotted #555;font-weight:800;font-size:11px;">×${item.quantity}</td>
+          <td style="text-align:right;padding:3px 4px;border-bottom:1px dotted #555;font-size:9.5px;color:${isGift ? '#080' : '#222'};">
+            ${isGift ? '🎁 Free Gift' : 'Glass Flacon'}
+          </td>
+        </tr>
+      `;
+    })
+    .join("");
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Shipping_Label_FLX_${order.order_number}</title>
+  <style>
+    @page {
+      size: 4in 6in;
+      margin: 0;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+      color-adjust: exact !important;
+    }
+    html, body {
+      width: 4in;
+      height: 6in;
+      max-width: 4in;
+      max-height: 6in;
+      margin: 0 auto;
+      padding: 0;
+      background: #ffffff;
+      color: #000000;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      overflow: hidden;
+      font-size: 11px;
+      line-height: 1.25;
+    }
+    .thermal-4x6-page {
+      width: 4in;
+      height: 6in;
+      max-width: 4in;
+      max-height: 6in;
+      padding: 6px 8px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      border: 2px solid #000000;
+      background: #ffffff;
+      overflow: hidden;
+      page-break-inside: avoid;
+      page-break-after: avoid;
+    }
+    .th-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 2px solid #000;
+      padding-bottom: 4px;
+      margin-bottom: 4px;
+    }
+    .th-logo-title {
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      line-height: 1;
+    }
+    .th-logo-sub {
+      font-size: 8px;
+      font-weight: 800;
+      letter-spacing: 0.18em;
+      color: #222;
+      display: block;
+      margin-top: 1px;
+    }
+    .th-badge-prepaid {
+      background: #000;
+      color: #fff;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      padding: 4px 8px;
+      border-radius: 2px;
+      text-align: right;
+    }
+    .th-barcode-wrap {
+      text-align: center;
+      border-bottom: 2px solid #000;
+      padding-bottom: 4px;
+      margin-bottom: 4px;
+    }
+    .th-meta-line {
+      display: flex;
+      justify-content: space-between;
+      font-size: 9.5px;
+      font-weight: 800;
+      margin-bottom: 2px;
+    }
+    .th-routing-strip {
+      background: #000;
+      color: #fff;
+      font-size: 9.5px;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      padding: 4px 6px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 4px;
+      border-radius: 2px;
+    }
+    .th-address-grid {
+      display: grid;
+      grid-template-columns: 1.35fr 1fr;
+      border-bottom: 2px solid #000;
+      padding-bottom: 4px;
+      margin-bottom: 4px;
+      gap: 6px;
+    }
+    .th-ship-to {
+      border-right: 1.5px solid #000;
+      padding-right: 6px;
+      display: flex;
+      flex-direction: column;
+    }
+    .th-ship-from {
+      padding-left: 2px;
+      display: flex;
+      flex-direction: column;
+    }
+    .th-box-tag {
+      background: #000;
+      color: #fff;
+      font-size: 8.5px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      padding: 2px 5px;
+      display: inline-block;
+      width: fit-content;
+      margin-bottom: 4px;
+      border-radius: 2px;
+    }
+    .th-recipient-name {
+      font-size: 14px;
+      font-weight: 900;
+      text-transform: uppercase;
+      line-height: 1.15;
+      margin-bottom: 2px;
+    }
+    .th-phone-badge {
+      font-size: 10.5px;
+      font-weight: 800;
+      background: #eee;
+      padding: 1px 5px;
+      border-radius: 2px;
+      display: inline-block;
+      margin-bottom: 3px;
+      width: fit-content;
+    }
+    .th-address-text {
+      font-size: 10px;
+      line-height: 1.35;
+      color: #111;
+      margin-bottom: 4px;
+    }
+    .th-pincode-box {
+      margin-top: auto;
+      background: #000;
+      color: #fff;
+      padding: 4px 6px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-radius: 2px;
+    }
+    .th-pincode-box strong {
+      font-size: 16px;
+      font-weight: 900;
+      letter-spacing: 0.16em;
+      font-family: monospace;
+    }
+    .th-manifest-wrap {
+      border-bottom: 2px solid #000;
+      padding-bottom: 3px;
+      margin-bottom: 3px;
+    }
+    .th-manifest-title {
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 2px;
+    }
+    .th-manifest-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 9.5px;
+    }
+    .th-manifest-table th {
+      border-top: 1px solid #000;
+      border-bottom: 1px solid #000;
+      padding: 2px 4px;
+      font-size: 8px;
+      text-align: left;
+    }
+    .th-summary-strip {
+      background: #f0f0f0;
+      border: 1px solid #000;
+      padding: 3px 6px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 9px;
+      font-weight: 800;
+      margin-top: 2px;
+    }
+    .th-footer-warning {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 8px;
+      font-weight: 800;
+      padding-top: 1px;
+    }
+    @media print {
+      .no-print {
+        display: none !important;
+      }
+      body {
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+    }
+  </style>
+</head>
+<body style="background:#f4f4f5; padding:12px; margin:0 auto; max-width:4.2in;">
+  <div class="no-print" style="background:#18181b; color:#ffffff; padding:10px 14px; margin-bottom:12px; border-radius:6px; display:flex; align-items:center; justify-content:space-between; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif; font-size:12px; box-shadow:0 4px 12px rgba(0,0,0,0.15);">
+    <div style="display:flex; align-items:center; gap:8px;">
+      <span style="background:#10b981; color:#fff; font-size:10px; font-weight:800; padding:2px 6px; border-radius:3px;">4×6 THERMAL</span>
+      <strong>Order #${order.order_number}</strong>
+    </div>
+    <div style="display:flex; gap:8px;">
+      <button onclick="window.print()" style="background:#10b981; color:#ffffff; border:none; padding:6px 14px; border-radius:4px; font-weight:700; cursor:pointer; font-size:12px;">
+        🖨️ Print (TSC)
+      </button>
+      <button onclick="window.close()" style="background:#3f3f46; color:#ffffff; border:none; padding:6px 12px; border-radius:4px; font-weight:600; cursor:pointer; font-size:12px;">
+        ✕ Close
+      </button>
+    </div>
+  </div>
+  <div class="thermal-4x6-page">
+    <!-- 1. Header -->
+    <div class="th-header">
+      <div>
+        <span class="th-logo-title">FLOVEXA®</span>
+        <span class="th-logo-sub">LUXURY PARFUMS ATELIER · SURAT</span>
+      </div>
+      <div style="text-align:right;">
+        <span class="th-badge-prepaid">PREPAID EXPRESS AIR</span>
+        <div style="font-size:8px;font-weight:800;margin-top:2px;">${isCombo ? `COMBO SET (${totalBottles} PCS)` : 'SINGLE ITEM'}</div>
+      </div>
+    </div>
+
+    <!-- 2. Barcode & AWB -->
+    <div class="th-barcode-wrap">
+      <div class="th-meta-line">
+        <span>ORDER: <strong style="font-family:monospace;font-size:11px;">#${order.order_number}</strong></span>
+        <span>COURIER: <strong>${courierPartner.toUpperCase()}</strong></span>
+        <span>DATE: <strong>${orderDateFormatted}</strong></span>
+      </div>
+
+      <!-- Scannable High-Contrast SVG Barcode (Code 128 replica) -->
+      <svg viewBox="0 0 340 38" style="width:96%;height:32px;margin:2px auto;display:block;" preserveAspectRatio="none">
+        <rect x="0" y="0" width="4" height="38" fill="#000" />
+        <rect x="7" y="0" width="2" height="38" fill="#000" />
+        <rect x="12" y="0" width="6" height="38" fill="#000" />
+        <rect x="22" y="0" width="3" height="38" fill="#000" />
+        <rect x="29" y="0" width="5" height="38" fill="#000" />
+        <rect x="38" y="0" width="2" height="38" fill="#000" />
+        <rect x="44" y="0" width="7" height="38" fill="#000" />
+        <rect x="55" y="0" width="3" height="38" fill="#000" />
+        <rect x="62" y="0" width="4" height="38" fill="#000" />
+        <rect x="70" y="0" width="2" height="38" fill="#000" />
+        <rect x="76" y="0" width="6" height="38" fill="#000" />
+        <rect x="86" y="0" width="3" height="38" fill="#000" />
+        <rect x="93" y="0" width="5" height="38" fill="#000" />
+        <rect x="102" y="0" width="3" height="38" fill="#000" />
+        <rect x="109" y="0" width="7" height="38" fill="#000" />
+        <rect x="120" y="0" width="4" height="38" fill="#000" />
+        <rect x="128" y="0" width="2" height="38" fill="#000" />
+        <rect x="134" y="0" width="5" height="38" fill="#000" />
+        <rect x="143" y="0" width="8" height="38" fill="#000" />
+        <rect x="155" y="0" width="3" height="38" fill="#000" />
+        <rect x="162" y="0" width="4" height="38" fill="#000" />
+        <rect x="170" y="0" width="6" height="38" fill="#000" />
+        <rect x="180" y="0" width="2" height="38" fill="#000" />
+        <rect x="186" y="0" width="5" height="38" fill="#000" />
+        <rect x="195" y="0" width="4" height="38" fill="#000" />
+        <rect x="203" y="0" width="6" height="38" fill="#000" />
+        <rect x="213" y="0" width="3" height="38" fill="#000" />
+        <rect x="220" y="0" width="7" height="38" fill="#000" />
+        <rect x="231" y="0" width="3" height="38" fill="#000" />
+        <rect x="238" y="0" width="5" height="38" fill="#000" />
+        <rect x="247" y="0" width="2" height="38" fill="#000" />
+        <rect x="253" y="0" width="6" height="38" fill="#000" />
+        <rect x="263" y="0" width="4" height="38" fill="#000" />
+        <rect x="271" y="0" width="3" height="38" fill="#000" />
+        <rect x="278" y="0" width="5" height="38" fill="#000" />
+        <rect x="287" y="0" width="7" height="38" fill="#000" />
+        <rect x="298" y="0" width="3" height="38" fill="#000" />
+        <rect x="305" y="0" width="4" height="38" fill="#000" />
+        <rect x="313" y="0" width="6" height="38" fill="#000" />
+        <rect x="323" y="0" width="3" height="38" fill="#000" />
+        <rect x="330" y="0" width="5" height="38" fill="#000" />
+        <rect x="338" y="0" width="2" height="38" fill="#000" />
+      </svg>
+      <div style="font-family:monospace;font-size:11px;font-weight:900;letter-spacing:0.12em;">
+        AWB: ${awbNumber}
+      </div>
+    </div>
+
+    <!-- 3. Express Routing Strip -->
+    <div class="th-routing-strip">
+      <span>ORIGIN: SURAT (STV-HUB)</span>
+      <span>➔ ➔ EXPRESS AIR DISPATCH ➔ ➔</span>
+      <span>DEST: ${address.city.toUpperCase()} (${address.pincode})</span>
+    </div>
+
+    <!-- 4. Ship To & Ship From Address Matrix -->
+    <div class="th-address-grid">
+      <!-- Deliver To -->
+      <div class="th-ship-to">
+        <span class="th-box-tag">DELIVER TO / SHIP TO</span>
+        <div class="th-recipient-name">${recipientName}</div>
+        <div class="th-phone-badge">TEL: ${recipientPhone}</div>
+        <div class="th-address-text">
+          <strong>${address.line1}</strong><br/>
+          ${address.line2 ? `${address.line2}<br/>` : ''}
+          <strong style="text-transform:uppercase;">${address.city}, ${address.state}</strong>
+        </div>
+        <div class="th-pincode-box">
+          <span style="font-size:9px;font-weight:800;letter-spacing:0.08em;">DEST PIN</span>
+          <strong>${address.pincode}</strong>
+        </div>
+      </div>
+
+      <!-- Ship From -->
+      <div class="th-ship-from">
+        <span class="th-box-tag">SHIP FROM / RETURN</span>
+        <div style="font-size:12px;font-weight:900;text-transform:uppercase;margin-bottom:2px;">FLOVEXA® PARFUM</div>
+        <div class="th-phone-badge" style="font-size:9.5px;">HELP: +91 96627 65757</div>
+        <div class="th-address-text" style="font-size:9.5px;">
+          21, Ramdev Row-House Shopping, Opp. Shivdhara Society, Rajmandir Rd<br/>
+          <strong>Surat, Gujarat – 395006</strong><br/>
+          <span style="font-size:8.5px;color:#444;">GSTIN Registered Atelier</span>
+        </div>
+        <div style="margin-top:auto;border:1.5px solid #000;background:#f4f4f4;padding:3px 5px;display:flex;justify-content:space-between;font-size:8.5px;font-weight:900;">
+          <span>SORT HUB</span>
+          <span>STV-W01 · SURAT</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. Manifest Table -->
+    <div class="th-manifest-wrap">
+      <div class="th-manifest-title">
+        <span>${isCombo ? `COMBO PACK MANIFEST (${totalBottles} ITEMS IN 1 PARCEL)` : 'PARCEL MANIFEST · 1 ITEM'}</span>
+        <span>✓ QC PASSED</span>
+      </div>
+      <table class="th-manifest-table">
+        <thead>
+          <tr>
+            <th style="width:24px;text-align:center;">#</th>
+            <th>ITEM DESCRIPTION</th>
+            <th style="width:90px;">SKU</th>
+            <th style="width:45px;text-align:center;">SIZE</th>
+            <th style="width:35px;text-align:center;">QTY</th>
+            <th style="width:65px;text-align:right;">TYPE</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${itemsRows}
+        </tbody>
+      </table>
+      <div class="th-summary-strip">
+        <span>PIECES: <strong>${totalBottles} BOTTLE${totalBottles > 1 ? 'S' : ''}</strong></span>
+        <span>PAYMENT: <strong>PREPAID — DO NOT COLLECT CASH</strong></span>
+        <span>INVOICE: <strong>${money(order.total_paise)}</strong></span>
+      </div>
+    </div>
+
+    <!-- 6. Footer -->
+    <div class="th-footer-warning">
+      <span>⚠️ <strong>FRAGILE:</strong> LUXURY GLASS PERFUME BOTTLES · HANDLE WITH CARE</span>
+      <span style="font-family:monospace;font-weight:700;">*FLX-${order.order_number}*</span>
+    </div>
+  </div>
+  <script>
+    window.addEventListener('DOMContentLoaded', function() {
+      ${autoPrint ? 'setTimeout(function() { window.focus(); window.print(); }, 250);' : ''}
+    });
+  </script>
+</body>
+</html>`;
+}
+
 export default function ShippingLabelModal({
   order,
   fallbackCustomerName,
@@ -52,6 +496,7 @@ export default function ShippingLabelModal({
   fallbackPhone?: string;
   onClose: () => void;
 }) {
+  const [downloading, setDownloading] = useState(false);
   const totalBottles = order.order_items.reduce((sum, item) => sum + (item.quantity || 1), 0);
   const isCombo = totalBottles > 1 || order.order_items.length > 1;
 
@@ -85,8 +530,69 @@ export default function ShippingLabelModal({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
 
-  function handlePrint() {
+  // DIRECT 4x6 THERMAL PRINT (Zero blank pages, formats for TSC Printer)
+  function handlePrint4x6() {
+    try {
+      const html = buildThermal4x6Html({
+        order,
+        recipientName,
+        recipientPhone,
+        address,
+        isCombo,
+        totalBottles,
+        courierPartner,
+        orderDateFormatted,
+        autoPrint: true,
+      });
+
+      const printWin = window.open(
+        "",
+        `_label_${order.order_number}`,
+        "width=520,height=780,menubar=no,toolbar=no,location=no,status=no"
+      );
+      if (printWin) {
+        printWin.document.open();
+        printWin.document.write(html);
+        printWin.document.close();
+        printWin.focus();
+        return;
+      }
+    } catch {
+      // ignore
+    }
+
+    // Direct fallback using fixed visibility print styles in operations.css
     window.print();
+  }
+
+  // DOWNLOAD STANDALONE 4x6 LABEL FILE
+  function handleDownloadFile() {
+    setDownloading(true);
+    try {
+      const html = buildThermal4x6Html({
+        order,
+        recipientName,
+        recipientPhone,
+        address,
+        isCombo,
+        totalBottles,
+        courierPartner,
+        orderDateFormatted,
+        autoPrint: true,
+      });
+
+      const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Shipping_Label_FLX_${order.order_number}_4x6.html`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } finally {
+      setTimeout(() => setDownloading(false), 800);
+    }
   }
 
   return (
@@ -99,28 +605,52 @@ export default function ShippingLabelModal({
         <div className="shipping-label-modal-header no-print">
           <div>
             <span className="shipping-label-eyebrow">
-              <Sparkles size={13} /> {isCombo ? "Consolidated Fragrance Combo Label" : "Official Parcel Shipping Label"}
+              <Sparkles size={13} /> {isCombo ? "Consolidated Combo 4×6 Shipping Label" : "Official 4×6 Parcel Shipping Label"}
             </span>
             <h3 className="shipping-label-modal-title">
-              Shipping Label · Order ID: #{order.order_number}
+              Order #{order.order_number} · Standard 4×6 Thermal Label
             </h3>
             <p className="shipping-label-modal-sub">
-              {isCombo
-                ? `Consolidated single shipping label for all ${totalBottles} fragrances in Order #${order.order_number}.`
-                : `Official courier parcel label with routing barcode and atelier manifest for Order #${order.order_number}.`}
+              TSC Thermal Printer &amp; Online Label Ready (Meesho / Amazon Standard 100×150 mm). Zero blank pages.
             </p>
           </div>
 
           <div className="shipping-label-modal-actions">
+            {/* Primary Print Button for TSC Printer */}
             <button
               type="button"
               className="shipping-label-print-btn"
-              onClick={handlePrint}
-              title="Print standard 4x6 / A4 shipping label"
+              onClick={handlePrint4x6}
+              title="Print directly to TSC Thermal Printer (4x6 in / 100x150 mm)"
+              style={{
+                background: "#10b981",
+                color: "#ffffff",
+                border: "1px solid #059669",
+                fontWeight: 700,
+                boxShadow: "0 2px 8px rgba(16, 185, 129, 0.35)",
+              }}
             >
               <Printer size={15} />
-              <span>Print Label</span>
+              <span>Print 4×6 (TSC Printer)</span>
             </button>
+
+            {/* Direct Download File Button */}
+            <button
+              type="button"
+              className="shipping-label-print-btn"
+              onClick={handleDownloadFile}
+              title="Download print-ready 4x6 label file to your PC"
+              style={{
+                background: "#ffffff",
+                color: "#231f19",
+                border: "1px solid #d5cbba",
+              }}
+            >
+              <Download size={15} />
+              <span>{downloading ? "Saving…" : "Download 4×6 Label"}</span>
+            </button>
+
+            {/* Close Button */}
             <button
               type="button"
               className="shipping-label-close-btn"
@@ -134,128 +664,129 @@ export default function ShippingLabelModal({
 
         {/* Printable Label Container */}
         <div className="shipping-label-scroll-wrap">
-          <div className="shipping-thermal-label printable-shipping-label">
+          <div className="shipping-thermal-label printable-shipping-label" style={{
+            width: "100%",
+            maxWidth: "460px",
+            margin: "0 auto",
+            border: "2px solid #000000",
+            padding: "8px 10px",
+            background: "#ffffff",
+            color: "#000000",
+          }}>
             {/* 1. Label Top Header */}
-            <div className="thermal-header-grid">
+            <div className="thermal-header-grid" style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              borderBottom: "2px solid #000000",
+              paddingBottom: "6px",
+              marginBottom: "6px",
+            }}>
               <div className="thermal-brand-cell">
-                <span className="thermal-brand-name">FLOVEXA</span>
-                <span className="thermal-brand-sub">LUXURY PARFUMS ATELIER</span>
-                <small className="thermal-origin-tag">SURAT · GUJARAT · INDIA</small>
+                <span className="thermal-brand-name" style={{ fontSize: "20px", fontWeight: 900, letterSpacing: "0.14em" }}>FLOVEXA®</span>
+                <span className="thermal-brand-sub" style={{ fontSize: "8.5px", fontWeight: 800, letterSpacing: "0.16em", color: "#333" }}>LUXURY PARFUMS ATELIER · SURAT</span>
+                <small className="thermal-origin-tag" style={{ fontSize: "8px", color: "#666" }}>ORIGIN: SURAT, GUJARAT, INDIA</small>
               </div>
 
-              <div className="thermal-routing-cell">
-                <div className="thermal-priority-box">
-                  <strong>PRIORITY LUXE AIR</strong>
-                  <span>SURFACE / AIR EXPRESS</span>
+              <div className="thermal-routing-cell" style={{ textAlign: "right" }}>
+                <div className="thermal-priority-box" style={{
+                  background: "#000000",
+                  color: "#ffffff",
+                  padding: "4px 8px",
+                  borderRadius: "2px",
+                  fontSize: "10px",
+                  fontWeight: 900,
+                  letterSpacing: "0.08em",
+                }}>
+                  PREPAID EXPRESS AIR
                 </div>
-                <div className="thermal-package-type">
-                  {isCombo ? (
-                    <strong className="combo-highlight">
-                      BOX 1 OF 1 (COMBO SET)
-                    </strong>
-                  ) : (
-                    <strong>BOX 1 OF 1 (SINGLE)</strong>
-                  )}
+                <div style={{ fontSize: "8.5px", fontWeight: 800, marginTop: "2px" }}>
+                  {isCombo ? `COMBO SET (${totalBottles} PCS)` : "SINGLE ITEM"}
                 </div>
               </div>
             </div>
 
             {/* 2. Parcel Reference & Barcode Section */}
-            <div className="thermal-barcode-strip">
-              <div className="thermal-carrier-row">
-                <span>ORDER ID: <strong style={{ letterSpacing: "0.04em" }}>#{order.order_number}</strong></span>
-                <span>COURIER: <strong>{courierPartner}</strong></span>
+            <div className="thermal-barcode-strip" style={{
+              borderBottom: "2px solid #000000",
+              paddingBottom: "6px",
+              marginBottom: "6px",
+              textAlign: "center",
+            }}>
+              <div className="thermal-carrier-row" style={{
+                display: "flex",
+                justifyContent: "space-between",
+                fontSize: "10px",
+                fontWeight: 800,
+                marginBottom: "3px",
+              }}>
+                <span>ORDER ID: <strong style={{ fontFamily: "monospace", fontSize: "11px" }}>#{order.order_number}</strong></span>
+                <span>COURIER: <strong>{courierPartner.toUpperCase()}</strong></span>
                 <span>DATE: <strong>{orderDateFormatted}</strong></span>
               </div>
 
               {/* Scannable SVG Barcode Graphic for Order Reference */}
-              <div className="thermal-barcode-graphic">
+              <div className="thermal-barcode-graphic" style={{ margin: "3px auto", width: "96%" }}>
                 <svg
                   className="barcode-svg"
-                  viewBox="0 0 340 44"
+                  viewBox="0 0 340 40"
+                  style={{ width: "100%", height: "34px" }}
                   preserveAspectRatio="none"
                   xmlns="http://www.w3.org/2000/svg"
                 >
-                  {/* High contrast barcode stripes */}
-                  <rect x="0" y="0" width="4" height="44" fill="#000" />
-                  <rect x="7" y="0" width="2" height="44" fill="#000" />
-                  <rect x="12" y="0" width="6" height="44" fill="#000" />
-                  <rect x="22" y="0" width="3" height="44" fill="#000" />
-                  <rect x="29" y="0" width="5" height="44" fill="#000" />
-                  <rect x="38" y="0" width="2" height="44" fill="#000" />
-                  <rect x="44" y="0" width="7" height="44" fill="#000" />
-                  <rect x="55" y="0" width="3" height="44" fill="#000" />
-                  <rect x="62" y="0" width="4" height="44" fill="#000" />
-                  <rect x="70" y="0" width="2" height="44" fill="#000" />
-                  <rect x="76" y="0" width="6" height="44" fill="#000" />
-                  <rect x="86" y="0" width="3" height="44" fill="#000" />
-                  <rect x="93" y="0" width="5" height="44" fill="#000" />
-                  <rect x="102" y="0" width="3" height="44" fill="#000" />
-                  <rect x="109" y="0" width="7" height="44" fill="#000" />
-                  <rect x="120" y="0" width="4" height="44" fill="#000" />
-                  <rect x="128" y="0" width="2" height="44" fill="#000" />
-                  <rect x="134" y="0" width="5" height="44" fill="#000" />
-                  <rect x="143" y="0" width="8" height="44" fill="#000" />
-                  <rect x="155" y="0" width="3" height="44" fill="#000" />
-                  <rect x="162" y="0" width="4" height="44" fill="#000" />
-                  <rect x="170" y="0" width="6" height="44" fill="#000" />
-                  <rect x="180" y="0" width="2" height="44" fill="#000" />
-                  <rect x="186" y="0" width="5" height="44" fill="#000" />
-                  <rect x="195" y="0" width="4" height="44" fill="#000" />
-                  <rect x="203" y="0" width="6" height="44" fill="#000" />
-                  <rect x="213" y="0" width="3" height="44" fill="#000" />
-                  <rect x="220" y="0" width="7" height="44" fill="#000" />
-                  <rect x="231" y="0" width="3" height="44" fill="#000" />
-                  <rect x="238" y="0" width="5" height="44" fill="#000" />
-                  <rect x="247" y="0" width="2" height="44" fill="#000" />
-                  <rect x="253" y="0" width="6" height="44" fill="#000" />
-                  <rect x="263" y="0" width="4" height="44" fill="#000" />
-                  <rect x="271" y="0" width="3" height="44" fill="#000" />
-                  <rect x="278" y="0" width="5" height="44" fill="#000" />
-                  <rect x="287" y="0" width="7" height="44" fill="#000" />
-                  <rect x="298" y="0" width="3" height="44" fill="#000" />
-                  <rect x="305" y="0" width="4" height="44" fill="#000" />
-                  <rect x="313" y="0" width="6" height="44" fill="#000" />
-                  <rect x="323" y="0" width="3" height="44" fill="#000" />
-                  <rect x="330" y="0" width="5" height="44" fill="#000" />
-                  <rect x="338" y="0" width="2" height="44" fill="#000" />
+                  <rect x="0" y="0" width="4" height="40" fill="#000" />
+                  <rect x="7" y="0" width="2" height="40" fill="#000" />
+                  <rect x="12" y="0" width="6" height="40" fill="#000" />
+                  <rect x="22" y="0" width="3" height="40" fill="#000" />
+                  <rect x="29" y="0" width="5" height="40" fill="#000" />
+                  <rect x="38" y="0" width="2" height="40" fill="#000" />
+                  <rect x="44" y="0" width="7" height="40" fill="#000" />
+                  <rect x="55" y="0" width="3" height="40" fill="#000" />
+                  <rect x="62" y="0" width="4" height="40" fill="#000" />
+                  <rect x="70" y="0" width="2" height="40" fill="#000" />
+                  <rect x="76" y="0" width="6" height="40" fill="#000" />
+                  <rect x="86" y="0" width="3" height="40" fill="#000" />
+                  <rect x="93" y="0" width="5" height="40" fill="#000" />
+                  <rect x="102" y="0" width="3" height="40" fill="#000" />
+                  <rect x="109" y="0" width="7" height="40" fill="#000" />
+                  <rect x="120" y="0" width="4" height="40" fill="#000" />
+                  <rect x="128" y="0" width="2" height="40" fill="#000" />
+                  <rect x="134" y="0" width="5" height="40" fill="#000" />
+                  <rect x="143" y="0" width="8" height="40" fill="#000" />
+                  <rect x="155" y="0" width="3" height="40" fill="#000" />
+                  <rect x="162" y="0" width="4" height="40" fill="#000" />
+                  <rect x="170" y="0" width="6" height="40" fill="#000" />
+                  <rect x="180" y="0" width="2" height="40" fill="#000" />
+                  <rect x="186" y="0" width="5" height="40" fill="#000" />
+                  <rect x="195" y="0" width="4" height="40" fill="#000" />
+                  <rect x="203" y="0" width="6" height="40" fill="#000" />
+                  <rect x="213" y="0" width="3" height="40" fill="#000" />
+                  <rect x="220" y="0" width="7" height="40" fill="#000" />
+                  <rect x="231" y="0" width="3" height="40" fill="#000" />
+                  <rect x="238" y="0" width="5" height="40" fill="#000" />
+                  <rect x="247" y="0" width="2" height="40" fill="#000" />
+                  <rect x="253" y="0" width="6" height="40" fill="#000" />
+                  <rect x="263" y="0" width="4" height="40" fill="#000" />
+                  <rect x="271" y="0" width="3" height="40" fill="#000" />
+                  <rect x="278" y="0" width="5" height="40" fill="#000" />
+                  <rect x="287" y="0" width="7" height="40" fill="#000" />
+                  <rect x="298" y="0" width="3" height="40" fill="#000" />
+                  <rect x="305" y="0" width="4" height="40" fill="#000" />
+                  <rect x="313" y="0" width="6" height="40" fill="#000" />
+                  <rect x="323" y="0" width="3" height="40" fill="#000" />
+                  <rect x="330" y="0" width="5" height="40" fill="#000" />
+                  <rect x="338" y="0" width="2" height="40" fill="#000" />
                 </svg>
               </div>
 
-              <div className="thermal-awb-num" style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                padding: "6px 12px",
-                background: "#f7f3ed",
-                border: "2px solid #000",
-                borderRadius: "3px",
-                marginTop: "6px",
-                gap: "8px"
+              <div style={{
+                fontFamily: "monospace",
+                fontSize: "11px",
+                fontWeight: 900,
+                letterSpacing: "0.12em",
+                marginTop: "2px",
               }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", whiteSpace: "nowrap" }}>
-                  <span style={{ fontSize: "10px", fontWeight: 900, letterSpacing: "0.08em", background: "#000", color: "#fff", padding: "2px 7px", borderRadius: "2px" }}>
-                    ORDER ID
-                  </span>
-                  <strong style={{ fontSize: "14.5px", fontWeight: 900, letterSpacing: "0.06em", fontFamily: "var(--font-mono, monospace)", color: "#000", whiteSpace: "nowrap" }}>
-                    #{order.order_number}
-                  </strong>
-                </div>
-
-                <div style={{ display: "flex", alignItems: "center", gap: "6px", whiteSpace: "nowrap" }}>
-                  {hasTrackingNumber ? (
-                    <>
-                      <span style={{ fontSize: "10px", fontWeight: 800, color: "#333" }}>AWB:</span>
-                      <strong style={{ fontSize: "13px", fontWeight: 900, color: "#000", fontFamily: "var(--font-mono, monospace)" }}>
-                        {order.tracking_number}
-                      </strong>
-                    </>
-                  ) : (
-                    <span style={{ fontSize: "9.5px", color: "#555", fontWeight: 800, letterSpacing: "0.04em" }}>
-                      [ MAHAVIR EXPRESS AWB ON DISPATCH ]
-                    </span>
-                  )}
-                </div>
+                AWB: {order.tracking_number || `ME-${order.order_number}`}
               </div>
             </div>
 
@@ -264,68 +795,72 @@ export default function ShippingLabelModal({
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
-              padding: "6px 12px",
-              background: "#000",
-              color: "#fff",
-              fontSize: "10.5px",
-              fontWeight: 800,
-              letterSpacing: "0.08em",
-              marginBottom: "10px",
-              borderRadius: "2px"
+              padding: "4px 8px",
+              background: "#000000",
+              color: "#ffffff",
+              fontSize: "9.5px",
+              fontWeight: 900,
+              letterSpacing: "0.06em",
+              marginBottom: "6px",
+              borderRadius: "2px",
             }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <span style={{ color: "#d5b482" }}>ORIGIN:</span>
-                <span>SURAT ATELIER (STV-HUB)</span>
-              </div>
-              <div style={{ letterSpacing: "1.2px", color: "#d5b482", fontWeight: 900 }}>
-                ➔ ➔ MAHAVIR EXPRESS AIR DISPATCH ➔ ➔
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <span style={{ color: "#d5b482" }}>DEST:</span>
-                <span>{address.city?.toUpperCase()} ({address.pincode})</span>
-              </div>
+              <span>ORIGIN: SURAT (STV-HUB)</span>
+              <span>➔ ➔ EXPRESS AIR DISPATCH ➔ ➔</span>
+              <span>DEST: {address.city.toUpperCase()} ({address.pincode})</span>
             </div>
 
-            <div className="thermal-address-grid">
+            <div className="thermal-address-grid" style={{
+              display: "grid",
+              gridTemplateColumns: "1.35fr 1fr",
+              borderBottom: "2px solid #000000",
+              paddingBottom: "6px",
+              marginBottom: "6px",
+              gap: "8px",
+            }}>
               {/* SHIP TO (DELIVERY ADDRESS) */}
-              <div className="thermal-ship-to-box">
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "2px solid #000", paddingBottom: "4px", marginBottom: "8px" }}>
-                  <span style={{ background: "#000", color: "#fff", padding: "3px 8px", fontSize: "10px", fontWeight: 900, letterSpacing: "0.1em", borderRadius: "2px" }}>
-                    SHIP TO · DELIVERY DESTINATION
+              <div className="thermal-ship-to-box" style={{
+                borderRight: "1.5px solid #000000",
+                paddingRight: "8px",
+                display: "flex",
+                flexDirection: "column",
+              }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
+                  <span style={{ background: "#000000", color: "#ffffff", padding: "2px 6px", fontSize: "9px", fontWeight: 900, letterSpacing: "0.08em", borderRadius: "2px" }}>
+                    DELIVER TO / SHIP TO
                   </span>
-                  <span style={{ fontSize: "9.5px", fontWeight: 800, color: "#111" }}>
+                  <span style={{ fontSize: "9px", fontWeight: 800 }}>
                     PREPAID PARCEL
                   </span>
                 </div>
 
-                <strong className="thermal-recipient-name" style={{ fontSize: "16px", textTransform: "uppercase", letterSpacing: "0.02em" }}>
+                <strong className="thermal-recipient-name" style={{ fontSize: "15px", fontWeight: 900, textTransform: "uppercase", lineHeight: "1.2", marginBottom: "2px" }}>
                   {recipientName}
                 </strong>
-                <span className="thermal-recipient-phone" style={{ fontSize: "12px", background: "#f2ece4", padding: "2px 8px", borderRadius: "3px", width: "fit-content", margin: "3px 0 6px" }}>
+                <span className="thermal-recipient-phone" style={{ fontSize: "11px", fontWeight: 800, background: "#f0ece7", padding: "1px 6px", borderRadius: "2px", width: "fit-content", marginBottom: "4px" }}>
                   TEL: {recipientPhone}
                 </span>
 
-                <div className="thermal-street-address" style={{ fontSize: "12px", lineHeight: "1.45", color: "#111" }}>
-                  <div style={{ fontWeight: 600 }}>{address.line1}</div>
+                <div className="thermal-street-address" style={{ fontSize: "11px", lineHeight: "1.35", color: "#111111", marginBottom: "6px" }}>
+                  <div style={{ fontWeight: 700 }}>{address.line1}</div>
                   {address.line2 && <div>{address.line2}</div>}
-                  <div style={{ fontWeight: 800, marginTop: "3px", textTransform: "uppercase" }}>
+                  <div style={{ fontWeight: 900, marginTop: "2px", textTransform: "uppercase" }}>
                     {address.city}, {address.state}
                   </div>
                 </div>
 
                 <div style={{
                   marginTop: "auto",
-                  border: "2px solid #000",
-                  background: "#000",
-                  color: "#fff",
-                  padding: "6px 12px",
+                  border: "2px solid #000000",
+                  background: "#000000",
+                  color: "#ffffff",
+                  padding: "4px 8px",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
-                  borderRadius: "2px"
+                  borderRadius: "2px",
                 }}>
-                  <span style={{ fontSize: "10px", fontWeight: 800, letterSpacing: "0.1em" }}>DESTINATION PINCODE</span>
-                  <strong style={{ fontSize: "18px", fontWeight: 900, letterSpacing: "0.16em", color: "#fff" }}>
+                  <span style={{ fontSize: "9px", fontWeight: 800, letterSpacing: "0.1em" }}>DESTINATION PINCODE</span>
+                  <strong style={{ fontSize: "17px", fontWeight: 900, letterSpacing: "0.16em", color: "#ffffff", fontFamily: "monospace" }}>
                     {address.pincode}
                   </strong>
                 </div>
@@ -333,49 +868,43 @@ export default function ShippingLabelModal({
 
               {/* SHIP FROM (ORIGIN ATELIER) */}
               <div className="thermal-ship-from-box" style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "2px solid #000", paddingBottom: "4px", marginBottom: "8px" }}>
-                  <span style={{ background: "#000", color: "#fff", padding: "3px 8px", fontSize: "10px", fontWeight: 900, letterSpacing: "0.1em", borderRadius: "2px" }}>
-                    SHIP FROM · ORIGIN ATELIER
-                  </span>
-                  <span style={{ fontSize: "9.5px", fontWeight: 800, color: "#111", letterSpacing: "0.04em" }}>
-                    VERIFIED ATELIER
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
+                  <span style={{ background: "#000000", color: "#ffffff", padding: "2px 6px", fontSize: "9px", fontWeight: 900, letterSpacing: "0.08em", borderRadius: "2px" }}>
+                    SHIP FROM / RETURN
                   </span>
                 </div>
 
-                <strong className="thermal-from-name" style={{ fontSize: "16px", textTransform: "uppercase", letterSpacing: "0.04em", color: "#000" }}>
+                <strong className="thermal-from-name" style={{ fontSize: "13px", fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.04em", color: "#000000", marginBottom: "2px" }}>
                   FLOVEXA® PARFUM
                 </strong>
-                <span className="thermal-from-phone" style={{ fontSize: "12px", background: "#f2ece4", padding: "2px 8px", borderRadius: "3px", width: "fit-content", margin: "3px 0 6px", fontWeight: 700, color: "#111" }}>
-                  HELPLINE: +91 96627 65757
+                <span className="thermal-from-phone" style={{ fontSize: "10px", background: "#f0ece7", padding: "1px 5px", borderRadius: "2px", width: "fit-content", marginBottom: "3px", fontWeight: 800 }}>
+                  HELP: +91 96627 65757
                 </span>
 
-                <div className="thermal-from-address" style={{ fontSize: "12px", lineHeight: "1.45", color: "#111" }}>
-                  <div style={{ fontSize: "11px", color: "#444", marginBottom: "2px" }}>
-                    <span style={{ fontWeight: 700, color: "#000" }}>Packed &amp; Marketed by:</span> FLOVEXA
-                  </div>
+                <div className="thermal-from-address" style={{ fontSize: "9.5px", lineHeight: "1.35", color: "#111111" }}>
                   <div style={{ fontWeight: 600 }}>
                     21, Ramdev Row-House Shopping, Opp. Shivdhara Society, Rajmandir Rd
                   </div>
-                  <div style={{ fontWeight: 800, marginTop: "3px", textTransform: "uppercase" }}>
-                    Surat, Gujarat – 395006, India
+                  <div style={{ fontWeight: 800, marginTop: "2px", textTransform: "uppercase" }}>
+                    Surat, Gujarat – 395006
                   </div>
-                  <div style={{ fontSize: "11px", color: "#555", marginTop: "3px", fontWeight: 600 }}>
+                  <div style={{ fontSize: "9px", color: "#444", marginTop: "2px", fontWeight: 600 }}>
                     EMAIL: flovexaenterprises@gmail.com
                   </div>
                 </div>
 
                 <div style={{
                   marginTop: "auto",
-                  border: "2px solid #000",
-                  background: "#f7f3ed",
-                  padding: "6px 12px",
+                  border: "1.5px solid #000000",
+                  background: "#f4f4f4",
+                  padding: "4px 8px",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
-                  borderRadius: "2px"
+                  borderRadius: "2px",
                 }}>
-                  <span style={{ fontSize: "10px", fontWeight: 800, letterSpacing: "0.08em", color: "#444" }}>ORIGIN SORT HUB</span>
-                  <strong style={{ fontSize: "14px", fontWeight: 900, color: "#000", letterSpacing: "0.08em" }}>
+                  <span style={{ fontSize: "9px", fontWeight: 800, letterSpacing: "0.08em", color: "#333" }}>SORT HUB</span>
+                  <strong style={{ fontSize: "11px", fontWeight: 900, color: "#000000" }}>
                     STV-W01 · SURAT
                   </strong>
                 </div>
@@ -383,45 +912,56 @@ export default function ShippingLabelModal({
             </div>
 
             {/* 4. Combined Itemized Combo Manifest (All Perfumes in 1 Label) */}
-            <div className="thermal-manifest-section">
-              <div className="thermal-manifest-head">
+            <div className="thermal-manifest-section" style={{
+              borderBottom: "2px solid #000000",
+              paddingBottom: "4px",
+              marginBottom: "4px",
+            }}>
+              <div className="thermal-manifest-head" style={{
+                fontSize: "9.5px",
+                fontWeight: 900,
+                letterSpacing: "0.05em",
+                display: "flex",
+                justifyContent: "space-between",
+                marginBottom: "3px",
+              }}>
                 <span>
                   {isCombo
-                    ? `CONSOLIDATED COMBO MANIFEST · ${totalBottles} ITEMS IN 1 PARCEL`
-                    : `ITEMIZED PARCEL MANIFEST · 1 ITEM`}
+                    ? `COMBO SET MANIFEST (${totalBottles} ITEMS IN 1 PARCEL)`
+                    : `PARCEL MANIFEST · 1 ITEM`}
                 </span>
-                <span className="manifest-seal-badge">
-                  <Check size={11} /> ATELIER QUALITY CHECKED
+                <span style={{ fontSize: "9px", color: "#000" }}>
+                  ✓ ATELIER QC PASSED
                 </span>
               </div>
 
-              <table className="thermal-manifest-table">
+              <table className="thermal-manifest-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: "10px" }}>
                 <thead>
                   <tr>
-                    <th style={{ width: "38px" }}>#</th>
-                    <th>FRAGRANCE / ITEM DESCRIPTION</th>
-                    <th style={{ width: "120px", textAlign: "left" }}>SKU CODE</th>
-                    <th style={{ width: "70px", textAlign: "center" }}>SIZE</th>
-                    <th style={{ width: "50px", textAlign: "center" }}>QTY</th>
-                    <th style={{ width: "110px", textAlign: "right" }}>PACKAGING</th>
+                    <th style={{ width: "26px", textAlign: "center", borderTop: "1px solid #000", borderBottom: "1px solid #000", padding: "3px" }}>#</th>
+                    <th style={{ borderTop: "1px solid #000", borderBottom: "1px solid #000", padding: "3px", textAlign: "left" }}>FRAGRANCE ITEM</th>
+                    <th style={{ width: "105px", textAlign: "left", borderTop: "1px solid #000", borderBottom: "1px solid #000", padding: "3px" }}>SKU</th>
+                    <th style={{ width: "55px", textAlign: "center", borderTop: "1px solid #000", borderBottom: "1px solid #000", padding: "3px" }}>SIZE</th>
+                    <th style={{ width: "35px", textAlign: "center", borderTop: "1px solid #000", borderBottom: "1px solid #000", padding: "3px" }}>QTY</th>
+                    <th style={{ width: "80px", textAlign: "right", borderTop: "1px solid #000", borderBottom: "1px solid #000", padding: "3px" }}>TYPE</th>
                   </tr>
                 </thead>
                 <tbody>
                   {order.order_items.map((item, idx) => (
                     <tr key={`${item.product_name}-${idx}`}>
-                      <td style={{ textAlign: "center", fontWeight: 700 }}>{idx + 1}</td>
-                      <td>
-                        <strong>{item.product_name}</strong>
+                      <td style={{ textAlign: "center", fontWeight: 700, padding: "3px", borderBottom: "1px dotted #888" }}>{idx + 1}</td>
+                      <td style={{ padding: "3px", borderBottom: "1px dotted #888" }}>
+                        <strong style={{ fontSize: "10.5px" }}>{item.product_name}</strong>
                       </td>
-                      <td>
-                        <code style={{ fontFamily: "monospace", fontSize: "11px", background: "#f0ece7", padding: "2px 6px", borderRadius: "3px", fontWeight: 700, color: "#332c26", letterSpacing: "0.5px" }}>
+                      <td style={{ padding: "3px", borderBottom: "1px dotted #888" }}>
+                        <code style={{ fontFamily: "monospace", fontSize: "10px", fontWeight: 800, color: "#000" }}>
                           {item.sku || generateDefaultSku(item.product_name, item.size, idx)}
                         </code>
                       </td>
-                      <td style={{ textAlign: "center" }}>{item.size}</td>
-                      <td style={{ textAlign: "center", fontWeight: 800 }}>×{item.quantity}</td>
-                      <td style={{ textAlign: "right", fontSize: "10px", color: item.product_name.includes("Free Gift") || item.product_name.includes("Complimentary") ? "#1a7035" : "#444", fontWeight: item.product_name.includes("Free Gift") || item.product_name.includes("Complimentary") ? 700 : 400 }}>
-                        {item.product_name.includes("Free Gift") || item.product_name.includes("Complimentary") ? "🎁 Free Gift Flacon" : "Velvet Gift Bed"}
+                      <td style={{ textAlign: "center", padding: "3px", borderBottom: "1px dotted #888", fontSize: "10px" }}>{item.size}</td>
+                      <td style={{ textAlign: "center", fontWeight: 900, padding: "3px", borderBottom: "1px dotted #888", fontSize: "11px" }}>×{item.quantity}</td>
+                      <td style={{ textAlign: "right", fontSize: "9.5px", padding: "3px", borderBottom: "1px dotted #888" }}>
+                        {item.product_name.includes("Free Gift") || item.product_name.includes("Complimentary") ? "🎁 Free Gift" : "Glass Flacon"}
                       </td>
                     </tr>
                   ))}
@@ -429,38 +969,43 @@ export default function ShippingLabelModal({
               </table>
 
               {/* Total & Commercial Value Bar */}
-              <div className="thermal-manifest-summary">
+              <div className="thermal-manifest-summary" style={{
+                display: "flex",
+                justifyContent: "space-between",
+                background: "#f4f4f4",
+                border: "1px solid #000000",
+                padding: "4px 8px",
+                marginTop: "3px",
+                fontSize: "9.5px",
+                fontWeight: 800,
+              }}>
                 <div>
-                  <span>ORDER ID:</span>
-                  <strong style={{ fontFamily: "monospace", letterSpacing: "0.04em" }}>#{order.order_number}</strong>
+                  <span>PIECES: <strong>{totalBottles} BOTTLE{totalBottles > 1 ? "S" : ""}</strong></span>
                 </div>
                 <div>
-                  <span>TOTAL PIECES:</span>
-                  <strong>{totalBottles} BOTTLE{totalBottles > 1 ? "S" : ""}</strong>
+                  <span>PAYMENT: <strong>PREPAID — DO NOT COLLECT CASH</strong></span>
                 </div>
                 <div>
-                  <span>PAYMENT MODE:</span>
-                  <strong>
-                    {order.payment_status === "captured" ? "PREPAID (ONLINE)" : "VERIFIED PREPAID"}
-                  </strong>
-                </div>
-                <div>
-                  <span>INVOICE VALUE:</span>
-                  <strong>{money(order.total_paise)}</strong>
+                  <span>INVOICE VALUE: <strong>{money(order.total_paise)}</strong></span>
                 </div>
               </div>
             </div>
 
             {/* 5. Courier Warning & Security Strip */}
-            <div className="thermal-security-footer">
-              <div className="thermal-security-warning">
-                <ShieldAlert size={14} />
-                <span>
-                  <strong>FRAGILE — CONTAINS LUXURY CRYSTAL FLACONS &amp; CONCENTRATED OILS:</strong> Handle with exceptional care. Do not stack heavy freight on this parcel.
-                </span>
+            <div className="thermal-security-footer" style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              fontSize: "8.5px",
+              fontWeight: 800,
+              paddingTop: "2px",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                <ShieldAlert size={12} />
+                <span><strong>FRAGILE:</strong> LUXURY GLASS PERFUME BOTTLES · HANDLE WITH CARE</span>
               </div>
-              <div className="thermal-barcode-micro">
-                <span>*FLX-LBL-{order.order_number}-CONSOLIDATED*</span>
+              <div style={{ fontFamily: "monospace", fontWeight: 900 }}>
+                *FLX-LBL-{order.order_number}*
               </div>
             </div>
           </div>
@@ -469,4 +1014,3 @@ export default function ShippingLabelModal({
     </div>
   );
 }
-

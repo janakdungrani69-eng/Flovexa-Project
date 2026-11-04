@@ -156,7 +156,7 @@ const blankForm = (category: string): ProductForm => ({
   stock: "10",
   active: true,
   variants: [
-    { size: "50 ml", sku: "", price: "", compareAtPrice: "", stock: "10", imageUrl: "" },
+    { size: "50 ml", sku: "", price: "499", compareAtPrice: "999", stock: "10", imageUrl: "" },
   ],
 });
 
@@ -490,14 +490,17 @@ export default function SellerDashboard({
 
   function handleAddVariant(presetSize?: string) {
     setForm((current) => {
+      const existingPrice = current.variants.find((v) => Number(v.price) > 0)?.price || "499";
+      const existingMrp = current.variants.find((v) => Number(v.compareAtPrice) > 0)?.compareAtPrice || "999";
+      const existingStock = current.variants[0]?.stock || "10";
       const next = [
         ...current.variants,
         {
           size: presetSize || "50 ml",
           sku: "",
-          price: "",
-          compareAtPrice: "",
-          stock: "10",
+          price: existingPrice,
+          compareAtPrice: existingMrp,
+          stock: existingStock,
           imageUrl: "",
         },
       ];
@@ -1667,10 +1670,10 @@ export default function SellerDashboard({
                       {(() => {
                         const previewVar = form.variants[previewVariantIndex] || form.variants[0];
                         const coverPhoto = previewVar?.imageUrl || form.imageUrl || form.images[0] || "";
-                        const fallbackPrice = form.variants.find((v) => Number(v.price) > 0)?.price || "";
-                        const p = Number(previewVar?.price) || Number(fallbackPrice) || 0;
-                        const mrp = Number(previewVar?.compareAtPrice) || 0;
-                        const discount = mrp > p && p > 0 ? Math.round(((mrp - p) / mrp) * 100) : 0;
+                        const fallbackPrice = form.variants.find((v) => Number(v.price) > 0)?.price || "499";
+                        const p = Number(previewVar?.price) || Number(fallbackPrice) || 499;
+                        const mrp = Number(previewVar?.compareAtPrice) || (p > 0 ? Math.round(p * 2) : 999);
+                        const discount = mrp > p && p > 0 ? Math.round(((mrp - p) / mrp) * 100) : 50;
                         const notesList = form.notes.split(",").map((n) => n.trim()).filter(Boolean);
 
                         return (
@@ -1719,9 +1722,9 @@ export default function SellerDashboard({
                               {/* Pricing Block */}
                               <div className="seller-live-price-wrap">
                                 <span className="seller-live-price">
-                                  ₹{p > 0 ? p.toLocaleString("en-IN") : (previewVar?.price || fallbackPrice || "0")}
+                                  ₹{p.toLocaleString("en-IN")}
                                 </span>
-                                {mrp > p && p > 0 && (
+                                {mrp > p && (
                                   <span className="seller-live-mrp">₹{mrp.toLocaleString("en-IN")}</span>
                                 )}
                                 {discount > 0 && <span className="seller-live-savings">Save {discount}%</span>}
