@@ -254,7 +254,8 @@ export default function SellerDashboard({
   const [grossSales, setGrossSales] = useState(0);
   const [ordersLoaded, setOrdersLoaded] = useState(false);
   const [ordersError, setOrdersError] = useState("");
-  const [selectedLabelOrder, setSelectedLabelOrder] = useState<ShippingLabelOrder | null>(null);
+  const [selectedLabelOrders, setSelectedLabelOrders] = useState<ShippingLabelOrder[] | null>(null);
+  const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
 
   // Product Catalog Search, Filter & Sort
   const [searchQuery, setSearchQuery] = useState("");
@@ -486,6 +487,46 @@ export default function SellerDashboard({
       window.history.pushState({ formOpen: true }, "", url.pathname + "?" + url.searchParams.toString());
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
+  }
+
+  function toggleSelectOrder(orderId: string) {
+    setSelectedOrderIds((prev) =>
+      prev.includes(orderId) ? prev.filter((id) => id !== orderId) : [...prev, orderId]
+    );
+  }
+
+  function handleSelectAllVisibleOrders() {
+    const visibleIds = filteredOrders.map((o) => o.id);
+    const allSelected = visibleIds.length > 0 && visibleIds.every((id) => selectedOrderIds.includes(id));
+    if (allSelected) {
+      setSelectedOrderIds((prev) => prev.filter((id) => !visibleIds.includes(id)));
+    } else {
+      setSelectedOrderIds((prev) => Array.from(new Set([...prev, ...visibleIds])));
+    }
+  }
+
+  function handleOpenBatchPrint(customOrders?: typeof filteredOrders) {
+    const targetOrders = customOrders || filteredOrders.filter((o) => selectedOrderIds.includes(o.id));
+    if (targetOrders.length === 0) return;
+    const mapped: ShippingLabelOrder[] = targetOrders.map((order) => {
+      const draft = draftFor(order);
+      return {
+        id: order.id,
+        order_number: order.order_number,
+        customer_name: order.customer_name,
+        phone: order.phone,
+        shipping_address: order.shipping_address,
+        status: draft.status,
+        payment_status: "captured",
+        total_paise: order.order_items.reduce((s, it) => s + it.line_total_paise, 0),
+        created_at: order.created_at,
+        tracking_carrier: draft.trackingCarrier,
+        tracking_number: draft.trackingNumber,
+        tracking_url: draft.trackingUrl,
+        order_items: order.order_items,
+      };
+    });
+    setSelectedLabelOrders(mapped);
   }
 
   function handleAddVariant(presetSize?: string) {
@@ -2369,89 +2410,135 @@ export default function SellerDashboard({
                   </button>
                 </div>
               ) : (
-                <div className="seller-order-list">
-                  {filteredOrders.map((order) => {
-                    const draft = draftFor(order);
-                    const next = transitions[order.fulfillment.status] ?? [];
-                    const totalBottles = order.order_items.reduce((sum, item) => sum + (item.quantity || 1), 0);
-                    const isCombo = totalBottles > 1 || order.order_items.length > 1;
+                <>
+                  {/* Bulk Orders Selection & Combined Print Bar */}
+                  <div className="seller-orders-bulk-bar">
+                    <div className="seller-bulk-select-wrap">
+                      <label className="seller-bulk-checkbox-label">
+                        <input
+                          type="checkbox"
+                          checked={filteredOrders.length > 0 && filteredOrders.every((o) => selectedOrderIds.includes(o.id))}
+                          onChange={handleSelectAllVisibleOrders}
+                        />
+                        <span>Select All ({filteredOrders.length})</span>
+                      </label>
+                      {selectedOrderIds.length > 0 && (
+                        <span className="seller-bulk-count-badge">
+                          ✓ {selectedOrderIds.length} Selected
+                        </span>
+                      )}
+                    </div>
 
-                    return (
-                      <article className="seller-order" key={order.id}>
-                        <div className="seller-order-head">
-                          <div>
-                            <div style={{ display: "flex", alignItems: "center", gap: "7px", flexWrap: "wrap", marginBottom: "3px" }}>
-                              <span style={{
-                                fontSize: "10px",
-                                fontWeight: 800,
-                                letterSpacing: "0.08em",
-                                background: "#221c16",
-                                color: "#fff",
-                                padding: "2px 7px",
-                                borderRadius: "3px"
-                              }}>
-                                ORDER ID
-                              </span>
-                              <b style={{ fontSize: "14px", letterSpacing: "0.04em", fontFamily: "var(--font-mono, monospace)" }}>
-                                {order.order_number}
-                              </b>
+                    <div className="seller-bulk-actions-wrap">
+                      {selectedOrderIds.length > 0 ? (
+                        <>
+                          <button
+                            type="button"
+                            className="seller-bulk-btn-primary"
+                            onClick={() => handleOpenBatchPrint()}
+                          >
+                            <Printer size={14} />
+                            <span>Download / Print Combined 4×6 PDF ({selectedOrderIds.length} Orders)</span>
+                          </button>
+                          <button
+                            type="button"
+                            className="seller-bulk-btn-clear"
+                            onClick={() => setSelectedOrderIds([])}
+                          >
+                            Deselect All
+                          </button>
+                        </>
+                      ) : (
+                        pendingOrdersCount > 0 && (
+                          <button
+                            type="button"
+                            className="seller-bulk-btn-quick"
+                            onClick={() => handleOpenBatchPrint(orders.filter((o) => o.fulfillment.status === "pending"))}
+                            title="Print combined 4x6 labels for all pending dispatch orders in 1 click"
+                          >
+                            <Sparkles size={13} />
+                            <span>⚡ Bulk Print All Pending Orders ({pendingOrdersCount})</span>
+                          </button>
+                        )
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="seller-order-list">
+                    {filteredOrders.map((order) => {
+                      const draft = draftFor(order);
+                      const next = transitions[order.fulfillment.status] ?? [];
+                      const totalBottles = order.order_items.reduce((sum, item) => sum + (item.quantity || 1), 0);
+                      const isCombo = totalBottles > 1 || order.order_items.length > 1;
+                      const isSelected = selectedOrderIds.includes(order.id);
+
+                      return (
+                        <article className={`seller-order ${isSelected ? "selected" : ""}`} key={order.id}>
+                          <div className="seller-order-head">
+                            <div>
+                              <div style={{ display: "flex", alignItems: "center", gap: "7px", flexWrap: "wrap", marginBottom: "3px" }}>
+                                <input
+                                  type="checkbox"
+                                  className="seller-order-select-checkbox"
+                                  checked={isSelected}
+                                  onChange={() => toggleSelectOrder(order.id)}
+                                  title="Select order to combine in batch 4x6 PDF"
+                                />
+                                <span style={{
+                                  fontSize: "10px",
+                                  fontWeight: 800,
+                                  letterSpacing: "0.08em",
+                                  background: "#221c16",
+                                  color: "#fff",
+                                  padding: "2px 7px",
+                                  borderRadius: "3px"
+                                }}>
+                                  ORDER ID
+                                </span>
+                                <b style={{ fontSize: "14px", letterSpacing: "0.04em", fontFamily: "var(--font-mono, monospace)" }}>
+                                  {order.order_number}
+                                </b>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(order.order_number);
+                                    setMessage(`Order ID ${order.order_number} copied!`);
+                                  }}
+                                  title="Copy Order ID to search easily"
+                                  style={{
+                                    background: "#f5eee6",
+                                    border: "1px solid #d8cbbe",
+                                    borderRadius: "4px",
+                                    padding: "2px 7px",
+                                    fontSize: "11px",
+                                    cursor: "pointer",
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: "3px",
+                                    color: "#6b5847",
+                                    fontWeight: 600
+                                  }}
+                                >
+                                  <Copy size={11} /> Copy
+                                </button>
+                              </div>
+                              <small>
+                                Placed {new Date(order.created_at).toLocaleString("en-IN", {
+                                  dateStyle: "medium",
+                                  timeStyle: "short",
+                                })}
+                              </small>
+                            </div>
+                            <div className="seller-order-head-actions">
                               <button
                                 type="button"
-                                onClick={() => {
-                                  navigator.clipboard.writeText(order.order_number);
-                                  setMessage(`Order ID ${order.order_number} copied!`);
-                                }}
-                                title="Copy Order ID to search easily"
-                                style={{
-                                  background: "#f5eee6",
-                                  border: "1px solid #d8cbbe",
-                                  borderRadius: "4px",
-                                  padding: "2px 7px",
-                                  fontSize: "11px",
-                                  cursor: "pointer",
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  gap: "3px",
-                                  color: "#6b5847",
-                                  fontWeight: 600
-                                }}
+                                className="seller-order-label-btn"
+                                onClick={() => handleOpenBatchPrint([order])}
+                                title="Print 1 shipping label for all items to this address"
                               >
-                                <Copy size={11} /> Copy
+                                <Printer size={13} />
+                                <span>{isCombo ? `Print Combo Label (1 for Address)` : `Print Label`}</span>
                               </button>
-                            </div>
-                            <small>
-                              Placed {new Date(order.created_at).toLocaleString("en-IN", {
-                                dateStyle: "medium",
-                                timeStyle: "short",
-                              })}
-                            </small>
-                          </div>
-                          <div className="seller-order-head-actions">
-                            <button
-                              type="button"
-                              className="seller-order-label-btn"
-                              onClick={() =>
-                                setSelectedLabelOrder({
-                                  id: order.id,
-                                  order_number: order.order_number,
-                                  customer_name: order.customer_name,
-                                  phone: order.phone,
-                                  shipping_address: order.shipping_address,
-                                  status: draft.status,
-                                  payment_status: "captured",
-                                  total_paise: order.order_items.reduce((s, it) => s + it.line_total_paise, 0),
-                                  created_at: order.created_at,
-                                  tracking_carrier: draft.trackingCarrier,
-                                  tracking_number: draft.trackingNumber,
-                                  tracking_url: draft.trackingUrl,
-                                  order_items: order.order_items,
-                                })
-                              }
-                              title="Print 1 shipping label for all items to this address"
-                            >
-                              <Printer size={13} />
-                              <span>{isCombo ? `Print Combo Label (1 for Address)` : `Print Label`}</span>
-                            </button>
                             <span className={`seller-status seller-status-${draft.status}`}>
                               {draft.status.replaceAll("_", " ")}
                             </span>
@@ -2604,6 +2691,7 @@ export default function SellerDashboard({
                     );
                   })}
                 </div>
+                </>
               )}
             </section>
           )}
@@ -2733,10 +2821,10 @@ export default function SellerDashboard({
     </div>
       </section>
       {/* Printable Consolidated Shipping Label Modal */}
-      {selectedLabelOrder && (
+      {selectedLabelOrders && selectedLabelOrders.length > 0 && (
         <ShippingLabelModal
-          order={selectedLabelOrder}
-          onClose={() => setSelectedLabelOrder(null)}
+          orders={selectedLabelOrders}
+          onClose={() => setSelectedLabelOrders(null)}
         />
       )}
     </main>

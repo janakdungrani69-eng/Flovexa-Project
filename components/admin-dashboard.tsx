@@ -191,7 +191,30 @@ export default function AdminDashboard({
   const [shipments, setShipments] = useState<
     Record<string, { trackingCarrier: string; trackingNumber: string; trackingUrl: string }>
   >({});
-  const [selectedLabelOrder, setSelectedLabelOrder] = useState<ShippingLabelOrder | null>(null);
+  const [selectedLabelOrders, setSelectedLabelOrders] = useState<ShippingLabelOrder[] | null>(null);
+  const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
+
+  function toggleSelectOrder(orderId: string) {
+    setSelectedOrderIds((prev) =>
+      prev.includes(orderId) ? prev.filter((id) => id !== orderId) : [...prev, orderId]
+    );
+  }
+
+  function handleSelectAllVisibleOrders() {
+    const visibleIds = filteredOrders.map((o) => o.id);
+    const allSelected = visibleIds.length > 0 && visibleIds.every((id) => selectedOrderIds.includes(id));
+    if (allSelected) {
+      setSelectedOrderIds((prev) => prev.filter((id) => !visibleIds.includes(id)));
+    } else {
+      setSelectedOrderIds((prev) => Array.from(new Set([...prev, ...visibleIds])));
+    }
+  }
+
+  function handleOpenBatchPrint(customOrders?: typeof filteredOrders) {
+    const targetOrders = customOrders || filteredOrders.filter((o) => selectedOrderIds.includes(o.id));
+    if (targetOrders.length === 0) return;
+    setSelectedLabelOrders(targetOrders);
+  }
 
   // Key Calculations for Overview Cockpit
   const paidTotal = useMemo(
@@ -877,7 +900,7 @@ export default function AdminDashboard({
                             <button
                               type="button"
                               className="admin-order-label-btn"
-                              onClick={() => setSelectedLabelOrder(order)}
+                              onClick={() => handleOpenBatchPrint([order])}
                               title="Print 1 shipping label for address"
                               style={{ marginTop: 6 }}
                             >
@@ -1121,37 +1144,97 @@ export default function AdminDashboard({
                 <span>Try clearing the status filter or searching with different terms.</span>
               </div>
             ) : (
-              <div className="orders-list">
-                {filteredOrders.map((order) => {
-                  const totalBottles = order.order_items.reduce((sum, item) => sum + (item.quantity || 1), 0);
-                  const isCombo = totalBottles > 1 || order.order_items.length > 1;
+              <>
+                {/* Bulk Orders Selection Bar */}
+                <div className="admin-orders-bulk-bar">
+                  <div className="admin-bulk-select-wrap">
+                    <label className="admin-bulk-checkbox-label">
+                      <input
+                        type="checkbox"
+                        checked={filteredOrders.length > 0 && filteredOrders.every((o) => selectedOrderIds.includes(o.id))}
+                        onChange={handleSelectAllVisibleOrders}
+                      />
+                      <span>Select All ({filteredOrders.length})</span>
+                    </label>
+                    {selectedOrderIds.length > 0 && (
+                      <span className="seller-bulk-count-badge">
+                        ✓ {selectedOrderIds.length} Selected
+                      </span>
+                    )}
+                  </div>
 
-                  return (
-                    <article className="order-card" key={order.id}>
-                      <div className="order-card-head">
-                        <div>
-                          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
-                            <span style={{ fontSize: 9.5, fontWeight: 800, background: "#000", color: "#fff", padding: "1px 6px", borderRadius: 2 }}>
-                              ORDER ID
-                            </span>
-                            <span style={{ fontSize: 13.5, fontWeight: 800, letterSpacing: ".04em", fontFamily: "var(--font-mono, monospace)" }}>
-                              {order.order_number}
-                            </span>
+                  <div className="admin-bulk-actions-wrap">
+                    {selectedOrderIds.length > 0 ? (
+                      <>
+                        <button
+                          type="button"
+                          className="admin-bulk-btn-primary"
+                          onClick={() => handleOpenBatchPrint()}
+                        >
+                          <Printer size={14} />
+                          <span>Download / Print Combined 4×6 PDF ({selectedOrderIds.length} Orders)</span>
+                        </button>
+                        <button
+                          type="button"
+                          className="admin-bulk-btn-clear"
+                          onClick={() => setSelectedOrderIds([])}
+                        >
+                          Deselect All
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        type="button"
+                        className="admin-bulk-btn-quick"
+                        onClick={() => handleOpenBatchPrint(orders.filter((o) => o.status === "pending"))}
+                        title="Print combined 4x6 labels for pending orders in 1 click"
+                      >
+                        <Sparkles size={13} />
+                        <span>⚡ Bulk Print All Pending Labels</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="orders-list">
+                  {filteredOrders.map((order) => {
+                    const totalBottles = order.order_items.reduce((sum, item) => sum + (item.quantity || 1), 0);
+                    const isCombo = totalBottles > 1 || order.order_items.length > 1;
+                    const isSelected = selectedOrderIds.includes(order.id);
+
+                    return (
+                      <article className={`order-card ${isSelected ? "selected" : ""}`} key={order.id}>
+                        <div className="order-card-head">
+                          <div>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+                              <input
+                                type="checkbox"
+                                className="admin-order-select-checkbox"
+                                checked={isSelected}
+                                onChange={() => toggleSelectOrder(order.id)}
+                                title="Select order for batch 4x6 PDF"
+                              />
+                              <span style={{ fontSize: 9.5, fontWeight: 800, background: "#000", color: "#fff", padding: "1px 6px", borderRadius: 2 }}>
+                                ORDER ID
+                              </span>
+                              <span style={{ fontSize: 13.5, fontWeight: 800, letterSpacing: ".04em", fontFamily: "var(--font-mono, monospace)" }}>
+                                {order.order_number}
+                              </span>
+                            </div>
+                            <small>
+                              Placed {new Date(order.created_at).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}
+                            </small>
                           </div>
-                          <small>
-                            Placed {new Date(order.created_at).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}
-                          </small>
-                        </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <button
-                            type="button"
-                            className="admin-order-label-btn"
-                            onClick={() => setSelectedLabelOrder(order)}
-                            title="Print 1 consolidated shipping label for this address"
-                          >
-                            <Printer size={12} />
-                            <span>{isCombo ? `Print Combo Label (1 for Address)` : `Print Label`}</span>
-                          </button>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <button
+                              type="button"
+                              className="admin-order-label-btn"
+                              onClick={() => handleOpenBatchPrint([order])}
+                              title="Print 1 consolidated shipping label for this address"
+                            >
+                              <Printer size={12} />
+                              <span>{isCombo ? `Print Combo Label (1 for Address)` : `Print Label`}</span>
+                            </button>
                           <div className={`order-status status-${order.status}`}>
                             {order.status.replaceAll("_", " ")}
                           </div>
@@ -1307,6 +1390,7 @@ export default function AdminDashboard({
                   );
                 })}
               </div>
+              </>
             )}
           </div>
         )}
@@ -1759,11 +1843,11 @@ export default function AdminDashboard({
         {tab === "reviews" && (reviewPanel || <AdminReviews initialReviews={reviews} />)}
       </section>
 
-      {/* SINGLE SHIPPING LABEL MODAL (SUPPORTS CONSOLIDATED COMBOS) */}
-      {selectedLabelOrder && (
+      {/* SHIPPING LABEL MODAL (SUPPORTS SINGLE AND BATCH COMBINED PDF) */}
+      {selectedLabelOrders && selectedLabelOrders.length > 0 && (
         <ShippingLabelModal
-          order={selectedLabelOrder}
-          onClose={() => setSelectedLabelOrder(null)}
+          orders={selectedLabelOrders}
+          onClose={() => setSelectedLabelOrders(null)}
         />
       )}
     </div>
