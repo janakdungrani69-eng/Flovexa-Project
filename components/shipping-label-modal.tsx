@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, ChevronLeft, ChevronRight, Download, Printer, Sparkles, X, ShieldAlert } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Download, Package, Printer, X, ShieldAlert } from "lucide-react";
 import { generateDefaultSku } from "@/lib/products";
 
 export type ShippingLabelOrder = {
@@ -980,18 +980,13 @@ export default function ShippingLabelModal({
       >
         {/* Modal Top Bar (Hidden during print) */}
         <div className="shipping-label-modal-header no-print">
-          <div>
+          <div className="shipping-label-header-left">
             <span className="shipping-label-eyebrow">
-              <Sparkles size={13} /> {isMulti ? `📦 Bulk 4×6 Labels · ${orderList.length} Orders Selected` : "Official 4×6 Parcel Shipping Label"}
+              <Package size={12} /> {isMulti ? `Batch Shipping Labels (${orderList.length})` : "Shipping Label"}
             </span>
             <h3 className="shipping-label-modal-title">
-              {isMulti ? `Batch Shipping Labels (${orderList.length} Orders Combined)` : `Order #${currentOrder.order_number} · Standard 4×6 Thermal Label`}
+              {isMulti ? `${orderList.length} Orders Selected` : `Order #${currentOrder.order_number}`}
             </h3>
-            <p className="shipping-label-modal-sub">
-              {isMulti
-                ? "All selected orders merged into 1 continuous 4×6 PDF for rapid TSC thermal printer sticker roll dispatch."
-                : "TSC Thermal Printer & Online Label Ready (Meesho / Amazon Standard 100×150 mm). Zero blank pages."}
-            </p>
           </div>
 
           <div className="shipping-label-modal-actions">
@@ -1002,20 +997,13 @@ export default function ShippingLabelModal({
               onClick={handleDownloadPdf}
               disabled={downloadingPdf}
               title="Save exact 4x6 shipping label PDF file directly to your PC"
-              style={{
-                background: "#10b981",
-                color: "#ffffff",
-                border: "1px solid #059669",
-                fontWeight: 700,
-                boxShadow: "0 2px 8px rgba(16, 185, 129, 0.35)",
-              }}
             >
-              <Download size={15} />
+              <Download size={14} />
               <span>
                 {downloadingPdf
-                  ? (pdfProgress || "Generating PDF…")
+                  ? (pdfProgress || "Downloading…")
                   : isMulti
-                  ? `Download Combined 4×6 PDF (${orderList.length} Orders)`
+                  ? `Download All (${orderList.length})`
                   : "Download 4×6 PDF"}
               </span>
             </button>
@@ -1023,18 +1011,12 @@ export default function ShippingLabelModal({
             {/* Direct Print Button for TSC Thermal Printer */}
             <button
               type="button"
-              className="shipping-label-print-btn"
+              className="shipping-label-secondary-btn"
               onClick={handlePrint4x6}
               title="Print directly to TSC Thermal Printer (4x6 in / 100x150 mm)"
-              style={{
-                background: "#ffffff",
-                color: "#231f19",
-                border: "1px solid #d5cbba",
-                fontWeight: 700,
-              }}
             >
-              <Printer size={15} />
-              <span>{isMulti ? `Print All (${orderList.length})` : "Print 4×6 (TSC)"}</span>
+              <Printer size={14} />
+              <span>{isMulti ? `Print All (${orderList.length})` : "Print"}</span>
             </button>
 
             {/* Close Button */}

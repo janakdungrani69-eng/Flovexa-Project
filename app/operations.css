@@ -5104,45 +5104,52 @@
 
 .shipping-label-modal-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 18px 24px;
-  background: #231f19;
+  padding: 16px 22px;
+  background: #1f1b16;
+  border-bottom: 1px solid rgba(210, 183, 129, 0.18);
   color: #f4efe6;
+}
+
+.shipping-label-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 
 .shipping-label-eyebrow {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   color: #d2b781;
-  font-size: 10px;
-  font-weight: 700;
+  font-size: 11px;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  margin-bottom: 4px;
+  margin: 0;
 }
 
 .shipping-label-modal-title {
   font-family: var(--serif, 'Playfair Display', serif);
-  font-size: 20px;
-  font-weight: 400;
-  margin: 0 0 4px;
+  font-size: 19px;
+  font-weight: 500;
+  margin: 0;
   color: #ffffff;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
 }
 
 .shipping-label-modal-sub {
-  font-size: 11px;
-  color: #b7ad9d;
-  margin: 0;
-  line-height: 1.45;
+  display: none;
 }
 
 .shipping-label-modal-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   flex-shrink: 0;
 }
 
@@ -5153,16 +5160,40 @@
   padding: 8px 16px;
   background: #d2b781;
   color: #1f1b16;
-  border: none;
+  border: 1px solid #c4a56b;
   border-radius: 8px;
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition: all 0.15s ease;
+  white-space: nowrap;
 }
 
-.shipping-label-print-btn:hover {
+.shipping-label-print-btn:hover:not(:disabled) {
   background: #eeddbf;
+  border-color: #eeddbf;
+}
+
+.shipping-label-secondary-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #f4efe6;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.shipping-label-secondary-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #ffffff;
 }
 
 .shipping-label-close-btn {
@@ -5171,16 +5202,17 @@
   justify-content: center;
   width: 34px;
   height: 34px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 8px;
   color: #f4efe6;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: all 0.15s ease;
 }
 
 .shipping-label-close-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
 }
 
 .shipping-label-scroll-wrap {
