@@ -6,7 +6,7 @@ import { canonicalUrl } from "@/lib/seo";
 import { getStorefrontContent } from "@/lib/storefront-content-server";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: "Flovexa — Luxury Perfumes & Pure Fragrance Oils | Official Store",

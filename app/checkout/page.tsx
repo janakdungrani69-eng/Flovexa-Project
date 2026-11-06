@@ -29,11 +29,8 @@ function parseCart(value?: string): CartLine[] {
 }
 
 export default async function CheckoutPage({ searchParams }: { searchParams: Promise<{ items?: string }> }) {
+  // Guest and signed-in checkout supported on all devices (mobile, tablet, desktop)
   const [{ items }, products, user] = await Promise.all([searchParams, getProducts(), getSignedInUser()]);
-  if (!user) {
-    const checkoutNext = items ? `/checkout?items=${encodeURIComponent(items)}` : "/checkout";
-    redirect(`/login?next=${encodeURIComponent(checkoutNext)}`);
-  }
 
   let requested = parseCart(items);
   let lines = requested.flatMap((item) => {

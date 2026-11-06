@@ -87,6 +87,13 @@ export default function ProductPurchasePanel({ product }: { product: Product }) 
     }];
   }, [product, isFragranceOil]);
 
+  // Prefetch checkout route for instant 0ms transition on "Buy Now" click
+  useEffect(() => {
+    try {
+      router.prefetch("/checkout");
+    } catch {}
+  }, [router]);
+
   // State
   const [selectedVariantId, setSelectedVariantId] = useState<string>(variants[0]?.id || "var-default");
   const selectedVariant = useMemo(() => {
@@ -167,8 +174,9 @@ export default function ProductPurchasePanel({ product }: { product: Product }) 
       setAddedNotice(true);
       window.setTimeout(() => setAddedNotice(false), 2400);
 
-      // Dispatch custom storage event for sync
+      // Dispatch custom storage event for sync & notify header drawer
       window.dispatchEvent(new Event("storage"));
+      window.dispatchEvent(new CustomEvent("flovexa-cart-updated", { detail: { openDrawer: true } }));
     } catch {
       setAddedNotice(false);
     }
@@ -550,6 +558,33 @@ export default function ProductPurchasePanel({ product }: { product: Product }) 
             </svg>
           </div>
           <span className="trust-label">Flovexa<br />Assured</span>
+        </div>
+      </div>
+
+      {/* Mobile Quick Checkout Sticky Bar (Always accessible on phone screen) */}
+      <div className="mobile-sticky-purchase-bar" aria-label="Quick purchase bar">
+        <div className="mobile-sticky-price-wrap">
+          <span className="mobile-sticky-size-pill">{selectedVariant.size}</span>
+          <span className="mobile-sticky-price">₹{Math.round(pricePaise / 100)}</span>
+        </div>
+        <div className="mobile-sticky-actions">
+          <button
+            type="button"
+            className="mobile-sticky-add-btn"
+            onClick={handleAddToCart}
+            aria-label="Add item to shopping bag"
+          >
+            {addedNotice ? "✓ Added" : "+ Bag"}
+          </button>
+          <button
+            type="button"
+            className="mobile-sticky-buy-btn"
+            onClick={handleBuyItNow}
+            aria-label="Proceed to direct checkout"
+          >
+            <Sparkles size={14} />
+            <span>Buy Now</span>
+          </button>
         </div>
       </div>
     </div>

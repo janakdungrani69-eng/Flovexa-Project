@@ -1,7 +1,8 @@
 import "server-only";
+import { cache } from "react";
+import { unstable_cache } from "next/cache";
 import { createClient } from "@supabase/supabase-js";
 import { extractProductVariants, type Product } from "@/lib/products";
-import { createAdminSupabase } from "@/lib/supabase/admin";
 
 function parseStoredImages(imageUrl: string | null): { primary: string | null; all: string[] } {
   if (!imageUrl) return { primary: null, all: [] };
@@ -21,7 +22,7 @@ function parseStoredImages(imageUrl: string | null): { primary: string | null; a
   return { primary: trimmed, all: [trimmed] };
 }
 
-export async function getProducts(): Promise<Product[]> {
+async function fetchProductsFromDatabase(): Promise<Product[]> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   if (!url || !key) return [];
@@ -42,15 +43,8 @@ export async function getProducts(): Promise<Product[]> {
     const { primary, all } = parseStoredImages(product.image_url);
 
     let productDesc = product.description || "";
-    // Clean legacy/dummy mock variants (e.g. mock 20ml and 10ml that were not uploaded by seller)
     if (productDesc.includes("<!--FLOVEXA_VARIANTS:") && (productDesc.includes("20 ml") || productDesc.includes("10 ml"))) {
       productDesc = productDesc.replace(/<!--FLOVEXA_VARIANTS:[\s\S]*?-->/g, "").trim();
-      try {
-        const adminSupabase = createAdminSupabase();
-        void adminSupabase.from("products").update({ description: productDesc }).eq("id", product.id);
-      } catch {
-        // ignore background db sync error
-      }
     }
 
     const { cleanDescription, variants } = extractProductVariants(productDesc, {
@@ -85,3 +79,13 @@ export async function getProducts(): Promise<Product[]> {
     };
   });
 }
+
+const getCachedProducts = unstable_cache(
+  fetchProductsFromDatabase,
+  ["flovexa-products-cache-v2"],
+  { revalidate: 60, tags: ["products"] }
+);
+
+export const getProducts = cache(async (): Promise<Product[]> => {
+  return getCachedProducts();
+});

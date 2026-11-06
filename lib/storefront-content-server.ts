@@ -1,8 +1,10 @@
 import "server-only";
+import { cache } from "react";
+import { unstable_cache } from "next/cache";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { DEFAULT_CATEGORIES, DEFAULT_STOREFRONT_SETTINGS } from "@/lib/storefront-content";
 
-export async function getStorefrontContent() {
+async function fetchStorefrontContentRaw() {
   try {
     const supabase = createAdminSupabase();
     const [settingsResult, categoriesResult] = await Promise.all([
@@ -15,16 +17,6 @@ export async function getStorefrontContent() {
 
     let categories = DEFAULT_CATEGORIES;
     if (hasLegacy) {
-      try {
-        void supabase.from("store_categories").delete().neq("id", "00000000-0000-0000-0000-000000000000").then(async () => {
-          await supabase.from("store_categories").insert([
-            { name: "Scents", sort_order: 1, active: true },
-            { name: "Fragrance Oils", sort_order: 2, active: true },
-          ]);
-        });
-      } catch {
-        // ignore background sync error
-      }
       categories = DEFAULT_CATEGORIES;
     } else if (rawCategories.length > 0) {
       categories = rawCategories;
@@ -36,3 +28,13 @@ export async function getStorefrontContent() {
     };
   } catch { return { settings: DEFAULT_STOREFRONT_SETTINGS, categories: DEFAULT_CATEGORIES }; }
 }
+
+const getCachedStorefrontContent = unstable_cache(
+  fetchStorefrontContentRaw,
+  ["flovexa-storefront-content-v2"],
+  { revalidate: 60, tags: ["storefront-content"] }
+);
+
+export const getStorefrontContent = cache(async () => {
+  return getCachedStorefrontContent();
+});

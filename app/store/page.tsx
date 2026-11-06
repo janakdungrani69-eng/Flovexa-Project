@@ -6,7 +6,7 @@ import { canonicalUrl } from "@/lib/seo";
 import { getStorefrontContent } from "@/lib/storefront-content-server";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 export const metadata: Metadata = {
   title: "Flovexa Perfumes — Official Customer Store | Luxury Fragrances & Oils India",
   description: "Official customer storefront for Flovexa luxury Eau de Parfums and pure concentrated fragrance oils. 100% authentic, long-lasting luxury scents crafted in India with fast pan-India delivery.",

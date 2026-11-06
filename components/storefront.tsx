@@ -409,7 +409,7 @@ export default function Storefront({
             const isTopSeller = product.id === topSellingProduct?.id;
             return (
               <article className="product-card" key={product.id}>
-                <a href={`/products/${product.slug}`} className="product-art-link" aria-label={`View ${product.name}`}>
+                <Link href={`/products/${product.slug}`} className="product-art-link" aria-label={`View ${product.name}`} prefetch={true}>
                   <BottleArt product={product} />
                   {isTopSeller && (
                     <span className="product-top-seller-pill">
@@ -418,7 +418,7 @@ export default function Storefront({
                   )}
                   <span className="product-number">0{index + 1}</span>
                   <span className="quick-view">DISCOVER THIS SCENT <ArrowRight size={14} /></span>
-                </a>
+                </Link>
                 {(() => {
                   const hasMultiSizes = product.variants && product.variants.length > 1;
                   const minPrice = hasMultiSizes ? Math.min(...product.variants!.map((v) => v.pricePaise)) : product.pricePaise;
@@ -435,7 +435,7 @@ export default function Storefront({
                           <span>{hasMultiSizes ? `${product.variants!.length} Sizes (${product.variants!.map((v) => v.size).join(", ")})` : product.size}</span>
                         </span>
                       </div>
-                  <a href={`/products/${product.slug}`} className="product-name">{product.name.replace(/(?:[\s–—\-|,-]+)?\s*\d+\s*(?:ml|g|oz)\b/gi, "").trim() || product.name}</a>
+                  <Link href={`/products/${product.slug}`} className="product-name" prefetch={true}>{product.name.replace(/(?:[\s–—\-|,-]+)?\s*\d+\s*(?:ml|g|oz)\b/gi, "").trim() || product.name}</Link>
                   <p className="product-notes">{product.notes.join(" · ")}</p>
                   <div className="product-buy">
                     <div className="product-prices">
@@ -535,7 +535,7 @@ export default function Storefront({
       <div className={`drawer-scrim${cartOpen ? " is-visible" : ""}`} onClick={() => setCartOpen(false)} />
       <aside className={`cart-drawer${cartOpen ? " is-open" : ""}`} aria-label="Shopping bag" aria-hidden={!cartOpen}>
         <div className="drawer-heading"><div><span className="eyebrow">YOUR SELECTION</span><h2>Your bag <small>({cartQuantity})</small></h2></div><button className="icon-button" onClick={() => setCartOpen(false)} aria-label="Close bag"><X size={21} /></button></div>
-        {cartLines.length ? <><div className="drawer-items">{cartLines.map(({ product, quantity }) => <div className="drawer-item" key={product.id}><div className="drawer-thumb"><BottleArt product={product} /></div><div className="drawer-item-copy"><span>{product.category}</span><h3>{product.name}</h3><small>{product.size} · {product.concentration}</small><div className="quantity-control"><button onClick={() => updateQuantity(product.id, -1)} aria-label={`Remove one ${product.name}`}><Minus size={13} /></button><span>{quantity}</span><button onClick={() => updateQuantity(product.id, 1)} aria-label={`Add one ${product.name}`}><Plus size={13} /></button></div></div><strong>{money(product.pricePaise * quantity)}</strong></div>)}</div><div className="drawer-summary"><div><span>Subtotal</span><strong>{money(cartTotal)}</strong></div><small>Shipping and taxes are calculated at checkout.</small><a className="primary-button checkout-link" href={`/checkout?items=${encodeURIComponent(JSON.stringify(cart))}`}>Continue to checkout <ArrowRight size={16} /></a><button className="continue-shopping" onClick={() => setCartOpen(false)}>Continue exploring</button></div></> : <div className="empty-bag"><span className="empty-bag-icon"><ShoppingBag size={24} /></span><h3>Your bag is waiting</h3><p>Find a fragrance that feels like you.</p><button className="primary-button" onClick={() => setCartOpen(false)}>Explore the collection <ArrowRight size={16} /></button></div>}
+        {cartLines.length ? <><div className="drawer-items">{cartLines.map(({ product, quantity }) => <div className="drawer-item" key={product.id}><div className="drawer-thumb"><BottleArt product={product} /></div><div className="drawer-item-copy"><span>{product.category}</span><h3>{product.name}</h3><small>{product.size} · {product.concentration}</small><div className="quantity-control"><button onClick={() => updateQuantity(product.id, -1)} aria-label={`Remove one ${product.name}`}><Minus size={13} /></button><span>{quantity}</span><button onClick={() => updateQuantity(product.id, 1)} aria-label={`Add one ${product.name}`}><Plus size={13} /></button></div></div><strong>{money(product.pricePaise * quantity)}</strong></div>)}</div><div className="drawer-summary"><div><span>Subtotal</span><strong>{money(cartTotal)}</strong></div><small>Shipping and taxes are calculated at checkout.</small><Link className="primary-button checkout-link" href={`/checkout?items=${encodeURIComponent(JSON.stringify(cart))}`} prefetch={true}>Continue to checkout <ArrowRight size={16} /></Link><button className="continue-shopping" onClick={() => setCartOpen(false)}>Continue exploring</button></div></> : <div className="empty-bag"><span className="empty-bag-icon"><ShoppingBag size={24} /></span><h3>Your bag is waiting</h3><p>Find a fragrance that feels like you.</p><button className="primary-button" onClick={() => setCartOpen(false)}>Explore the collection <ArrowRight size={16} /></button></div>}
       </aside>
       {notice && <div className="toast" role="status"><Check size={16} />{notice}</div>}
     </main>

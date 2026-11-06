@@ -4,6 +4,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import JsonLd from "@/components/json-ld";
 import CheckoutBackButton from "@/components/checkout-back-button";
+import ProductDetailHeader from "@/components/product-detail-header";
 import ProductPurchasePanel from "@/components/product-purchase-panel";
 import ProductLuxuryDetails from "@/components/product-luxury-details";
 import ProductGallery from "@/components/product-gallery";
@@ -11,6 +12,19 @@ import SiteFooter from "@/components/site-footer";
 import { getProducts } from "@/lib/catalog";
 import { canonicalUrl, metaDescription, noIndexMetadata } from "@/lib/seo";
 import { createAdminSupabase } from "@/lib/supabase/admin";
+
+export const revalidate = 60;
+
+export async function generateStaticParams() {
+  try {
+    const products = await getProducts();
+    return products.map((product) => ({
+      slug: product.slug,
+    }));
+  } catch {
+    return [];
+  }
+}
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const [{ slug }, products] = await Promise.all([params, getProducts()]);
@@ -107,13 +121,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         }}
       />
 
-      <header className="checkout-header detail-header">
-        <CheckoutBackButton label="Go back" fallback="/store#collection" />
-        <Link href="/" className="wordmark">
-          FLOVEXA<span>PERFUMES</span>
-        </Link>
-        <span aria-hidden="true" />
-      </header>
+      <ProductDetailHeader currentProduct={product} allProducts={products} />
 
       <section className="product-stage">
         <ProductGallery product={product} />
