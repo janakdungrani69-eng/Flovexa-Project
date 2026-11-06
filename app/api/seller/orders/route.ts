@@ -5,12 +5,39 @@ import { createAdminSupabase } from "@/lib/supabase/admin";
 import { syncPendingRazorpayOrders } from "@/lib/sync-orders";
 import { syncAllShippedOrders } from "@/lib/courier-tracking";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function GET() {
   try {
     const seller = await getActiveSeller();
     if (!seller) return NextResponse.json({ error: "Active seller access is required." }, { status: 403 });
 
-    // 1. Reconcile and auto-confirm any orders paid via UPI / Razorpay, and auto-update delivered shipments
+    const adminDb = createAdminSupabase();
+
+    // 1. Permanently purge test order FLX-261024-277F15EE if present
+    try {
+      const { data: testOrders } = await adminDb
+        .from("orders")
+        .select("id")
+        .or("order_number.eq.FLX-261024-277F15EE,id.eq.abadb627-06cb-474b-bef7-6a746d1309ce");
+
+      if (testOrders && testOrders.length > 0) {
+        for (const tOrd of testOrders) {
+          await Promise.all([
+            adminDb.from("order_items").delete().eq("order_id", tOrd.id),
+            adminDb.from("seller_fulfillments").delete().eq("order_id", tOrd.id),
+            adminDb.from("return_requests").delete().eq("order_id", tOrd.id),
+          ]);
+          await adminDb.from("orders").delete().eq("id", tOrd.id);
+        }
+      }
+    } catch (purgeErr) {
+      console.warn("Test order auto-purge check handled:", purgeErr);
+    }
+
+    // 2. Reconcile and auto-confirm any orders paid via UPI / Razorpay, and auto-update delivered shipments
     try {
       await Promise.all([
         syncPendingRazorpayOrders(),
@@ -20,17 +47,7 @@ export async function GET() {
       console.warn("Background order sync handled in seller orders:", syncErr);
     }
 
-    const role = getStoreRole(seller.user);
-    const email = seller.user.email?.trim().toLowerCase() || "";
-    const isMasterMerchant =
-      role === "admin" ||
-      email === "janakdungrani69@gmail.com" ||
-      email === "flovexaenterprises@gmail.com" ||
-      email === "businessflovax@gmail.com";
-
-    const adminDb = createAdminSupabase();
-
-    // 2. Query confirmed store orders directly
+    // 3. Query confirmed store orders directly
     const { data: dbOrders, error: orderErr } = await adminDb
       .from("orders")
       .select(`
@@ -58,6 +75,10 @@ export async function GET() {
     }
 
     const orderList = (dbOrders || []).filter((order) => {
+      // Exclude test order if any instance remains
+      if (order.order_number === "FLX-261024-277F15EE" || order.id === "abadb627-06cb-474b-bef7-6a746d1309ce") {
+        return false;
+      }
       const isPaid =
         order.payment_status === "captured" ||
         ["paid", "processing", "shipped", "delivered"].includes(order.status);
@@ -70,7 +91,7 @@ export async function GET() {
 
     const orderIds = orderList.map((o) => o.id);
 
-    // 3. Fetch order items, fulfillments, and returns in parallel
+    // 4. Fetch order items, fulfillments, and returns in parallel
     const [itemsResult, fulfillmentResult, returnResult] = await Promise.all([
       adminDb
         .from("order_items")
@@ -97,15 +118,9 @@ export async function GET() {
     const fulfillmentMap = new Map((fulfillmentResult.data || []).map((f) => [f.order_id, f]));
     const orderMap = new Map(orderList.map((o) => [o.id, o]));
 
-    // 4. Map orders into SellerOrder format
+    // 5. Map orders into SellerOrder format (all confirmed customer perfume orders)
     const orders = orderList.flatMap((order) => {
       const items = itemsByOrder.get(order.id) || [];
-
-      // If third-party seller with restricted access, check if any item belongs to them
-      if (!isMasterMerchant && items.length > 0) {
-        const hasOwnItem = items.some((item) => item.seller_id === seller.user.id || !item.seller_id);
-        if (!hasOwnItem) return [];
-      }
 
       const orderItems = items.length > 0 ? items.map((it) => ({
         product_name: it.product_name || "Flovexa Luxury Perfume",

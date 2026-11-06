@@ -8,6 +8,9 @@ import { canonicalUrl } from "@/lib/seo";
 import { extractProductVariants } from "@/lib/products";
 import SellerApplicationPending from "@/components/seller-application-pending";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export const metadata: Metadata = {
   title: "Flovexa Seller Central — Merchant & Partner Portal | Sell on Flovexa",
   description: "Official Flovexa Seller Hub. Become an authorized fragrance merchant partner, list luxury perfumes, manage inventory, and grow your fragrance business across India on Flovexa.",

@@ -283,6 +283,7 @@ export default function SellerDashboard({
   const [variantUploadErrors, setVariantUploadErrors] = useState<Record<number, string>>({});
   const [variantUrlInputs, setVariantUrlInputs] = useState<Record<number, boolean>>({});
   const [deletingProductId, setDeletingProductId] = useState<string | null>(null);
+  const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null);
   const [savingFulfillment, setSavingFulfillment] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, { status: string; trackingCarrier: string; trackingNumber: string; trackingUrl: string }>>({});
   const [message, setMessage] = useState("");
@@ -534,6 +535,34 @@ export default function SellerDashboard({
       };
     });
     setSelectedLabelOrders(mapped);
+  }
+
+  async function handleDeleteOrder(order: SellerOrder) {
+    const ok = window.confirm(
+      `Kya aap order ${order.order_number} (${order.customer_name}) ko permanently delete karna chahte hain? Ye test orders ko hatane ke liye hai.`
+    );
+    if (!ok) return;
+
+    setDeletingOrderId(order.id);
+    try {
+      const res = await fetch(`/api/seller/orders/${order.id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Order delete nahi ho saka.");
+      }
+
+      setOrders((prev) => prev.filter((o) => o.id !== order.id));
+      setSelectedOrderIds((prev) => prev.filter((id) => id !== order.id));
+      setMessage(`Order ${order.order_number} successfully delete ho gaya.`);
+      setTimeout(() => setMessage(""), 5000);
+    } catch (err: any) {
+      setErrorMessage(err.message || "Order delete karne me dikkat aayi.");
+      setTimeout(() => setErrorMessage(""), 5000);
+    } finally {
+      setDeletingOrderId(null);
+    }
   }
 
   function handleAddVariant(presetSize?: string) {
@@ -2546,6 +2575,30 @@ export default function SellerDashboard({
                               >
                                 <Printer size={13} />
                                 <span>{isCombo ? `Print Combo Label (1 for Address)` : `Print Label`}</span>
+                              </button>
+                              <button
+                                type="button"
+                                className="seller-order-delete-btn"
+                                onClick={() => handleDeleteOrder(order)}
+                                disabled={deletingOrderId === order.id}
+                                title="Delete this order"
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "5px",
+                                  background: "#fff1f2",
+                                  color: "#be123c",
+                                  border: "1px solid #fecdd3",
+                                  borderRadius: "6px",
+                                  padding: "6px 12px",
+                                  fontSize: "12px",
+                                  fontWeight: 600,
+                                  cursor: "pointer",
+                                  transition: "background 0.2s, color 0.2s",
+                                }}
+                              >
+                                <Trash2 size={13} />
+                                <span>{deletingOrderId === order.id ? "Deleting..." : "Delete Order"}</span>
                               </button>
                             <span className={`seller-status seller-status-${draft.status}`}>
                               {draft.status.replaceAll("_", " ")}

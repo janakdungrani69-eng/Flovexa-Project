@@ -18,6 +18,9 @@ import { noIndexMetadata } from "@/lib/seo";
 
 export const metadata = noIndexMetadata("Executive Owner Admin - Flovexa Control Center");
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function AdminPage() {
   const user = await getAdminUser();
   if (!user) redirect("/admin/login");

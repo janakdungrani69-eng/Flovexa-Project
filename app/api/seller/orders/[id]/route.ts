@@ -5,6 +5,10 @@ import { getStoreRole } from "@/lib/supabase/roles";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { sendOrderEmail } from "@/lib/order-email";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 const updateSchema = z.object({
   status: z.enum(["processing", "shipped", "delivered"]),
   trackingCarrier: z.string().trim().max(80).optional().default("Mahavir Express"),
@@ -142,5 +146,56 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   } catch (error) {
     console.error("Seller fulfillment update failed", error instanceof Error ? error.message : "Unknown error");
     return NextResponse.json({ error: "Could not update this shipment." }, { status: 503 });
+  }
+}
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const seller = await getActiveSeller();
+    if (!seller) {
+      return NextResponse.json({ error: "Active seller access is required." }, { status: 403 });
+    }
+
+    const { id } = await params;
+    const adminDb = createAdminSupabase();
+
+    // Look up order first by UUID or by order_number
+    let targetId = id;
+    const isValidUuid = z.uuid().safeParse(id).success;
+    if (!isValidUuid) {
+      const { data: matched } = await adminDb
+        .from("orders")
+        .select("id")
+        .eq("order_number", id)
+        .maybeSingle();
+      if (!matched) {
+        return NextResponse.json({ error: "Order not found." }, { status: 404 });
+      }
+      targetId = matched.id;
+    }
+
+    // Delete related child rows
+    await Promise.all([
+      adminDb.from("order_items").delete().eq("order_id", targetId),
+      adminDb.from("seller_fulfillments").delete().eq("order_id", targetId),
+      adminDb.from("return_requests").delete().eq("order_id", targetId),
+    ]);
+
+    const { error: delErr } = await adminDb.from("orders").delete().eq("id", targetId);
+    if (delErr) {
+      console.error("[seller/orders/[id]] DELETE error:", delErr);
+      return NextResponse.json({ error: delErr.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ ok: true, deletedId: targetId });
+  } catch (error: any) {
+    console.error("[seller/orders/[id]] DELETE exception:", error);
+    return NextResponse.json(
+      { error: error?.message || "Failed to delete order." },
+      { status: 500 }
+    );
   }
 }
