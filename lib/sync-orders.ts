@@ -13,11 +13,16 @@ export async function syncPendingRazorpayOrders(): Promise<{ synced: number; ord
     const { client } = createRazorpay();
 
     // 1. Fetch recent orders from Razorpay directly (Bulletproof Source of Truth)
-    const rzpOrdersRes: any = await client.orders.all({ count: 25 }).catch((e) => {
-      console.error("[syncPendingRazorpayOrders] rzp.orders.all failed:", e);
-      return null;
-    });
+    let rzpOrdersRes: any = null;
+    try {
+      rzpOrdersRes = await client.orders.all({ count: 25 });
+    } catch (e: any) {
+      details.push({ action: "rzp_orders_all_error", error: e?.message || String(e) });
+      return { synced: 0, orders: [], details };
+    }
+
     const rzpOrders = rzpOrdersRes?.items || [];
+    details.push({ rzpOrdersTotal: rzpOrders.length });
 
     for (const rzpOrder of rzpOrders) {
       if (rzpOrder.status !== "paid" && (!rzpOrder.amount_paid || rzpOrder.amount_paid <= 0)) {
@@ -29,7 +34,10 @@ export async function syncPendingRazorpayOrders(): Promise<{ synced: number; ord
       const rzpOrderId: string = rzpOrder.id;
 
       // 2. Fetch payment details for this order using official SDK method
-      const paymentsRes: any = await (client.orders as any).fetchPayments(rzpOrderId).catch(() => null);
+      const paymentsRes: any = await (client.orders as any).fetchPayments(rzpOrderId).catch((pe: any) => {
+        details.push({ action: "fetch_payments_error", orderId: rzpOrderId, error: pe?.message });
+        return null;
+      });
       const payments = paymentsRes?.items || [];
       const captured = payments.find((p: any) => p.status === "captured") || payments[0];
       const paymentId = captured?.id || `pay_sync_${rzpOrderId}`;
@@ -37,36 +45,38 @@ export async function syncPendingRazorpayOrders(): Promise<{ synced: number; ord
       // 3. Reliable DB lookup: Exact primary key or unique attribute
       let dbOrder: any = null;
       if (localId) {
-        const { data } = await supabase
+        const { data, error: qErr1 } = await supabase
           .from("orders")
           .select("id, order_number, status, payment_status, total_paise, customer_name, email, phone")
           .eq("id", localId)
           .maybeSingle();
         if (data) dbOrder = data;
+        if (qErr1) details.push({ action: "qErr1", error: qErr1.message, localId });
       }
 
       if (!dbOrder && rzpOrderId) {
-        const { data } = await supabase
+        const { data, error: qErr2 } = await supabase
           .from("orders")
           .select("id, order_number, status, payment_status, total_paise, customer_name, email, phone")
           .eq("razorpay_order_id", rzpOrderId)
           .maybeSingle();
         if (data) dbOrder = data;
+        if (qErr2) details.push({ action: "qErr2", error: qErr2.message, rzpOrderId });
       }
 
       if (!dbOrder && receipt) {
-        const { data } = await supabase
+        const { data, error: qErr3 } = await supabase
           .from("orders")
           .select("id, order_number, status, payment_status, total_paise, customer_name, email, phone")
           .eq("order_number", receipt)
           .maybeSingle();
         if (data) dbOrder = data;
+        if (qErr3) details.push({ action: "qErr3", error: qErr3.message, receipt });
       }
 
       if (dbOrder) {
-        // Ensure order is marked paid and payment captured
         const newStatus = ["shipped", "delivered"].includes(dbOrder.status) ? dbOrder.status : "paid";
-        await supabase
+        const { error: updErr } = await supabase
           .from("orders")
           .update({
             status: newStatus,
@@ -79,20 +89,24 @@ export async function syncPendingRazorpayOrders(): Promise<{ synced: number; ord
           })
           .eq("id", dbOrder.id);
 
-        try {
-          await supabase.rpc("mark_order_paid", {
-            local_order_uuid: dbOrder.id,
-            provider_order_id: rzpOrderId,
-            provider_payment_id: paymentId,
-          });
-        } catch {}
+        if (updErr) {
+          details.push({ action: "update_error", id: dbOrder.id, error: updErr.message });
+        } else {
+          try {
+            await supabase.rpc("mark_order_paid", {
+              local_order_uuid: dbOrder.id,
+              provider_order_id: rzpOrderId,
+              provider_payment_id: paymentId,
+            });
+          } catch {}
 
-        try {
-          await sendOrderEmail(dbOrder.id, "order_confirmation");
-        } catch {}
+          try {
+            await sendOrderEmail(dbOrder.id, "order_confirmation");
+          } catch {}
 
-        syncedOrderNumbers.push(dbOrder.order_number || receipt);
-        details.push({ action: "updated", id: dbOrder.id, number: dbOrder.order_number, paymentId });
+          syncedOrderNumbers.push(dbOrder.order_number || receipt);
+          details.push({ action: "updated", id: dbOrder.id, number: dbOrder.order_number, paymentId });
+        }
       } else {
         // Order row missing in DB - insert it from Razorpay order and captured payment
         const newOrderId = localId || randomUUID();
@@ -140,12 +154,13 @@ export async function syncPendingRazorpayOrders(): Promise<{ synced: number; ord
           syncedOrderNumbers.push(receipt || newOrderId);
           details.push({ action: "created_from_razorpay", id: newOrderId, number: receipt, paymentId });
         } else {
-          console.error("[syncPendingRazorpayOrders] Order insert error:", insertErr);
+          details.push({ action: "insert_error", id: newOrderId, error: insertErr.message });
         }
       }
     }
-  } catch (err) {
+  } catch (err: any) {
     console.error("[syncPendingRazorpayOrders] General error:", err);
+    details.push({ action: "fatal_error", error: err?.message || String(err) });
   }
 
   return { synced: syncedOrderNumbers.length, orders: syncedOrderNumbers, details };
