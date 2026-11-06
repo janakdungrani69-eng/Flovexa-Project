@@ -50,7 +50,7 @@ export async function POST(request: Request) {
     const productIds = regularItems.map((i) => i.id);
     const { data: dbProducts, error: prodErr } = await supabase
       .from("products")
-      .select("id, name, slug, price_paise, size, stock, active")
+      .select("id, name, slug, price_paise, size, stock, active, seller_id")
       .in("id", productIds);
 
     if (prodErr || !dbProducts || dbProducts.length === 0) {
@@ -206,6 +206,7 @@ export async function POST(request: Request) {
       unit_price_paise: line.product.price_paise,
       quantity: line.quantity,
       line_total_paise: line.product.price_paise * line.quantity,
+      seller_id: (line.product as any).seller_id || null,
     }));
 
     if (hasFreeGift) {
@@ -218,6 +219,7 @@ export async function POST(request: Request) {
         unit_price_paise: 0,
         quantity: 1,
         line_total_paise: 0,
+        seller_id: (cartLines[0]?.product as any)?.seller_id || null,
       });
     }
 

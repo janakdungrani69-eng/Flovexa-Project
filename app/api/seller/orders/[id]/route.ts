@@ -29,30 +29,53 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     if (!parsed.success) return NextResponse.json({ error: "Please check the shipment details." }, { status: 400 });
 
     const role = getStoreRole(seller.user);
-    const isMasterAdmin =
+    const email = seller.user.email?.trim().toLowerCase() || "";
+    const isMasterMerchant =
       role === "admin" ||
-      seller.user.email?.trim().toLowerCase() === "janakdungrani69@gmail.com";
+      email === "janakdungrani69@gmail.com" ||
+      email === "flovexaenterprises@gmail.com" ||
+      email === "businessflovax@gmail.com";
 
-    const ownItemPromise = isMasterAdmin
-      ? Promise.resolve({ data: { id }, error: null })
-      : seller.supabase.from("order_items").select("id").eq("seller_id", seller.user.id).eq("order_id", id).limit(1).maybeSingle();
+    const adminDb = createAdminSupabase();
 
-    const currentFulfillmentPromise = isMasterAdmin
-      ? seller.supabase.from("seller_fulfillments").select("status").eq("order_id", id).maybeSingle()
-      : seller.supabase.from("seller_fulfillments").select("status").eq("seller_id", seller.user.id).eq("order_id", id).maybeSingle();
+    const { data: order, error: orderError } = await adminDb
+      .from("orders")
+      .select("id, payment_status, status, order_number, tracking_carrier, tracking_number, tracking_url")
+      .eq("id", id)
+      .maybeSingle();
 
-    const [{ data: ownItem, error: itemError }, { data: order, error: orderError }, { data: current, error: currentError }] = await Promise.all([
-      ownItemPromise,
-      seller.supabase.from("orders").select("id, payment_status, status").eq("id", id).maybeSingle(),
-      currentFulfillmentPromise,
-    ]);
-    if (itemError || orderError || currentError) throw itemError ?? orderError ?? currentError;
-    if (!ownItem || !order) return NextResponse.json({ error: "This order is not assigned to your store." }, { status: 404 });
-    if (order.payment_status !== "captured" || ["cancelled", "refunded"].includes(order.status)) {
+    if (orderError || !order) {
+      return NextResponse.json({ error: "Order not found." }, { status: 404 });
+    }
+
+    if (!isMasterMerchant) {
+      const { data: ownItem } = await adminDb
+        .from("order_items")
+        .select("id")
+        .eq("order_id", id)
+        .eq("seller_id", seller.user.id)
+        .limit(1)
+        .maybeSingle();
+      if (!ownItem) {
+        return NextResponse.json({ error: "This order is not assigned to your store." }, { status: 404 });
+      }
+    }
+
+    const isPaid =
+      order.payment_status === "captured" ||
+      ["paid", "processing", "shipped", "delivered"].includes(order.status);
+
+    if (!isPaid || ["cancelled", "refunded"].includes(order.status)) {
       return NextResponse.json({ error: "Only paid orders can be processed." }, { status: 409 });
     }
 
-    const currentStatus = current?.status ?? order.status ?? "paid";
+    const { data: currentFulfillment } = await adminDb
+      .from("seller_fulfillments")
+      .select("status")
+      .eq("order_id", id)
+      .maybeSingle();
+
+    const currentStatus = currentFulfillment?.status ?? order.status ?? "paid";
     const unchanged = currentStatus === parsed.data.status;
     if (!unchanged && !nextStates[currentStatus]?.includes(parsed.data.status)) {
       return NextResponse.json({ error: "That fulfillment status change is not allowed." }, { status: 409 });
@@ -65,19 +88,25 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const trackingNum = parsed.data.trackingNumber || null;
     const trackingUrl = parsed.data.trackingUrl || (trackingNum ? "https://shreemahavircourier.com/" : null);
 
-    const { data, error } = await seller.supabase.from("seller_fulfillments").upsert({
-      seller_id: seller.user.id,
-      order_id: id,
-      status: parsed.data.status,
-      tracking_carrier: carrier,
-      tracking_number: trackingNum,
-      tracking_url: trackingUrl,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: "seller_id,order_id" }).select("order_id, status, tracking_carrier, tracking_number, tracking_url").single();
-    if (error) throw error;
+    const { data: updatedFulfillment, error: fulfillError } = await adminDb
+      .from("seller_fulfillments")
+      .upsert({
+        seller_id: seller.user.id,
+        order_id: id,
+        status: parsed.data.status,
+        tracking_carrier: carrier,
+        tracking_number: trackingNum,
+        tracking_url: trackingUrl,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "seller_id,order_id" })
+      .select("order_id, status, tracking_carrier, tracking_number, tracking_url")
+      .maybeSingle();
+
+    if (fulfillError) {
+      console.warn("seller_fulfillments upsert fallback notice:", fulfillError);
+    }
 
     // Immediately sync to customer-facing public.orders table so customer sees live tracking!
-    const adminDb = createAdminSupabase();
     await adminDb.from("orders").update({
       status: parsed.data.status,
       tracking_carrier: carrier,
@@ -101,7 +130,15 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       }
     }
 
-    return NextResponse.json({ fulfillment: data });
+    return NextResponse.json({
+      fulfillment: updatedFulfillment || {
+        order_id: id,
+        status: parsed.data.status,
+        tracking_carrier: carrier,
+        tracking_number: trackingNum,
+        tracking_url: trackingUrl,
+      },
+    });
   } catch (error) {
     console.error("Seller fulfillment update failed", error instanceof Error ? error.message : "Unknown error");
     return NextResponse.json({ error: "Could not update this shipment." }, { status: 503 });

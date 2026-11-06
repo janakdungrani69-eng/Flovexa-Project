@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ExternalLink, ShieldCheck, Store, UserCheck } from "lucide-react";
 import AdminDashboard, { type AdminOrder, type AdminProduct, type AdminReturnRequest } from "@/components/admin-dashboard";
-import type { AdminCustomer, CustomerProductPurchase, CustomerOrderRecord, CustomerAddressRecord } from "@/components/admin-customers";
+import type { AdminCustomer, CustomerProductPurchase, CustomerOrderRecord, CustomerAddressRecord, AbandonedCartRecord } from "@/components/admin-customers";
 import type { AdminReportOrder } from "@/components/admin-reports";
 import AdminReports from "@/components/admin-reports";
 import AdminSellers, { type AdminSeller, type SellerProduct } from "@/components/admin-sellers";
@@ -27,6 +27,7 @@ export default async function AdminPage() {
   let orders: AdminOrder[] = [];
   let returnRequests: AdminReturnRequest[] = [];
   let customers: AdminCustomer[] = [];
+  let allAbandonedCarts: AbandonedCartRecord[] = [];
   let reportOrders: AdminReportOrder[] = [];
   let coupons: AdminCoupon[] = [];
   let sellers: AdminSeller[] = [];
@@ -268,19 +269,50 @@ export default async function AdminPage() {
     // Group all valid paid store orders by email (excluding abandoned or unpaid payment drafts)
     type RawOrderWithItems = NonNullable<typeof allStoreOrders>[number];
     const ordersByEmail = new Map<string, RawOrderWithItems[]>();
+    const abandonedCartsByEmail = new Map<string, number>();
+    allAbandonedCarts = [];
+
     for (const ord of allStoreOrders ?? []) {
       if (!ord.email) continue;
+      const em = ord.email.toLowerCase().trim();
+
       // Only count orders that have been successfully paid or fulfilled (never abandoned/unpaid drafts)
       const isPaidOrder =
         ord.payment_status === "captured" ||
         ["paid", "processing", "shipped", "delivered"].includes(ord.status);
       const isCancelled = ["cancelled", "refunded"].includes(ord.status);
-      if (!isPaidOrder || isCancelled) continue;
 
-      const em = ord.email.toLowerCase().trim();
-      const list = ordersByEmail.get(em) ?? [];
-      list.push(ord);
-      ordersByEmail.set(em, list);
+      if (isPaidOrder && !isCancelled) {
+        const list = ordersByEmail.get(em) ?? [];
+        list.push(ord);
+        ordersByEmail.set(em, list);
+      } else if (ord.status === "pending_payment" || ord.payment_status === "created") {
+        const currentCount = abandonedCartsByEmail.get(em) ?? 0;
+        abandonedCartsByEmail.set(em, currentCount + 1);
+
+        const cleanPhone = (ord.phone || "").replace(/[^0-9]/g, "").replace(/^0/, "");
+        const fullPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+        const itemName = ord.order_items?.[0]?.product_name || "Flovexa Fragrance";
+        const whatsapp_url = cleanPhone
+          ? `https://wa.me/${fullPhone}?text=Hello%20${encodeURIComponent(ord.customer_name || "there")},%20we%20noticed%20you%20added%20${encodeURIComponent(itemName)}%20to%20your%20bag%20on%20Flovexa%20Perfumes.%20Would%20you%20like%20any%20help%20completing%20your%20order?`
+          : undefined;
+
+        allAbandonedCarts.push({
+          id: ord.id,
+          order_number: ord.order_number,
+          customer_name: ord.customer_name || "Guest Shopper",
+          email: ord.email,
+          phone: ord.phone || "",
+          total_paise: ord.total_paise || 0,
+          created_at: ord.created_at,
+          items: (ord.order_items || []).map((it) => ({
+            product_name: it.product_name,
+            size: it.size,
+            quantity: it.quantity,
+          })),
+          whatsapp_url,
+        });
+      }
     }
 
     // Builder function for buyer purchase stats
@@ -404,6 +436,7 @@ export default async function AdminPage() {
           last_sign_in_at: u.last_sign_in_at ?? null,
           admin_note: profile?.admin_note ?? "",
           whatsapp_url,
+          in_cart_count: abandonedCartsByEmail.get(em) || 0,
           ...stats,
         },
       ];
@@ -436,6 +469,7 @@ export default async function AdminPage() {
         admin_note: "",
         is_guest: true,
         whatsapp_url,
+        in_cart_count: abandonedCartsByEmail.get(em) || 0,
         ...stats,
         tier: stats.tier === "lead" ? "guest" : stats.tier,
       });
@@ -497,6 +531,7 @@ export default async function AdminPage() {
         orders={orders}
         returnRequests={returnRequests}
         customers={customers}
+        abandonedCarts={allAbandonedCarts}
         sellers={sellers}
         coupons={coupons}
         reviews={reviews}

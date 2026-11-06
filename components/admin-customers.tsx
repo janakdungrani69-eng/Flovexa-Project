@@ -54,6 +54,18 @@ export type CustomerAddressRecord = {
   pincode: string;
 };
 
+export type AbandonedCartRecord = {
+  id: string;
+  order_number: string;
+  customer_name: string;
+  email: string;
+  phone: string;
+  total_paise: number;
+  created_at: string;
+  items: { product_name: string; size: string; quantity: number }[];
+  whatsapp_url?: string;
+};
+
 export type AdminCustomer = {
   id: string;
   email: string;
@@ -74,6 +86,7 @@ export type AdminCustomer = {
   recent_orders: CustomerOrderRecord[];
   addresses: CustomerAddressRecord[];
   whatsapp_url?: string;
+  in_cart_count?: number;
 };
 
 const money = (paise: number) =>
@@ -83,10 +96,16 @@ const money = (paise: number) =>
     maximumFractionDigits: 0,
   }).format(paise / 100);
 
-export default function AdminCustomers({ customers: initialCustomers }: { customers: AdminCustomer[] }) {
+export default function AdminCustomers({
+  customers: initialCustomers,
+  abandonedCarts = [],
+}: {
+  customers: AdminCustomer[];
+  abandonedCarts?: AbandonedCartRecord[];
+}) {
   const [customers, setCustomers] = useState(initialCustomers);
   const [search, setSearch] = useState("");
-  const [filterTab, setFilterTab] = useState<"all" | "vip" | "repeat" | "active" | "leads">("all");
+  const [filterTab, setFilterTab] = useState<"all" | "vip" | "repeat" | "active" | "leads" | "abandoned">("all");
   const [sortBy, setSortBy] = useState<"spend" | "orders" | "recent" | "oldest">("spend");
   const [expandedCustomerId, setExpandedCustomerId] = useState<string | null>(null);
   const [notes, setNotes] = useState<Record<string, string>>({});
@@ -146,6 +165,19 @@ export default function AdminCustomers({ customers: initialCustomers }: { custom
       return 0;
     });
   }, [customers, filterTab, vipCustomers, repeatCustomers, activeCustomers, leadCustomers, search, sortBy]);
+
+  const displayedAbandonedCarts = useMemo(() => {
+    if (!search.trim()) return abandonedCarts;
+    const q = search.toLowerCase().trim();
+    return abandonedCarts.filter(
+      (cart) =>
+        cart.customer_name.toLowerCase().includes(q) ||
+        cart.email.toLowerCase().includes(q) ||
+        cart.phone.includes(q) ||
+        cart.order_number.toLowerCase().includes(q) ||
+        cart.items.some((i) => i.product_name.toLowerCase().includes(q))
+    );
+  }, [abandonedCarts, search]);
 
   async function saveNote(customer: AdminCustomer) {
     setBusyId(customer.id);
@@ -235,12 +267,21 @@ export default function AdminCustomers({ customers: initialCustomers }: { custom
           </small>
         </div>
 
-        <div className="customer-kpi-card">
+        <div
+          className="customer-kpi-card"
+          onClick={() => setFilterTab("abandoned")}
+          style={{ cursor: "pointer", borderLeft: filterTab === "abandoned" ? "3px solid #d97706" : "3px solid #f59e0b" }}
+          title="Click to view all shoppers with perfumes currently left in bag"
+        >
           <span>
-            <UserPlus size={14} style={{ color: "#4338ca" }} /> REGISTERED STORE LEADS
+            <ShoppingBag size={14} style={{ color: "#d97706" }} /> 🛒 IN-CART (ADD TO BAG)
           </span>
-          <b>{leadCustomers.length}</b>
-          <small>Signed up on store · Ready for WhatsApp greeting &amp; coupon</small>
+          <b style={{ color: "#b45309" }}>{abandonedCarts.length}</b>
+          <small>
+            {abandonedCarts.length === 0
+              ? "All bags completed"
+              : `${money(abandonedCarts.reduce((s, c) => s + c.total_paise, 0))} pending checkout · Click to view`}
+          </small>
         </div>
       </div>
 
@@ -251,7 +292,7 @@ export default function AdminCustomers({ customers: initialCustomers }: { custom
           <strong>D2C Growth &amp; Repeat Purchase Engine:</strong>
           <span>
             {" "}
-            Click the green <strong>WhatsApp</strong> button on any customer to connect instantly with a personalized
+            Click the green <strong>WhatsApp</strong> button on any customer or in-cart shopper to connect instantly with a personalized
             greeting. Use the <strong>"Fragrances Purchased"</strong> dropdown to see exactly which perfume each buyer
             purchased and how many times they re-ordered.
           </span>
@@ -296,6 +337,19 @@ export default function AdminCustomers({ customers: initialCustomers }: { custom
           >
             <UserPlus size={12} /> New Leads ({leadCustomers.length})
           </button>
+          <button
+            type="button"
+            className={filterTab === "abandoned" ? "active" : ""}
+            onClick={() => setFilterTab("abandoned")}
+            style={{
+              background: filterTab === "abandoned" ? "#fffbeb" : undefined,
+              borderColor: filterTab === "abandoned" ? "#d97706" : undefined,
+              color: filterTab === "abandoned" ? "#b45309" : undefined,
+              fontWeight: filterTab === "abandoned" ? 700 : undefined,
+            }}
+          >
+            🛒 In-Cart / Add to Bag ({abandonedCarts.length})
+          </button>
         </div>
 
         <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
@@ -335,7 +389,115 @@ export default function AdminCustomers({ customers: initialCustomers }: { custom
         </div>
       </div>
 
-      {/* Customer Directory List */}
+      {/* Customer Directory List or In-Cart Abandoned Bags */}
+      {filterTab === "abandoned" ? (
+        <div className="customer-directory-list">
+          <div style={{
+            background: "#fffbeb",
+            border: "1px solid #fde68a",
+            borderRadius: 8,
+            padding: "14px 18px",
+            marginBottom: 16,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 12,
+            flexWrap: "wrap",
+          }}>
+            <div>
+              <b style={{ color: "#92400e", fontSize: 13, display: "flex", alignItems: "center", gap: 6 }}>
+                <ShoppingBag size={15} style={{ color: "#d97706" }} /> Add-to-Bag &amp; Incomplete Checkout Tracking ({abandonedCarts.length} Shoppers)
+              </b>
+              <span style={{ fontSize: 11.5, color: "#78350f" }}>
+                Customers who added luxury perfumes to their bag &amp; started checkout, but did not complete payment.
+                Click the green WhatsApp button to send a friendly reminder with free delivery!
+              </span>
+            </div>
+            <div style={{ background: "#fef3c7", padding: "6px 12px", borderRadius: 6, fontWeight: 700, color: "#92400e", fontSize: 13 }}>
+              Total Value in Bags: {money(abandonedCarts.reduce((s, c) => s + c.total_paise, 0))}
+            </div>
+          </div>
+
+          {displayedAbandonedCarts.length === 0 ? (
+            <div className="admin-empty" style={{ padding: "40px 20px" }}>
+              <ShoppingBag size={28} />
+              <b>No incomplete carts found</b>
+              <span>All customers who added perfumes to their cart either completed checkout or haven't left items behind.</span>
+            </div>
+          ) : (
+            <div style={{ display: "grid", gap: 12 }}>
+              {displayedAbandonedCarts.map((cart) => (
+                <div
+                  key={cart.id}
+                  style={{
+                    background: "#fff",
+                    border: "1px solid #e7dfd4",
+                    borderRadius: 10,
+                    padding: "16px 20px",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    gap: 16,
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <div style={{ minWidth: 220 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                      <b style={{ fontSize: 15, color: "#1f1a14" }}>{cart.customer_name}</b>
+                      <span style={{ fontSize: 10, background: "#fef3c7", color: "#92400e", padding: "2px 8px", borderRadius: 4, fontWeight: 700 }}>
+                        🛒 IN BAG (UNPAID)
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 12, color: "#6b7280", display: "flex", gap: 12, flexWrap: "wrap" }}>
+                      <span>✉ {cart.email}</span>
+                      {cart.phone && <span>📞 {cart.phone}</span>}
+                      <span>🕒 {new Date(cart.created_at).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}</span>
+                    </div>
+                  </div>
+
+                  <div style={{ minWidth: 180 }}>
+                    <div style={{ fontSize: 11, color: "#82796d", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".05em" }}>
+                      Perfumes Left in Bag
+                    </div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#252119" }}>
+                      {cart.items.map((i, idx) => (
+                        <span key={idx}>
+                          {i.product_name} ({i.size}) × {i.quantity}
+                          {idx < cart.items.length - 1 ? ", " : ""}
+                        </span>
+                      ))}
+                    </div>
+                    <b style={{ color: "#9e7740", fontSize: 14 }}>{money(cart.total_paise)}</b>
+                  </div>
+
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    {cart.whatsapp_url && (
+                      <a
+                        href={cart.whatsapp_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn-customer-whatsapp"
+                        style={{ padding: "8px 14px", fontSize: 12, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6, background: "#25D366", color: "#fff", borderRadius: 6, fontWeight: 600 }}
+                        title="Send friendly WhatsApp cart recovery reminder"
+                      >
+                        <MessageCircle size={14} /> WhatsApp Reminder
+                      </a>
+                    )}
+                    {cart.phone && (
+                      <a
+                        href={`tel:${cart.phone}`}
+                        style={{ padding: "8px 12px", fontSize: 12, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6, background: "#f3f4f6", color: "#1f2937", borderRadius: 6, fontWeight: 500 }}
+                      >
+                        Call
+                      </a>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
       <div className="customer-directory-list">
         {displayedCustomers.length === 0 ? (
           <div className="admin-empty" style={{ padding: "40px 20px" }}>
@@ -468,11 +630,30 @@ export default function AdminCustomers({ customers: initialCustomers }: { custom
                 {/* Metrics 4-Box Strip */}
                 <div className="ccl-metrics-grid">
                   <div className="ccl-metric-box">
-                    <span className="ccl-metric-label">Total Orders</span>
+                    <span className="ccl-metric-label">Confirmed Orders</span>
                     <strong className="ccl-metric-val">{customer.order_count}</strong>
                     <span className="ccl-metric-sub">
-                      {customer.order_count === 0 ? "No purchases yet" : `${totalPerfumesPurchased} bottles bought`}
+                      {customer.order_count === 0 ? "No purchases yet" : `${totalPerfumesPurchased} bottle${totalPerfumesPurchased > 1 ? "s" : ""} bought`}
                     </span>
+                    {customer.in_cart_count !== undefined && customer.in_cart_count > 0 && (
+                      <span
+                        onClick={() => setFilterTab("abandoned")}
+                        style={{
+                          display: "inline-block",
+                          marginTop: 4,
+                          fontSize: 10,
+                          background: "#fef3c7",
+                          color: "#92400e",
+                          padding: "1px 6px",
+                          borderRadius: 4,
+                          fontWeight: 700,
+                          cursor: "pointer",
+                        }}
+                        title="Click to view incomplete cart"
+                      >
+                        🛒 {customer.in_cart_count} in bag (unpaid)
+                      </span>
+                    )}
                   </div>
 
                   <div className="ccl-metric-box">
@@ -658,6 +839,7 @@ export default function AdminCustomers({ customers: initialCustomers }: { custom
           })
         )}
       </div>
+      )}
     </div>
   );
 }

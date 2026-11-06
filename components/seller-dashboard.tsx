@@ -243,7 +243,7 @@ export default function SellerDashboard({
   initialProducts: SellerProduct[];
   categories: string[];
 }) {
-  const [tab, setTab] = useState<"products" | "orders" | "returns" | "earnings" | "settings">("products");
+  const [tab, setTab] = useState<"orders" | "products" | "returns" | "earnings" | "settings">("orders");
   const [currentStoreName, setCurrentStoreName] = useState(initialStoreName);
   const [storeNameInput, setStoreNameInput] = useState(initialStoreName);
   const [savingStoreName, setSavingStoreName] = useState(false);
@@ -427,8 +427,13 @@ export default function SellerDashboard({
 
     const syncWithUrl = () => {
       const params = new URLSearchParams(window.location.search);
+      const urlTab = params.get("tab");
+      if (urlTab && ["orders", "products", "returns", "earnings", "settings"].includes(urlTab)) {
+        setTab(urlTab as any);
+      }
       const action = params.get("action");
       if (action === "new-product") {
+        setTab("products");
         setEditingId(null);
         setForm(blankForm(categories[0] ?? "Perfume"));
         setActiveFormStep(1);
@@ -440,6 +445,7 @@ export default function SellerDashboard({
         if (id) {
           const found = products.find((p) => p.id === id);
           if (found) {
+            setTab("products");
             setEditingId(found.id);
             setActiveFormStep(1);
             setActiveVariantTab(0);
@@ -472,6 +478,7 @@ export default function SellerDashboard({
   }
 
   function beginAdd() {
+    setTab("products");
     setEditingId(null);
     setForm(blankForm(categories[0] ?? "Perfume"));
     setActiveFormStep(1);
@@ -730,6 +737,7 @@ export default function SellerDashboard({
   }
 
   function beginEdit(product: SellerProduct) {
+    setTab("products");
     setEditingId(product.id);
     const existingImages =
       product.images && product.images.length > 0
@@ -1070,8 +1078,8 @@ export default function SellerDashboard({
   }
 
   const tabs = [
-    { id: "products" as const, label: "Catalogue & Products", icon: Package, count: products.length },
     { id: "orders" as const, label: "Customer Orders", icon: ClipboardList, count: orders.length },
+    { id: "products" as const, label: "Catalogue & Products", icon: Package, count: products.length },
     { id: "returns" as const, label: "Returns", icon: Undo2, count: returns.length },
     { id: "earnings" as const, label: "Gross Sales & Payouts", icon: BadgeIndianRupee },
     { id: "settings" as const, label: "Store Profile", icon: Settings },

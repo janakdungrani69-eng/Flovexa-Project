@@ -36,9 +36,12 @@ export default async function SellerPage() {
   }
 
   const role = getStoreRole(user);
+  const email = user.email?.trim().toLowerCase() || "";
   const isMasterAdmin =
     role === "admin" ||
-    user.email?.trim().toLowerCase() === "janakdungrani69@gmail.com";
+    email === "janakdungrani69@gmail.com" ||
+    email === "flovexaenterprises@gmail.com" ||
+    email === "businessflovax@gmail.com";
 
   let profile: {
     store_name?: string;

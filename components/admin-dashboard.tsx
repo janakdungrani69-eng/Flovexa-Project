@@ -38,7 +38,7 @@ import {
   UsersRound,
 } from "lucide-react";
 import { generateDefaultSku, type Product } from "@/lib/products";
-import AdminCustomers, { type AdminCustomer } from "@/components/admin-customers";
+import AdminCustomers, { type AdminCustomer, type AbandonedCartRecord } from "@/components/admin-customers";
 import AdminStorefront from "@/components/admin-storefront";
 import AdminReviews, { type AdminReview } from "@/components/admin-reviews";
 import type { AdminCoupon } from "@/components/admin-coupons";
@@ -142,6 +142,7 @@ export default function AdminDashboard({
   orders: initialOrders,
   returnRequests: initialReturns,
   customers,
+  abandonedCarts = [],
   sellers,
   coupons,
   couponPanel,
@@ -156,6 +157,7 @@ export default function AdminDashboard({
   orders: AdminOrder[];
   returnRequests: AdminReturnRequest[];
   customers: AdminCustomer[];
+  abandonedCarts?: AbandonedCartRecord[];
   sellers: AdminSeller[];
   coupons: AdminCoupon[];
   couponPanel: ReactNode;
@@ -1753,7 +1755,7 @@ export default function AdminDashboard({
         {/* =========================================================================
             TAB 5: CUSTOMERS
            ========================================================================= */}
-        {tab === "customers" && <AdminCustomers customers={customers} />}
+        {tab === "customers" && <AdminCustomers customers={customers} abandonedCarts={abandonedCarts} />}
 
         {/* =========================================================================
             TAB 6: RETURNS
