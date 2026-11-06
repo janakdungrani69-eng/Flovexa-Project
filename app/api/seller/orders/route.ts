@@ -1,11 +1,23 @@
 import { NextResponse } from "next/server";
 import { getActiveSeller } from "@/lib/supabase/seller-user";
 import { getStoreRole } from "@/lib/supabase/roles";
+import { syncPendingRazorpayOrders } from "@/lib/sync-orders";
+import { syncAllShippedOrders } from "@/lib/courier-tracking";
 
 export async function GET() {
   try {
     const seller = await getActiveSeller();
     if (!seller) return NextResponse.json({ error: "Active seller access is required." }, { status: 403 });
+
+    // Reconcile and auto-confirm any orders paid via UPI / Razorpay, and auto-update delivered shipments
+    try {
+      await Promise.all([
+        syncPendingRazorpayOrders(),
+        syncAllShippedOrders(),
+      ]);
+    } catch (syncErr) {
+      console.warn("Background order sync handled in seller orders:", syncErr);
+    }
 
     const role = getStoreRole(seller.user);
     const isMasterAdmin =

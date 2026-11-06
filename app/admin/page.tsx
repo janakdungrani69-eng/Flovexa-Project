@@ -12,6 +12,8 @@ import { getStoreRole } from "@/lib/supabase/roles";
 import { getStorefrontContent } from "@/lib/storefront-content-server";
 import { getAdminUser } from "@/lib/supabase/admin-user";
 import { createAdminSupabase } from "@/lib/supabase/admin";
+import { syncPendingRazorpayOrders } from "@/lib/sync-orders";
+import { syncAllShippedOrders } from "@/lib/courier-tracking";
 import { noIndexMetadata } from "@/lib/seo";
 
 export const metadata = noIndexMetadata("Executive Owner Admin - Flovexa Control Center");
@@ -31,6 +33,16 @@ export default async function AdminPage() {
   let reviews: AdminReview[] = [];
 
   try {
+    // Reconcile and auto-confirm any orders paid via UPI / Razorpay, and auto-update delivered shipments
+    try {
+      await Promise.all([
+        syncPendingRazorpayOrders(),
+        syncAllShippedOrders(),
+      ]);
+    } catch (syncErr) {
+      console.warn("Background order sync handled in admin:", syncErr);
+    }
+
     const supabase = createAdminSupabase();
 
     const [productResult, orderResult, returnResult, reportResult, usersResult, couponResult, orderItemsResult, reviewsResult] =
@@ -253,11 +265,18 @@ export default async function AdminPage() {
 
     const custProfileMap = new Map((customerProfiles ?? []).map((cp) => [cp.user_id, cp]));
 
-    // Group all store orders by email
+    // Group all valid paid store orders by email (excluding abandoned or unpaid payment drafts)
     type RawOrderWithItems = NonNullable<typeof allStoreOrders>[number];
     const ordersByEmail = new Map<string, RawOrderWithItems[]>();
     for (const ord of allStoreOrders ?? []) {
       if (!ord.email) continue;
+      // Only count orders that have been successfully paid or fulfilled (never abandoned/unpaid drafts)
+      const isPaidOrder =
+        ord.payment_status === "captured" ||
+        ["paid", "processing", "shipped", "delivered"].includes(ord.status);
+      const isCancelled = ["cancelled", "refunded"].includes(ord.status);
+      if (!isPaidOrder || isCancelled) continue;
+
       const em = ord.email.toLowerCase().trim();
       const list = ordersByEmail.get(em) ?? [];
       list.push(ord);
