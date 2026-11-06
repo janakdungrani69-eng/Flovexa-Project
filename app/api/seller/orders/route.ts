@@ -47,7 +47,8 @@ export async function GET() {
         tracking_number,
         tracking_url
       `)
-      .not("status", "in", '("pending_payment","cancelled")')
+      .neq("status", "pending_payment")
+      .neq("status", "cancelled")
       .order("created_at", { ascending: false })
       .limit(300);
 

@@ -1,4 +1,5 @@
 import "server-only";
+import { randomUUID } from "crypto";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { createRazorpay } from "@/lib/razorpay";
 import { sendOrderEmail } from "@/lib/order-email";
@@ -12,7 +13,10 @@ export async function syncPendingRazorpayOrders(): Promise<{ synced: number; ord
     const { client } = createRazorpay();
 
     // 1. Fetch recent orders from Razorpay directly (Bulletproof Source of Truth)
-    const rzpOrdersRes: any = await client.orders.all({ count: 20 }).catch(() => null);
+    const rzpOrdersRes: any = await client.orders.all({ count: 25 }).catch((e) => {
+      console.error("[syncPendingRazorpayOrders] rzp.orders.all failed:", e);
+      return null;
+    });
     const rzpOrders = rzpOrdersRes?.items || [];
 
     for (const rzpOrder of rzpOrders) {
@@ -24,60 +28,74 @@ export async function syncPendingRazorpayOrders(): Promise<{ synced: number; ord
       const localId: string | undefined = rzpOrder.notes?.local_order_id;
       const rzpOrderId: string = rzpOrder.id;
 
-      // Fetch payment details for this order
-      const paymentsRes: any = await (client.orders as any).payments(rzpOrderId).catch(() => null);
+      // 2. Fetch payment details for this order using official SDK method
+      const paymentsRes: any = await (client.orders as any).fetchPayments(rzpOrderId).catch(() => null);
       const payments = paymentsRes?.items || [];
       const captured = payments.find((p: any) => p.status === "captured") || payments[0];
       const paymentId = captured?.id || `pay_sync_${rzpOrderId}`;
 
-      // Check if order exists in Supabase
-      let query = supabase.from("orders").select("id, order_number, status, payment_status, total_paise, customer_name, email, phone");
-      if (localId && rzpOrderId) {
-        query = query.or(`id.eq.${localId},razorpay_order_id.eq.${rzpOrderId}${receipt ? `,order_number.eq.${receipt}` : ""}`);
-      } else if (rzpOrderId) {
-        query = query.or(`razorpay_order_id.eq.${rzpOrderId}${receipt ? `,order_number.eq.${receipt}` : ""}`);
-      } else if (receipt) {
-        query = query.eq("order_number", receipt);
-      } else {
-        continue;
+      // 3. Reliable DB lookup: Exact primary key or unique attribute
+      let dbOrder: any = null;
+      if (localId) {
+        const { data } = await supabase
+          .from("orders")
+          .select("id, order_number, status, payment_status, total_paise, customer_name, email, phone")
+          .eq("id", localId)
+          .maybeSingle();
+        if (data) dbOrder = data;
       }
 
-      const { data: dbOrders } = await query.limit(1);
-      const dbOrder = dbOrders?.[0];
+      if (!dbOrder && rzpOrderId) {
+        const { data } = await supabase
+          .from("orders")
+          .select("id, order_number, status, payment_status, total_paise, customer_name, email, phone")
+          .eq("razorpay_order_id", rzpOrderId)
+          .maybeSingle();
+        if (data) dbOrder = data;
+      }
+
+      if (!dbOrder && receipt) {
+        const { data } = await supabase
+          .from("orders")
+          .select("id, order_number, status, payment_status, total_paise, customer_name, email, phone")
+          .eq("order_number", receipt)
+          .maybeSingle();
+        if (data) dbOrder = data;
+      }
 
       if (dbOrder) {
-        // If order exists in DB but is pending or created
-        if (dbOrder.status !== "paid" && dbOrder.status !== "shipped" && dbOrder.status !== "delivered") {
-          await supabase.from("orders").update({
-            status: "paid",
+        // Ensure order is marked paid and payment captured
+        const newStatus = ["shipped", "delivered"].includes(dbOrder.status) ? dbOrder.status : "paid";
+        await supabase
+          .from("orders")
+          .update({
+            status: newStatus,
             payment_status: "captured",
             razorpay_order_id: rzpOrderId,
             razorpay_payment_id: paymentId,
             tracking_carrier: "Mahavir Express",
             payment_signature_verified_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
-          }).eq("id", dbOrder.id);
+          })
+          .eq("id", dbOrder.id);
 
-          try {
-            await supabase.rpc("mark_order_paid", {
-              local_order_uuid: dbOrder.id,
-              provider_order_id: rzpOrderId,
-              provider_payment_id: paymentId,
-            });
-          } catch {}
+        try {
+          await supabase.rpc("mark_order_paid", {
+            local_order_uuid: dbOrder.id,
+            provider_order_id: rzpOrderId,
+            provider_payment_id: paymentId,
+          });
+        } catch {}
 
-          try {
-            await sendOrderEmail(dbOrder.id, "order_confirmation");
-          } catch {}
+        try {
+          await sendOrderEmail(dbOrder.id, "order_confirmation");
+        } catch {}
 
-          syncedOrderNumbers.push(dbOrder.order_number || receipt);
-          details.push({ action: "updated", id: dbOrder.id, number: dbOrder.order_number, paymentId });
-        } else {
-          details.push({ action: "already_paid", id: dbOrder.id, number: dbOrder.order_number, status: dbOrder.status });
-        }
+        syncedOrderNumbers.push(dbOrder.order_number || receipt);
+        details.push({ action: "updated", id: dbOrder.id, number: dbOrder.order_number, paymentId });
       } else {
         // Order row missing in DB - insert it from Razorpay order and captured payment
-        const newOrderId = localId || crypto.randomUUID();
+        const newOrderId = localId || randomUUID();
         const customerName = captured?.notes?.name || (captured?.email ? captured.email.split("@")[0] : "Priyanshi");
         const customerEmail = captured?.email || "customer@flovexa.in";
         const customerPhone = captured?.contact || "+919106302990";
@@ -119,8 +137,10 @@ export async function syncPendingRazorpayOrders(): Promise<{ synced: number; ord
             line_total_paise: rzpOrder.amount || 39900,
           });
 
-          syncedOrderNumbers.push(receipt);
+          syncedOrderNumbers.push(receipt || newOrderId);
           details.push({ action: "created_from_razorpay", id: newOrderId, number: receipt, paymentId });
+        } else {
+          console.error("[syncPendingRazorpayOrders] Order insert error:", insertErr);
         }
       }
     }
